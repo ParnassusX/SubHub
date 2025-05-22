@@ -1,3 +1,18 @@
+## Important Note on Guide Structure & Quick Links to Latest Code
+
+This guide has been assembled chronologically as features were developed. Some components are updated in later steps. **To get the most up-to-date code for each component, please refer to the specific "Step" linked below where its latest version is provided:**
+
+*   **`SubscriptionContext.js` (with Local Storage, Categories, Payment Methods, and Settings concept):** See **Step 14**.
+*   **`App.jsx` (main app structure, including PremiumTeaser integration):** See **Step 13**.
+*   **`AddSubscriptionForm.jsx` (with Category and Payment Method, refined UI):** See **Step 11** (for Payment Method) and **Step 10** (for general UI refinements). *Please synthesize these; Step 11 builds on Step 10's structure.* (Self-correction: The latest full code for AddSubscriptionForm is actually in Step 11, which incorporates Step 10's UI refinements). **Correction: Latest `AddSubscriptionForm.jsx` is in Step 11.**
+*   **`SubscriptionList.jsx` (refined UI):** See **Step 10**.
+*   **`SubscriptionListItem.jsx` (with Category, Payment Method, Settings concept, refined UI):** See **Step 14**.
+*   **`Dashboard.jsx` (with Calendar integration, enhanced UI):** See **Step 12**.
+*   **`NotificationsPanel.jsx` (refined UI):** See **Step 10**.
+*   **`SubscriptionCalendar.jsx` (new component):** See **Step 12**.
+*   **`PremiumTeaser.jsx` (new component):** See **Step 13**.
+
+The initial "Step 3: Integrate Provided SubHub MVP Components" describes an older version of the components. For setting up your project with the latest code, use the links above to find the most current snippets for each file after completing the initial Vite and Tailwind setup (Steps 1 & 2).
 # React Project Setup Guide (Vite + Tailwind CSS)
 
 This guide will walk you through setting up a local React development environment using Vite and Tailwind CSS, and then integrating the SubHub MVP components.
@@ -324,56 +339,59 @@ The example `App.jsx` above assumes all components (`AddSubscriptionForm`, `Subs
 ```
 ---
 
-## Architecture Overview (MVP)
+## Updated Architecture Overview (MVP)
 
-This section outlines the basic frontend architecture for the SubHub MVP.
+This section outlines the frontend architecture for the enhanced SubHub MVP.
 
 ### Core Concepts
 
-*   **React Components**: The UI is built using React components. Key components include:
-    *   `App.jsx`: The main application wrapper.
-    *   `SubscriptionContext.js`: Manages shared state (subscriptions list) and related functions (add, edit, delete) using React Context API. This serves as the **mock backend** for the MVP.
-    *   `AddSubscriptionForm.jsx`: UI for adding new subscriptions.
-    *   `SubscriptionList.jsx` & `SubscriptionListItem.jsx`: UI for displaying the list of subscriptions.
-    *   `Dashboard.jsx`: UI for displaying summarized financial information (monthly/yearly costs) and upcoming payments.
-    *   `NotificationsPanel.jsx`: UI for displaying mock user notifications.
-*   **Tailwind CSS**: Used for styling all components, providing utility classes for rapid UI development.
-*   **Mock Data**: All data is currently mocked and managed within the `SubscriptionContext.js`. There is no actual backend database or API interaction in this MVP. Data will persist only for the duration of the browser session and will not be saved permanently.
+*   **React Components**: The UI is built using React components.
+*   **`SubscriptionContext.js`**: Manages shared state (subscriptions list, user settings) and related functions (add, edit, delete). It now includes:
+    *   Persistence of subscriptions to **Local Storage**.
+    *   Data model support for `category` and `paymentMethod` per subscription.
+    *   Conceptual placeholders for `userSettings` (currency symbol, date format).
+*   **Component Breakdown**:
+    *   `App.jsx`: Main application wrapper, integrates all primary views and context.
+    *   `AddSubscriptionForm.jsx`: UI for adding new subscriptions, including category and payment method.
+    *   `SubscriptionList.jsx` & `SubscriptionListItem.jsx`: UI for displaying subscriptions, now showing category, payment method, and using conceptual settings for date/currency.
+    *   `Dashboard.jsx`: Main overview page, now includes:
+        *   Financial summaries (monthly/yearly costs).
+        *   `SubscriptionCalendar.jsx` for a visual display of payment dates.
+        *   Spending breakdown by category.
+    *   `SubscriptionCalendar.jsx`: A new component rendering a navigable monthly calendar view of subscription start dates.
+    *   `NotificationsPanel.jsx`: UI for displaying mock user notifications with refined styling.
+    *   `PremiumTeaser.jsx`: A new component to showcase (mockup) future premium features.
+*   **Tailwind CSS**: Used for styling all components.
+*   **Local Data Persistence**: Subscription data is saved to and loaded from the browser's local storage. User settings are conceptually defined but not yet persisted.
 
 ### Data Flow
 
-1.  **Initialization**: `SubscriptionProvider` (from `SubscriptionContext.js`) wraps the main part of the application in `App.jsx`. It initializes an empty list of subscriptions.
-2.  **Adding Subscriptions**:
-    *   The `AddSubscriptionForm.jsx` component captures user input for a new subscription.
-    *   On submission, it calls the `addSubscription` function provided by `SubscriptionContext`.
-    *   `SubscriptionContext` updates its internal list of subscriptions.
-3.  **Displaying Subscriptions**:
-    *   `SubscriptionList.jsx` consumes `SubscriptionContext` to get the current list of subscriptions.
-    *   It maps over this list and renders `SubscriptionListItem.jsx` for each subscription.
-4.  **Dashboard Display**:
-    *   `Dashboard.jsx` consumes `SubscriptionContext` to get the subscriptions.
-    *   It calculates totals and filters upcoming payments based on this data.
-5.  **Notifications**:
-    *   `NotificationsPanel.jsx` currently displays hardcoded mock notifications. It does not yet interact with `SubscriptionContext` for dynamic alerts.
+1.  **Initialization**: `SubscriptionProvider` loads subscriptions from local storage. Default user settings are initialized.
+2.  **Adding/Editing/Deleting Subscriptions**: Actions from components call functions in `SubscriptionContext`. The context updates its internal state, which then triggers an update to local storage.
+3.  **Display**: Components consume data from `SubscriptionContext`. `SubscriptionListItem` uses `userSettings` for formatting. `Dashboard` uses subscription data for summaries and the calendar.
+4.  **Calendar**: `SubscriptionCalendar` reads subscription start dates to mark them on the calendar grid.
+5.  **Premium Teaser**: `PremiumTeaser` is a static component displayed, typically in `App.jsx`, to show potential upgrades.
 
-### Directory Structure (Recommended for Local Setup)
+### Directory Structure (Recommended for Local Setup - unchanged)
 
 ```
 subhub-mvp-app/
 ├── public/
 ├── src/
-│   ├── assets/         // For static assets like images
-│   ├── components/     // Reusable UI components
+│   ├── assets/
+│   ├── components/
 │   │   ├── AddSubscriptionForm.jsx
 │   │   ├── Dashboard.jsx
 │   │   ├── NotificationsPanel.jsx
 │   │   ├── SubscriptionList.jsx
-│   │   └── SubscriptionListItem.jsx
-│   ├── context/        // React context providers
+│   │   ├── SubscriptionListItem.jsx
+│   │   ├── SubscriptionCalendar.jsx
+│   │   └── PremiumTeaser.jsx
+│   ├── context/
 │   │   └── SubscriptionContext.js
-│   ├── App.jsx         // Main application component
-│   ├── index.css       // Global styles and Tailwind imports
-│   └── main.jsx        // Application entry point
+│   ├── App.jsx
+│   ├── index.css
+│   └── main.jsx
 ├── .gitignore
 ├── index.html
 ├── package.json
@@ -381,8 +399,7 @@ subhub-mvp-app/
 ├── tailwind.config.js
 └── vite.config.js
 ```
-
-This architecture is designed for rapid MVP development and local testing. For a production application, a proper backend, database, and API would be required.
+This architecture supports a feature-rich client-side MVP.
 
 ---
 
@@ -989,7 +1006,7 @@ const Dashboard = () => {
         </div>
         <div className="p-4 bg-white rounded-xl shadow-md transition-shadow hover:shadow-lg">
           <h3 className="text-lg font-medium text-slate-600">Estimated Yearly Cost</h3>
-          <p className="text-2xl font-bold text-emerald-600">${totalYearlyCost.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-green-500">${totalYearlyCost.toFixed(2)}</p>
         </div>
       </div>
 
@@ -1059,4 +1076,1099 @@ export default Dashboard;
 -   **Layout**: Uses `md:` prefixes for responsive design adjustments on medium screens and above.
 
 Remember to integrate this updated `Dashboard.jsx` into your local project by replacing the old version. This should give you a more dynamic and visually organized dashboard.
+---
+
+## Step 10: Refine UI/UX for Core Components
+
+This step focuses on enhancing the visual appeal, usability, and modern feel of the core components. We'll use Tailwind CSS utilities to achieve a cleaner and more intuitive interface.
+
+**Instructions:**
+
+Replace the content of your `src/components/AddSubscriptionForm.jsx`, `src/components/SubscriptionList.jsx`, `src/components/SubscriptionListItem.jsx`, and `src/components/NotificationsPanel.jsx` files with the updated code provided below.
+
+### 1. Refined `src/components/AddSubscriptionForm.jsx`
+
+Improvements:
+-   Slightly more spacious layout.
+-   Consistent input styling.
+-   Button with a more prominent style.
+-   Clearer visual grouping if applicable (though it's a simple form).
+
+```javascript
+// src/components/AddSubscriptionForm.jsx
+import React, { useState, useContext } from 'react';
+import { SubscriptionContext } from '../context/SubscriptionContext'; // Adjust path
+
+const AddSubscriptionForm = () => {
+  const { addSubscription } = useContext(SubscriptionContext);
+  const [name, setName] = useState('');
+  const [cost, setCost] = useState('');
+  const [frequency, setFrequency] = useState('Monthly');
+  const [startDate, setStartDate] = useState('');
+  const [category, setCategory] = useState('');
+
+  const suggestedCategories = ["Entertainment", "Software", "Utilities", "Health", "Education", "Finance", "Other"];
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name || !cost || !startDate) {
+      alert('Please fill in all required fields: Name, Cost, and Start Date.');
+      return;
+    }
+    addSubscription({ name, cost, frequency, startDate, category: category || 'General' });
+    setName('');
+    setCost('');
+    setFrequency('Monthly');
+    setStartDate('');
+    setCategory('');
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="p-6 bg-white rounded-xl shadow-xl mb-10 space-y-5">
+      <h3 className="text-xl font-semibold text-slate-700 mb-5 text-center">Add New Subscription</h3>
+      
+      <div>
+        <label htmlFor="name" className="block text-sm font-medium text-slate-600 mb-1">Subscription Name</label>
+        <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)}
+               className="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition-shadow" required />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
+        <div>
+          <label htmlFor="cost" className="block text-sm font-medium text-slate-600 mb-1">Cost ($)</label>
+          <input type="number" id="cost" value={cost} onChange={(e) => setCost(e.target.value)} step="0.01"
+                 className="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition-shadow" required />
+        </div>
+        <div>
+          <label htmlFor="frequency" className="block text-sm font-medium text-slate-600 mb-1">Payment Frequency</label>
+          <select id="frequency" value={frequency} onChange={(e) => setFrequency(e.target.value)}
+                  className="mt-1 block w-full px-4 py-2.5 border border-slate-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition-shadow">
+            <option value="Monthly">Monthly</option>
+            <option value="Yearly">Yearly</option>
+            <option value="Quarterly">Quarterly</option>
+            <option value="Bi-Annually">Bi-Annually</option>
+            <option value="Weekly">Weekly</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
+        <div>
+          <label htmlFor="startDate" className="block text-sm font-medium text-slate-600 mb-1">Start Date / Next Payment</label>
+          <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                 className="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition-shadow" required />
+        </div>
+        <div>
+          <label htmlFor="category" className="block text-sm font-medium text-slate-600 mb-1">Category</label>
+          <input type="text" id="category" value={category} onChange={(e) => setCategory(e.target.value)} list="categories" placeholder="e.g., Entertainment"
+                 className="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition-shadow" />
+          <datalist id="categories">
+            {suggestedCategories.map(cat => <option key={cat} value={cat} />)}
+          </datalist>
+        </div>
+      </div>
+      
+      <button type="submit"
+              className="w-full py-3 px-4 mt-3 border border-transparent rounded-lg shadow-md text-md font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors">
+        Add Subscription
+      </button>
+    </form>
+  );
+};
+export default AddSubscriptionForm;
+```
+
+### 2. Refined `src/components/SubscriptionList.jsx`
+
+Improvements:
+-   Clearer "empty state" message.
+-   Uses a grid for potentially better responsiveness if items have varying content.
+
+```javascript
+// src/components/SubscriptionList.jsx
+import React, { useContext } from 'react';
+import { SubscriptionContext } from '../context/SubscriptionContext'; // Adjust path
+import SubscriptionListItem from './SubscriptionListItem'; // Adjust path
+
+const SubscriptionList = () => {
+  const { subscriptions, deleteSubscription, editSubscription } = useContext(SubscriptionContext); // Assuming edit/delete are added to context
+
+  if (!subscriptions || subscriptions.length === 0) {
+    return (
+      <div className="text-center p-8 bg-white rounded-xl shadow-lg">
+        <svg className="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+        </svg>
+        <h3 className="mt-2 text-lg font-medium text-slate-800">No Subscriptions Yet</h3>
+        <p className="mt-1 text-sm text-slate-500">Add some subscriptions to see them listed here!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-xl font-semibold text-slate-700 mb-3">Your Subscriptions</h3>
+      {subscriptions.map(subscription => (
+        <SubscriptionListItem 
+          key={subscription.id} 
+          subscription={subscription} 
+          onDelete={() => deleteSubscription(subscription.id)} // Pass delete handler
+          onEdit={(updatedSub) => editSubscription(updatedSub)} // Pass edit handler (expects full updated sub object)
+        />
+      ))}
+    </div>
+  );
+};
+export default SubscriptionList;
+```
+
+### 3. Refined `src/components/SubscriptionListItem.jsx`
+
+Improvements:
+-   Clearer visual hierarchy for information.
+-   Added placeholder Edit and Delete buttons with icons (functionality depends on `editSubscription` and `deleteSubscription` in context).
+-   Subtle hover effect on the list item.
+
+```javascript
+// src/components/SubscriptionListItem.jsx
+import React, { useState } from 'react'; // useState for potential inline editing later
+
+const SubscriptionListItem = ({ subscription, onDelete, onEdit }) => {
+  // Placeholder for inline editing state if needed in the future
+  // const [isEditing, setIsEditing] = useState(false);
+  // const [editedName, setEditedName] = useState(subscription.name);
+  // ... other fields for editing
+
+  // const handleEdit = () => {
+  //   onEdit({ ...subscription, name: editedName /*, other fields */ });
+  //   setIsEditing(false);
+  // };
+
+  return (
+    <div className="p-5 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out mb-3">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center">
+        {/* Subscription Details */}
+        <div className="flex-grow mb-4 sm:mb-0">
+          <div className="flex items-center mb-1">
+            <h3 className="text-lg font-semibold text-sky-700">{subscription.name}</h3>
+            {subscription.category && (
+              <span className="ml-3 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 bg-indigo-100 rounded-full uppercase tracking-wider">
+                {subscription.category}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-slate-600">
+            Cost: <span className="font-medium text-slate-800">${(parseFloat(subscription.cost) || 0).toFixed(2)}</span> / {subscription.frequency}
+          </p>
+          <p className="text-sm text-slate-500">
+            Next Payment: {new Date(subscription.startDate).toLocaleDateString()}
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex-shrink-0 flex items-center space-x-2">
+          {/* Placeholder Edit Button */}
+          <button 
+            onClick={() => alert(`Edit functionality for '${subscription.name}' not fully implemented yet.`)} 
+            className="p-2 text-slate-500 hover:text-sky-600 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+            aria-label="Edit subscription"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+              <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
+            </svg>
+          </button>
+          {/* Delete Button */}
+          <button 
+            onClick={onDelete} 
+            className="p-2 text-slate-500 hover:text-red-600 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+            aria-label="Delete subscription"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+export default SubscriptionListItem;
+```
+
+### 4. Refined `src/components/NotificationsPanel.jsx`
+
+Improvements:
+-   More distinct styling for different notification types using icons and color-coding.
+-   Better overall panel styling.
+
+```javascript
+// src/components/NotificationsPanel.jsx
+import React from 'react';
+
+const NotificationsPanel = () => {
+  const mockNotifications = [
+    { id: 1, message: "Your Netflix subscription renews in 3 days.", type: "alert", icon: "⚠️" },
+    { id: 2, message: "Spotify payment was successful.", type: "success", icon: "✅" },
+    { id: 3, message: "Adobe Creative Cloud price has increased by $5.", type: "warning", icon: "📈" },
+    { id: 4, message: "Consider reviewing your 'Software' category spending.", type: "info", icon: "ℹ️" },
+  ];
+
+  const getNotificationStyles = (type) => {
+    switch (type) {
+      case 'alert': // Often yellow for warnings/alerts
+        return {
+          bg: 'bg-yellow-50 border-yellow-400',
+          iconBg: 'bg-yellow-100 text-yellow-600',
+          text: 'text-yellow-700',
+          iconColor: 'text-yellow-500'
+        };
+      case 'success': // Green
+        return {
+          bg: 'bg-green-50 border-green-400',
+          iconBg: 'bg-green-100 text-green-600',
+          text: 'text-green-700',
+          iconColor: 'text-green-500'
+        };
+      case 'warning': // Often red or orange for critical warnings
+        return {
+          bg: 'bg-red-50 border-red-400',
+          iconBg: 'bg-red-100 text-red-600',
+          text: 'text-red-700',
+          iconColor: 'text-red-500'
+        };
+      case 'info': // Blue or gray
+      default:
+        return {
+          bg: 'bg-sky-50 border-sky-400',
+          iconBg: 'bg-sky-100 text-sky-600',
+          text: 'text-sky-700',
+          iconColor: 'text-sky-500'
+        };
+    }
+  };
+
+  return (
+    <div className="p-6 bg-white rounded-xl shadow-xl mb-10">
+      <h3 className="text-xl font-semibold text-slate-700 mb-5">Notifications</h3>
+      {mockNotifications.length > 0 ? (
+        <ul className="space-y-4">
+          {mockNotifications.map(notification => {
+            const styles = getNotificationStyles(notification.type);
+            return (
+              <li 
+                key={notification.id} 
+                className={`p-4 border-l-4 rounded-r-lg flex items-start space-x-3 ${styles.bg} ${styles.text}`}
+              >
+                <div className={`flex-shrink-0 p-1.5 rounded-full ${styles.iconBg} ${styles.iconColor}`}>
+                  {/* Placeholder for a more sophisticated icon system if needed */}
+                  <span className="font-bold text-sm">{notification.icon}</span>
+                </div>
+                <div className="flex-grow">
+                  <p className="text-sm">{notification.message}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div className="text-center p-5 text-slate-500">
+          <svg className="mx-auto h-10 w-10 text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+          </svg>
+          No new notifications.
+        </div>
+      )}
+    </div>
+  );
+};
+export default NotificationsPanel;
+```
+
+These refinements aim to make the application more visually appealing and easier to use, aligning with modern UI/UX trends. Remember to replace the existing component code in your local project with these updated versions.
+---
+
+## Step 11: Add "Payment Method" Tracking
+
+To help users keep better track of their subscriptions, we'll add a `paymentMethod` field. This will allow users to note how they are paying for each subscription.
+
+**Instructions:**
+
+Update the relevant parts of your `src/context/SubscriptionContext.js`, `src/components/AddSubscriptionForm.jsx`, and `src/components/SubscriptionListItem.jsx` files with the code provided below.
+
+### 1. Updated `src/context/SubscriptionContext.js` (with Payment Method)
+
+This version builds upon the previous one (with categories and local storage) by adding `paymentMethod` to the subscription object.
+
+```javascript
+// src/context/SubscriptionContext.js
+import React, { createContext, useState, useEffect } from 'react';
+
+export const SubscriptionContext = createContext();
+
+export const SubscriptionProvider = ({ children }) => {
+  const [subscriptions, setSubscriptions] = useState(() => {
+    const localData = localStorage.getItem('subscriptions');
+    return localData ? JSON.parse(localData) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+  }, [subscriptions]);
+
+  const addSubscription = (subscription) => {
+    const newSubscription = {
+      ...subscription,
+      id: Date.now(),
+      cost: parseFloat(subscription.cost) || 0,
+      category: subscription.category || 'General',
+      paymentMethod: subscription.paymentMethod || 'Not Specified', // Add paymentMethod
+    };
+    setSubscriptions(prevSubscriptions => [...prevSubscriptions, newSubscription]);
+  };
+
+  const editSubscription = (updatedSubscription) => {
+    setSubscriptions(prevSubscriptions =>
+      prevSubscriptions.map(sub =>
+        sub.id === updatedSubscription.id ? { 
+          ...sub, 
+          ...updatedSubscription, 
+          cost: parseFloat(updatedSubscription.cost) || 0,
+          category: updatedSubscription.category || sub.category,
+          paymentMethod: updatedSubscription.paymentMethod || sub.paymentMethod // Ensure paymentMethod is part of update
+        } : sub
+      )
+    );
+  };
+
+  const deleteSubscription = (id) => {
+    setSubscriptions(prevSubscriptions =>
+      prevSubscriptions.filter(sub => sub.id !== id)
+    );
+  };
+
+  return (
+    <SubscriptionContext.Provider value={{ subscriptions, addSubscription, editSubscription, deleteSubscription }}>
+      {children}
+    </SubscriptionContext.Provider>
+  );
+};
+```
+**Key changes:**
+- In `addSubscription`: `paymentMethod: subscription.paymentMethod || 'Not Specified'` is added.
+- In `editSubscription`: The `paymentMethod` field is now part of the update logic.
+
+### 2. Updated `src/components/AddSubscriptionForm.jsx` (with Payment Method Input)
+
+Add a new input field for the payment method.
+
+```javascript
+// src/components/AddSubscriptionForm.jsx
+import React, { useState, useContext } from 'react';
+import { SubscriptionContext } from '../context/SubscriptionContext'; // Adjust path
+
+const AddSubscriptionForm = () => {
+  const { addSubscription } = useContext(SubscriptionContext);
+  const [name, setName] = useState('');
+  const [cost, setCost] = useState('');
+  const [frequency, setFrequency] = useState('Monthly');
+  const [startDate, setStartDate] = useState('');
+  const [category, setCategory] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState(''); // New state for paymentMethod
+
+  const suggestedCategories = ["Entertainment", "Software", "Utilities", "Health", "Education", "Finance", "Other"];
+  // Suggested payment methods (can be expanded)
+  const suggestedPaymentMethods = ["Credit Card (Visa ****1234)", "PayPal", "Apple Pay", "Google Pay", "Bank Debit", "Other"];
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name || !cost || !startDate) {
+      alert('Please fill in all required fields: Name, Cost, and Start Date.');
+      return;
+    }
+    addSubscription({ name, cost, frequency, startDate, category: category || 'General', paymentMethod: paymentMethod || 'Not Specified' });
+    setName('');
+    setCost('');
+    setFrequency('Monthly');
+    setStartDate('');
+    setCategory('');
+    setPaymentMethod(''); // Reset paymentMethod field
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="p-6 bg-white rounded-xl shadow-xl mb-10 space-y-5">
+      <h3 className="text-xl font-semibold text-slate-700 mb-5 text-center">Add New Subscription</h3>
+      
+      <div>
+        <label htmlFor="name" className="block text-sm font-medium text-slate-600 mb-1">Subscription Name</label>
+        <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)}
+               className="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition-shadow" required />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
+        <div>
+          <label htmlFor="cost" className="block text-sm font-medium text-slate-600 mb-1">Cost ($)</label>
+          <input type="number" id="cost" value={cost} onChange={(e) => setCost(e.target.value)} step="0.01"
+                 className="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition-shadow" required />
+        </div>
+        <div>
+          <label htmlFor="frequency" className="block text-sm font-medium text-slate-600 mb-1">Payment Frequency</label>
+          <select id="frequency" value={frequency} onChange={(e) => setFrequency(e.target.value)}
+                  className="mt-1 block w-full px-4 py-2.5 border border-slate-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition-shadow">
+            <option value="Monthly">Monthly</option>
+            <option value="Yearly">Yearly</option>
+            <option value="Quarterly">Quarterly</option>
+            <option value="Bi-Annually">Bi-Annually</option>
+            <option value="Weekly">Weekly</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
+        <div>
+          <label htmlFor="startDate" className="block text-sm font-medium text-slate-600 mb-1">Start Date / Next Payment</label>
+          <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                 className="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition-shadow" required />
+        </div>
+        <div>
+          <label htmlFor="category" className="block text-sm font-medium text-slate-600 mb-1">Category</label>
+          <input type="text" id="category" value={category} onChange={(e) => setCategory(e.target.value)} list="categories" placeholder="e.g., Entertainment"
+                 className="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition-shadow" />
+          <datalist id="categories">
+            {suggestedCategories.map(cat => <option key={cat} value={cat} />)}
+          </datalist>
+        </div>
+      </div>
+       <div>
+        <label htmlFor="paymentMethod" className="block text-sm font-medium text-slate-600 mb-1">Payment Method (Optional)</label>
+        <input type="text" id="paymentMethod" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} list="paymentMethods" placeholder="e.g., Visa ****1234"
+               className="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition-shadow" />
+        <datalist id="paymentMethods">
+            {suggestedPaymentMethods.map(pm => <option key={pm} value={pm} />)}
+        </datalist>
+      </div>
+      
+      <button type="submit"
+              className="w-full py-3 px-4 mt-3 border border-transparent rounded-lg shadow-md text-md font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors">
+        Add Subscription
+      </button>
+    </form>
+  );
+};
+export default AddSubscriptionForm;
+```
+**Key changes:**
+- Added `paymentMethod` state and an input field for it, including a `datalist` for suggestions.
+- `paymentMethod` is passed to `addSubscription`.
+
+### 3. Updated `src/components/SubscriptionListItem.jsx` (to Display Payment Method)
+
+Modify the item display to include the payment method.
+
+```javascript
+// src/components/SubscriptionListItem.jsx
+import React from 'react';
+
+const SubscriptionListItem = ({ subscription, onDelete, onEdit }) => {
+  return (
+    <div className="p-5 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out mb-3">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-start">
+        {/* Subscription Details */}
+        <div className="flex-grow mb-4 sm:mb-0 pr-0 sm:pr-4"> {/* Added padding-right for spacing on sm screens */}
+          <div className="flex items-center mb-1">
+            <h3 className="text-lg font-semibold text-sky-700">{subscription.name}</h3>
+            {subscription.category && (
+              <span className="ml-3 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 bg-indigo-100 rounded-full uppercase tracking-wider">
+                {subscription.category}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-slate-600">
+            Cost: <span className="font-medium text-slate-800">${(parseFloat(subscription.cost) || 0).toFixed(2)}</span> / {subscription.frequency}
+          </p>
+          <p className="text-sm text-slate-500">
+            Next Payment: {new Date(subscription.startDate).toLocaleDateString()}
+          </p>
+          {/* Display Payment Method */}
+          {subscription.paymentMethod && subscription.paymentMethod !== 'Not Specified' && (
+            <p className="text-xs text-slate-500 mt-1">
+              Paid with: <span className="font-medium text-slate-600">{subscription.paymentMethod}</span>
+            </p>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex-shrink-0 flex items-center space-x-2 self-start sm:self-center"> {/* Adjusted alignment for buttons */}
+          <button 
+            onClick={() => alert(`Edit functionality for '${subscription.name}' not fully implemented yet.`)} 
+            className="p-2 text-slate-500 hover:text-sky-600 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+            aria-label="Edit subscription"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+              <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
+            </svg>
+          </button>
+          <button 
+            onClick={onDelete} 
+            className="p-2 text-slate-500 hover:text-red-600 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+            aria-label="Delete subscription"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+export default SubscriptionListItem;
+```
+**Key changes:**
+- Added a paragraph to display `subscription.paymentMethod` if it exists and is not the default "Not Specified".
+- Minor layout adjustments for better alignment of action buttons, especially on smaller screens.
+
+These updates will allow users to specify and see the payment method associated with each subscription, adding another layer of useful detail.
+---
+
+## Step 12: Implement Calendar View for Upcoming Payments
+
+A calendar view can provide a very intuitive way for users to see their upcoming subscription payments. This step adds a basic calendar component and integrates it into the dashboard.
+
+**Note:** This is a simplified calendar for MVP purposes. It primarily considers the `startDate` of subscriptions. A full implementation would calculate all future recurring payment dates.
+
+**Instructions:**
+
+1.  Create a new file `src/components/SubscriptionCalendar.jsx` with the code below.
+2.  Update your `src/components/Dashboard.jsx` to include this new calendar component.
+
+### 1. New Component: `src/components/SubscriptionCalendar.jsx`
+
+```javascript
+// src/components/SubscriptionCalendar.jsx
+import React, { useState, useContext } from 'react';
+import { SubscriptionContext } from '../context/SubscriptionContext'; // Adjust path
+
+const SubscriptionCalendar = () => {
+  const { subscriptions } = useContext(SubscriptionContext);
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = (year, month) => new Date(year, month, 1).getDay(); // 0 (Sun) - 6 (Sat)
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth(); // 0-11
+  const monthName = currentDate.toLocaleString('default', { month: 'long' });
+
+  const numDays = daysInMonth(year, month);
+  const startingDay = firstDayOfMonth(year, month);
+
+  const calendarDays = [];
+  for (let i = 0; i < startingDay; i++) {
+    calendarDays.push(<div key={`empty-start-${i}`} className="p-2 border border-slate-200 bg-slate-50"></div>);
+  }
+
+  for (let day = 1; day <= numDays; day++) {
+    const dayDate = new Date(year, month, day);
+    const isToday = dayDate.toDateString() === new Date().toDateString();
+    
+    // Find subscriptions starting on this day (simplified for MVP)
+    const todaysSubscriptions = subscriptions.filter(sub => {
+      if (!sub.startDate) return false;
+      const subStartDate = new Date(sub.startDate);
+      // Adjusting for timezone differences if subStartDate is stored as YYYY-MM-DD string
+      const subDateCorrected = new Date(subStartDate.getUTCFullYear(), subStartDate.getUTCMonth(), subStartDate.getUTCDate());
+      return subDateCorrected.toDateString() === dayDate.toDateString();
+    });
+
+    calendarDays.push(
+      <div 
+        key={day} 
+        className={`p-2 border relative min-h-[100px] ${isToday ? 'bg-sky-100 border-sky-300' : 'border-slate-200 bg-white'} ${todaysSubscriptions.length > 0 ? 'bg-amber-50' : ''} transition-colors hover:bg-slate-100`}
+      >
+        <span className={`text-sm font-medium ${isToday ? 'text-sky-700 font-bold' : 'text-slate-700'}`}>{day}</span>
+        {todaysSubscriptions.length > 0 && (
+          <div className="mt-1 space-y-0.5">
+            {todaysSubscriptions.slice(0, 2).map(sub => ( // Show max 2 subs directly, more indicated by a dot or count
+              <div key={sub.id} title={`${sub.name} - $${sub.cost}`} className="truncate text-xs p-0.5 rounded bg-sky-500 text-white">
+                {sub.name}
+              </div>
+            ))}
+            {todaysSubscriptions.length > 2 && (
+              <div className="text-xs text-slate-500 mt-0.5">+{todaysSubscriptions.length - 2} more</div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const goToPreviousMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
+  };
+  
+  const goToCurrentMonth = () => {
+    setCurrentDate(new Date());
+  };
+
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  return (
+    <div className="p-4 md:p-6 bg-white rounded-xl shadow-xl mb-8">
+      <div className="flex justify-between items-center mb-4">
+        <button onClick={goToPreviousMonth} className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg shadow-sm transition-colors">&lt; Prev</button>
+        <div className="text-center">
+            <h3 className="text-xl md:text-2xl font-semibold text-slate-800">{monthName} {year}</h3>
+            <button onClick={goToCurrentMonth} className="text-xs text-sky-600 hover:text-sky-800 transition-colors">Today</button>
+        </div>
+        <button onClick={goToNextMonth} className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg shadow-sm transition-colors">Next &gt;</button>
+      </div>
+      <div className="grid grid-cols-7 gap-px border border-slate-200 bg-slate-200">
+        {dayNames.map(name => (
+          <div key={name} className="p-2 text-xs font-semibold text-center text-slate-600 bg-slate-100">{name}</div>
+        ))}
+        {calendarDays}
+      </div>
+    </div>
+  );
+};
+
+export default SubscriptionCalendar;
+```
+
+### 2. Updated `src/components/Dashboard.jsx` (to include Calendar)
+
+Now, let's add the `SubscriptionCalendar` to your main dashboard.
+
+```javascript
+// src/components/Dashboard.jsx
+import React, { useContext } from 'react';
+import { SubscriptionContext } from '../context/SubscriptionContext'; // Adjust path
+import SubscriptionCalendar from './SubscriptionCalendar'; // Import the new calendar
+
+const Dashboard = () => {
+  const { subscriptions } = useContext(SubscriptionContext);
+
+  let totalMonthlyCost = 0;
+  let totalYearlyCost = 0;
+  const spendingByCategory = {};
+
+  subscriptions.forEach(sub => {
+    const cost = parseFloat(sub.cost) || 0;
+    if (sub.frequency === 'Monthly') {
+      totalMonthlyCost += cost;
+      totalYearlyCost += cost * 12;
+    } else if (sub.frequency === 'Yearly') {
+      totalMonthlyCost += cost / 12;
+      totalYearlyCost += cost;
+    }
+    const category = sub.category || 'General';
+    spendingByCategory[category] = (spendingByCategory[category] || 0) + (sub.frequency === 'Monthly' ? cost : cost / 12);
+  });
+
+  // Upcoming payments logic can be simplified or removed if calendar is primary view for this
+  const upcomingPayments = subscriptions.filter(sub => {
+    if (!sub.startDate) return false;
+    try {
+      const startDate = new Date(sub.startDate);
+      const today = new Date();
+      return startDate >= today; 
+    } catch (e) { return false; }
+  }).sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+  return (
+    <div className="p-4 md:p-6 bg-slate-50 rounded-lg shadow-lg mb-8">
+      <h2 className="text-2xl md:text-3xl font-semibold text-slate-800 mb-6 border-b pb-3">Dashboard</h2>
+      
+      {/* Financial Overview Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
+        <div className="p-4 bg-white rounded-xl shadow-md transition-shadow hover:shadow-lg">
+          <h3 className="text-lg font-medium text-slate-600">Total Monthly Cost</h3>
+          <p className="text-2xl font-bold text-sky-600">${totalMonthlyCost.toFixed(2)}</p>
+        </div>
+        <div className="p-4 bg-white rounded-xl shadow-md transition-shadow hover:shadow-lg">
+          <h3 className="text-lg font-medium text-slate-600">Estimated Yearly Cost</h3>
+          <p className="text-2xl font-bold text-emerald-600">${totalYearlyCost.toFixed(2)}</p>
+        </div>
+      </div>
+
+      {/* Subscription Calendar - New Section */}
+      <SubscriptionCalendar /> 
+      {/* End Subscription Calendar */}
+
+      {/* Spending by Category Section - Placed after calendar or in a different tab/view later */}
+      <div className="my-8 p-4 bg-white rounded-xl shadow-md transition-shadow hover:shadow-lg">
+        <h3 className="text-xl font-semibold text-slate-700 mb-3">Spending by Category (Monthly Est.)</h3>
+        {Object.keys(spendingByCategory).length > 0 ? (
+          <ul className="space-y-2">
+            {Object.entries(spendingByCategory).sort(([,a],[,b]) => b-a).map(([category, total]) => (
+              <li key={category} className="flex justify-between items-center p-3 bg-slate-50 rounded-md">
+                <span className="text-slate-700 font-medium">{category}</span>
+                <span className="text-slate-800 font-semibold">${total.toFixed(2)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-slate-500 italic">No subscriptions with categories yet.</p>
+        )}
+      </div>
+      
+      {/* Upcoming Payments List - This can be kept, or removed if calendar is sufficient */}
+      <div className="p-4 bg-white rounded-xl shadow-md transition-shadow hover:shadow-lg">
+        <h3 className="text-xl font-semibold text-slate-700 mb-3">Upcoming Payments List (Sorted by Date)</h3>
+        {upcomingPayments.length > 0 ? (
+          <ul className="space-y-3">
+            {upcomingPayments.map(sub => (
+              <li key={sub.id} className="p-3 bg-slate-50 rounded-md shadow-sm">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="font-semibold text-slate-800">{sub.name}</span>
+                    {sub.category && (
+                      <span className="ml-2 px-2 py-0.5 text-xs font-semibold text-indigo-700 bg-indigo-100 rounded-full">
+                        {sub.category}
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-medium text-slate-700">${(parseFloat(sub.cost) || 0).toFixed(2)}</span>
+                </div>
+                <p className="text-sm text-slate-500">
+                  Due: {new Date(sub.startDate).toLocaleDateString()} ({sub.frequency})
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-slate-500 italic">No upcoming payments based on current data.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+export default Dashboard;
+```
+
+**After adding these:**
+- Your dashboard will now feature an interactive monthly calendar.
+- Subscriptions (based on their `startDate`) will be visually indicated on the calendar days.
+- You can navigate between months.
+
+This calendar view significantly enhances the user's ability to visualize their payment schedule.
+---
+
+## Step 13: Design UI for Premium Feature Mockup
+
+To make users aware of potential premium features and the app's future monetization strategy (as outlined in the PRD), this step adds a simple UI mockup for these features. These will be non-functional placeholders.
+
+**Instructions:**
+
+1.  Create a new file `src/components/PremiumTeaser.jsx` with the code below.
+2.  Update your `src/App.jsx` (or another relevant component like `Dashboard.jsx`) to include this new teaser component.
+
+### 1. New Component: `src/components/PremiumTeaser.jsx`
+
+This component will display placeholders for premium features.
+
+```javascript
+// src/components/PremiumTeaser.jsx
+import React from 'react';
+
+const PremiumTeaser = () => {
+  const premiumFeatures = [
+    { 
+      name: "Advanced Analytics", 
+      description: "Get deeper insights into your spending habits with detailed charts and reports.",
+      icon: "📊" // Example icon
+    },
+    { 
+      name: "Family Sharing", 
+      description: "Share subscription tracking and management with your household members.",
+      icon: "👨‍👩‍👧‍👦" // Example icon
+    },
+    {
+      name: "Automated Bill Negotiation",
+      description: "Let us try to lower your bills for you (future service).",
+      icon: "💼"
+    }
+  ];
+
+  return (
+    <div className="p-6 my-10 bg-gradient-to-r from-sky-500 to-indigo-600 rounded-xl shadow-xl text-white">
+      <h3 className="text-2xl font-semibold mb-2 text-center">Unlock SubHub Premium!</h3>
+      <p className="text-sm text-center text-sky-100 mb-6">
+        Supercharge your subscription management with these exclusive features:
+      </p>
+      
+      <div className="grid md:grid-cols-3 gap-6 mb-6">
+        {premiumFeatures.map((feature) => (
+          <div key={feature.name} className="p-4 bg-white/20 backdrop-blur-md rounded-lg text-center transition-transform hover:scale-105">
+            <span className="text-3xl mb-2 block" role="img" aria-label={feature.name}>{feature.icon}</span>
+            <h4 className="font-semibold text-lg mb-1">{feature.name}</h4>
+            <p className="text-xs text-sky-50">{feature.description}</p>
+          </div>
+        ))}
+      </div>
+      
+      <div className="text-center">
+        <button 
+          onClick={() => alert('Premium features are coming soon! Stay tuned.')}
+          className="px-8 py-3 font-semibold bg-white text-indigo-600 rounded-lg shadow-md hover:bg-slate-100 transition-colors"
+        >
+          Learn More & Upgrade (Coming Soon)
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default PremiumTeaser;
+```
+
+### 2. Example Integration into `src/App.jsx`
+
+You can place the `PremiumTeaser` component in a prominent location, for example, below the main content in `App.jsx`.
+
+```javascript
+// src/App.jsx (Example of where to add PremiumTeaser)
+import React from 'react';
+import { SubscriptionProvider } from './context/SubscriptionContext'; // Adjust path
+import AddSubscriptionForm from './components/AddSubscriptionForm';    // Adjust path
+import SubscriptionList from './components/SubscriptionList';      // Adjust path
+import Dashboard from './components/Dashboard';                      // Adjust path
+import NotificationsPanel from './components/NotificationsPanel';    // Adjust path
+import PremiumTeaser from './components/PremiumTeaser';              // Import PremiumTeaser
+
+// Assuming your App.css or index.css handles global styling
+// import './App.css'; 
+
+function App() {
+  return (
+    <SubscriptionProvider>
+      <div className="min-h-screen bg-slate-100 text-slate-800"> {/* Added a background color to body */}
+        <div className="App container mx-auto p-4 md:p-6 lg:p-8">
+          <header className="mb-8 md:mb-12">
+            <h1 className="text-3xl md:text-4xl font-bold text-center text-sky-700">
+              SubHub MVP
+            </h1>
+          </header>
+          
+          <main>
+            <Dashboard />
+            {/* You might place form and list in separate views/routes later */}
+            <div className="mt-8 md:mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+              <div>
+                <AddSubscriptionForm />
+                <NotificationsPanel />
+              </div>
+              <SubscriptionList />
+            </div>
+            
+            {/* Premium Teaser Section */}
+            <PremiumTeaser />
+          </main>
+
+          <footer className="text-center mt-12 py-6 border-t border-slate-300">
+            <p className="text-sm text-slate-500">&copy; {new Date().getFullYear()} SubHub. All rights reserved (Placeholder).</p>
+          </footer>
+        </div>
+      </div>
+    </SubscriptionProvider>
+  );
+}
+
+export default App;
+```
+
+**After adding these:**
+- Your application will have a section that visually teases upcoming premium features.
+- This helps communicate the value proposition for future paid tiers without needing to build out the complex features at this MVP stage.
+- The `App.jsx` example also includes a subtle page background color and a basic footer for a more "complete page" feel.
+---
+
+## Step 14: Conceptual: Customizable Date/Currency Formats
+
+To prepare for future internationalization and user preferences, this step introduces the concept of customizable date and currency formatting. We'll add settings to a context and show how a component might use them. A full UI for changing these settings is beyond this MVP step.
+
+**Instructions:**
+
+Update your `src/context/SubscriptionContext.js` and `src/components/SubscriptionListItem.jsx` files with the code provided below.
+
+### 1. Updated `src/context/SubscriptionContext.js` (with Basic Settings)
+
+We add basic settings for currency and date format directly into the existing context for simplicity in this MVP. In a larger app, these might live in a dedicated `SettingsContext`.
+
+```javascript
+// src/context/SubscriptionContext.js
+import React, { createContext, useState, useEffect } from 'react';
+
+export const SubscriptionContext = createContext();
+
+export const SubscriptionProvider = ({ children }) => {
+  const [subscriptions, setSubscriptions] = useState(() => {
+    const localData = localStorage.getItem('subscriptions');
+    return localData ? JSON.parse(localData) : [];
+  });
+
+  // Basic settings placeholders - conceptually, these could be changed by a user
+  const [userSettings, setUserSettings] = useState({
+    currencySymbol: '$', // Default currency symbol
+    dateFormat: 'MM/DD/YYYY', // Default date format e.g., 'YYYY-MM-DD', 'DD.MM.YYYY'
+  });
+
+  useEffect(() => {
+    localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+  }, [subscriptions]);
+
+  // In a full app, you'd also save/load userSettings from localStorage
+  // useEffect(() => {
+  //   localStorage.setItem('userSettings', JSON.stringify(userSettings));
+  // }, [userSettings]);
+  // And load them:
+  // const localSettings = localStorage.getItem('userSettings');
+  // return localSettings ? JSON.parse(localSettings) : { currencySymbol: '$', dateFormat: 'MM/DD/YYYY' };
+
+
+  const addSubscription = (subscription) => {
+    const newSubscription = {
+      ...subscription,
+      id: Date.now(),
+      cost: parseFloat(subscription.cost) || 0,
+      category: subscription.category || 'General',
+      paymentMethod: subscription.paymentMethod || 'Not Specified',
+    };
+    setSubscriptions(prevSubscriptions => [...prevSubscriptions, newSubscription]);
+  };
+
+  const editSubscription = (updatedSubscription) => {
+    setSubscriptions(prevSubscriptions =>
+      prevSubscriptions.map(sub =>
+        sub.id === updatedSubscription.id ? { 
+          ...sub, 
+          ...updatedSubscription, 
+          cost: parseFloat(updatedSubscription.cost) || 0,
+          category: updatedSubscription.category || sub.category,
+          paymentMethod: updatedSubscription.paymentMethod || sub.paymentMethod
+        } : sub
+      )
+    );
+  };
+
+  const deleteSubscription = (id) => {
+    setSubscriptions(prevSubscriptions =>
+      prevSubscriptions.filter(sub => sub.id !== id)
+    );
+  };
+
+  // Function to update settings (conceptual)
+  const updateUserSettings = (newSettings) => {
+    setUserSettings(prevSettings => ({ ...prevSettings, ...newSettings }));
+  };
+
+  return (
+    <SubscriptionContext.Provider value={{ 
+      subscriptions, 
+      addSubscription, 
+      editSubscription, 
+      deleteSubscription,
+      userSettings, // Provide settings
+      updateUserSettings // Provide function to update settings (for future use)
+    }}>
+      {children}
+    </SubscriptionContext.Provider>
+  );
+};
+```
+**Key changes:**
+- Added `userSettings` state to `SubscriptionContext` with defaults for `currencySymbol` and `dateFormat`.
+- Added a conceptual `updateUserSettings` function.
+- `userSettings` and `updateUserSettings` are provided in the context value.
+
+### 2. Updated `src/components/SubscriptionListItem.jsx` (Using Settings for Display)
+
+This component will now consume `userSettings` from the context to format the cost and date.
+
+```javascript
+// src/components/SubscriptionListItem.jsx
+import React, { useContext } from 'react'; // Added useContext
+import { SubscriptionContext } from '../context/SubscriptionContext'; // Adjust path
+
+const SubscriptionListItem = ({ subscription, onDelete, onEdit }) => {
+  const { userSettings } = useContext(SubscriptionContext); // Consume userSettings
+
+  // Helper function to format date based on userSetting.dateFormat
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+     // Adjust for timezone differences if dateString is simple YYYY-MM-DD
+    const correctedDate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+
+    if (userSettings.dateFormat === 'DD/MM/YYYY') {
+      return correctedDate.toLocaleDateString('en-GB'); // Example: British English format
+    } else if (userSettings.dateFormat === 'YYYY-MM-DD') {
+      return correctedDate.toISOString().split('T')[0];
+    }
+    // Default to MM/DD/YYYY (US style) or a more robust library for i18n
+    return correctedDate.toLocaleDateString('en-US'); 
+  };
+
+  return (
+    <div className="p-5 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out mb-3">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-start">
+        <div className="flex-grow mb-4 sm:mb-0 pr-0 sm:pr-4">
+          <div className="flex items-center mb-1">
+            <h3 className="text-lg font-semibold text-sky-700">{subscription.name}</h3>
+            {subscription.category && (
+              <span className="ml-3 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 bg-indigo-100 rounded-full uppercase tracking-wider">
+                {subscription.category}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-slate-600">
+            Cost: <span className="font-medium text-slate-800">{userSettings.currencySymbol}{(parseFloat(subscription.cost) || 0).toFixed(2)}</span> / {subscription.frequency}
+          </p>
+          <p className="text-sm text-slate-500">
+            Next Payment: {formatDate(subscription.startDate)}
+          </p>
+          {subscription.paymentMethod && subscription.paymentMethod !== 'Not Specified' && (
+            <p className="text-xs text-slate-500 mt-1">
+              Paid with: <span className="font-medium text-slate-600">{subscription.paymentMethod}</span>
+            </p>
+          )}
+        </div>
+        <div className="flex-shrink-0 flex items-center space-x-2 self-start sm:self-center">
+          <button 
+            onClick={() => alert(`Edit functionality for '${subscription.name}' not fully implemented yet.`)} 
+            className="p-2 text-slate-500 hover:text-sky-600 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+            aria-label="Edit subscription"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>
+          </button>
+          <button 
+            onClick={onDelete} 
+            className="p-2 text-slate-500 hover:text-red-600 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+            aria-label="Delete subscription"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+export default SubscriptionListItem;
+```
+**Key changes:**
+- `SubscriptionListItem` now uses `useContext` to access `userSettings`.
+- The cost display now prepends `userSettings.currencySymbol`.
+- A `formatDate` helper function is introduced to display `subscription.startDate` according to `userSettings.dateFormat`. This is a basic example; a library like `date-fns` or `moment.js` would be better for robust date formatting in a real app.
+
+This conceptual addition demonstrates how user-specific display preferences could be handled, making the app more adaptable in the future.
+---
+## Concluding Note on This Guide
+
+This guide has been assembled by appending new features and code updates step-by-step. While this shows the evolution of the MVP, always refer to the "Quick Links to Latest Code" at the beginning of this document to ensure you are using the most up-to-date version of each component. The instructions within each step generally assume you are replacing the entirety of the specified file with the new code provided.
 ```
