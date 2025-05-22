@@ -636,4 +636,427 @@ npm test
 ```
 
 This provides a starting point for testing your SubHub MVP components. Remember to adjust import paths based on your final project structure.
+---
+
+## Step 7: Implement Data Persistence with Local Storage
+
+To make your SubHub MVP more useful, we'll update `SubscriptionContext.js` to save and load subscriptions from the browser's local storage. This means your data will persist even after you close the browser tab.
+
+**Instructions:**
+
+Replace the entire content of your `src/context/SubscriptionContext.js` file with the code below.
+
+### Updated `src/context/SubscriptionContext.js` (with Local Storage)
+
+```javascript
+// src/context/SubscriptionContext.js
+import React, { createContext, useState, useEffect } from 'react';
+
+export const SubscriptionContext = createContext();
+
+export const SubscriptionProvider = ({ children }) => {
+  const [subscriptions, setSubscriptions] = useState(() => {
+    // Load subscriptions from local storage on initial render
+    const localData = localStorage.getItem('subscriptions');
+    return localData ? JSON.parse(localData) : [];
+  });
+
+  // Save subscriptions to local storage whenever they change
+  useEffect(() => {
+    localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+  }, [subscriptions]);
+
+  const addSubscription = (subscription) => {
+    // Ensure cost is a number before saving
+    const newSubscription = {
+      ...subscription,
+      id: Date.now(), // Simple ID generation
+      cost: parseFloat(subscription.cost) || 0, // Ensure cost is a number
+    };
+    setSubscriptions(prevSubscriptions => [...prevSubscriptions, newSubscription]);
+  };
+
+  // Placeholder for editSubscription - to be implemented
+  const editSubscription = (updatedSubscription) => {
+    setSubscriptions(prevSubscriptions =>
+      prevSubscriptions.map(sub =>
+        sub.id === updatedSubscription.id ? { ...sub, ...updatedSubscription, cost: parseFloat(updatedSubscription.cost) || 0 } : sub
+      )
+    );
+  };
+
+  // Placeholder for deleteSubscription - to be implemented
+  const deleteSubscription = (id) => {
+    setSubscriptions(prevSubscriptions =>
+      prevSubscriptions.filter(sub => sub.id !== id)
+    );
+  };
+
+  return (
+    <SubscriptionContext.Provider value={{ subscriptions, addSubscription, editSubscription, deleteSubscription }}>
+      {children}
+    </SubscriptionContext.Provider>
+  );
+};
+```
+
+**Key changes in this version:**
+
+1.  **Loading from Local Storage**:
+    *   When `SubscriptionProvider` first loads, `useState` for `subscriptions` now has a function as its initial value.
+    *   This function tries to read `'subscriptions'` from `localStorage`.
+    *   If data exists, it parses it (it's stored as a JSON string). Otherwise, it defaults to an empty array `[]`.
+2.  **Saving to Local Storage**:
+    *   A `useEffect` hook is added. This hook runs every time the `subscriptions` state changes.
+    *   Inside `useEffect`, `localStorage.setItem('subscriptions', JSON.stringify(subscriptions))` saves the current list of subscriptions to local storage. They are converted to a JSON string because local storage can only store strings.
+3.  **`addSubscription` Update**:
+    *   Ensures `cost` is stored as a number using `parseFloat()`.
+4.  **`editSubscription` and `deleteSubscription`**:
+    *   Basic implementations for these functions are now provided to allow for future enhancements. They also update the local storage implicitly due to the `useEffect` hook.
+
+After replacing the file content, your application will automatically save subscriptions to and load them from local storage. You can test this by adding subscriptions, closing the tab or browser, and then reopening it. Your subscriptions should still be there.
+---
+
+## Step 8: Add Subscription Categories
+
+To better organize subscriptions, we'll add a `category` field. This involves updating the context, the form, and the list item display.
+
+**Instructions:**
+
+Update the relevant parts of your `src/context/SubscriptionContext.js`, `src/components/AddSubscriptionForm.jsx`, and `src/components/SubscriptionListItem.jsx` files with the code provided below.
+
+### 1. Updated `src/context/SubscriptionContext.js` (with Categories)
+
+This version builds upon the previous local storage implementation by adding a `category` to the subscription object.
+
+```javascript
+// src/context/SubscriptionContext.js
+import React, { createContext, useState, useEffect } from 'react';
+
+export const SubscriptionContext = createContext();
+
+export const SubscriptionProvider = ({ children }) => {
+  const [subscriptions, setSubscriptions] = useState(() => {
+    const localData = localStorage.getItem('subscriptions');
+    return localData ? JSON.parse(localData) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+  }, [subscriptions]);
+
+  const addSubscription = (subscription) => {
+    const newSubscription = {
+      ...subscription,
+      id: Date.now(),
+      cost: parseFloat(subscription.cost) || 0,
+      category: subscription.category || 'General', // Add category, default to 'General'
+    };
+    setSubscriptions(prevSubscriptions => [...prevSubscriptions, newSubscription]);
+  };
+
+  const editSubscription = (updatedSubscription) => {
+    setSubscriptions(prevSubscriptions =>
+      prevSubscriptions.map(sub =>
+        sub.id === updatedSubscription.id ? { 
+          ...sub, 
+          ...updatedSubscription, 
+          cost: parseFloat(updatedSubscription.cost) || 0,
+          category: updatedSubscription.category || sub.category // Ensure category is part of update
+        } : sub
+      )
+    );
+  };
+
+  const deleteSubscription = (id) => {
+    setSubscriptions(prevSubscriptions =>
+      prevSubscriptions.filter(sub => sub.id !== id)
+    );
+  };
+
+  return (
+    <SubscriptionContext.Provider value={{ subscriptions, addSubscription, editSubscription, deleteSubscription }}>
+      {children}
+    </SubscriptionContext.Provider>
+  );
+};
+```
+**Key changes:**
+- In `addSubscription`: `category: subscription.category || 'General'` is added.
+- In `editSubscription`: The category field is now part of the update logic.
+
+### 2. Updated `src/components/AddSubscriptionForm.jsx` (with Category Input)
+
+Add a new input field for the category.
+
+```javascript
+// src/components/AddSubscriptionForm.jsx
+import React, { useState, useContext } from 'react';
+// Adjust path as needed
+import { SubscriptionContext } from '../context/SubscriptionContext'; 
+
+const AddSubscriptionForm = () => {
+  const { addSubscription } = useContext(SubscriptionContext);
+  const [name, setName] = useState('');
+  const [cost, setCost] = useState('');
+  const [frequency, setFrequency] = useState('Monthly');
+  const [startDate, setStartDate] = useState('');
+  const [category, setCategory] = useState(''); // New state for category
+
+  // Suggested categories (can be expanded or moved to context/config)
+  const suggestedCategories = ["Entertainment", "Software", "Utilities", "Health", "Education", "Finance", "Other"];
+
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name || !cost || !startDate) {
+      alert('Please fill in all required fields: Name, Cost, and Start Date.');
+      return;
+    }
+    addSubscription({ name, cost, frequency, startDate, category: category || 'General' });
+    setName('');
+    setCost('');
+    setFrequency('Monthly');
+    setStartDate('');
+    setCategory(''); // Reset category field
+  };
+
+  return (
+    // Suggested Tailwind for form: <form onSubmit={handleSubmit} className="p-6 bg-white rounded-lg shadow-md mb-8 space-y-4">
+    <form onSubmit={handleSubmit} className="p-6 bg-white rounded-lg shadow-md mb-8 space-y-4">
+      <div>
+        <label htmlFor="name" className="block text-sm font-medium text-gray-700">Subscription Name</label>
+        <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)}
+               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required />
+      </div>
+      <div>
+        <label htmlFor="cost" className="block text-sm font-medium text-gray-700">Cost ($)</label>
+        <input type="number" id="cost" value={cost} onChange={(e) => setCost(e.target.value)} step="0.01"
+               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required />
+      </div>
+      <div>
+        <label htmlFor="frequency" className="block text-sm font-medium text-gray-700">Payment Frequency</label>
+        <select id="frequency" value={frequency} onChange={(e) => setFrequency(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+          <option value="Monthly">Monthly</option>
+          <option value="Yearly">Yearly</option>
+          <option value="Quarterly">Quarterly</option>
+          {/* Add other frequencies as needed */}
+        </select>
+      </div>
+      <div>
+        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Start Date / Next Payment</label>
+        <input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required />
+      </div>
+      <div>
+        <label htmlFor="category" className="block text-sm font-medium text-gray-700">Category (Optional)</label>
+        <input type="text" id="category" value={category} onChange={(e) => setCategory(e.target.value)} list="categories"
+               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+        <datalist id="categories">
+          {suggestedCategories.map(cat => <option key={cat} value={cat} />)}
+        </datalist>
+      </div>
+      <button type="submit"
+              className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        Add Subscription
+      </button>
+    </form>
+  );
+};
+
+export default AddSubscriptionForm;
+```
+**Key changes:**
+- Added `category` state and an input field for it.
+- Using a `datalist` for category suggestions (simple approach).
+- `category` is passed to `addSubscription`.
+
+### 3. Updated `src/components/SubscriptionListItem.jsx` (to Display Category)
+
+Modify the item display to include the category.
+
+```javascript
+// src/components/SubscriptionListItem.jsx
+import React from 'react'; // Removed useContext as it's not used directly here
+
+const SubscriptionListItem = ({ subscription }) => {
+  // Basic styling for the category tag
+  // const categoryStyle = "px-2 py-0.5 text-xs font-semibold text-indigo-800 bg-indigo-100 rounded-full";
+
+  return (
+    // Suggested Tailwind for list item: <li className="p-4 bg-white rounded-lg shadow-md flex justify-between items-center">
+    <li className="p-4 bg-white rounded-lg shadow-md mb-2">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800">{subscription.name}</h3>
+          <p className="text-sm text-gray-600">
+            Cost: ${subscription.cost.toFixed(2)} / {subscription.frequency}
+          </p>
+          <p className="text-sm text-gray-500">
+            Next Payment: {new Date(subscription.startDate).toLocaleDateString()}
+          </p>
+        </div>
+        {/* Display Category */}
+        {subscription.category && (
+          <span className="px-2 py-0.5 text-xs font-semibold text-indigo-800 bg-indigo-100 rounded-full">
+            {subscription.category}
+          </span>
+        )}
+      </div>
+      {/* Add Edit/Delete buttons here if implementing that functionality */}
+      {/* 
+      <div className="mt-2">
+        <button onClick={() => console.log('Edit:', subscription.id)} className="text-xs text-blue-500 hover:text-blue-700 mr-2">Edit</button>
+        <button onClick={() => console.log('Delete:', subscription.id)} className="text-xs text-red-500 hover:text-red-700">Delete</button>
+      </div>
+      */}
+    </li>
+  );
+};
+
+export default SubscriptionListItem;
+```
+**Key changes:**
+- Added a `span` to display `subscription.category` if it exists.
+- Included commented-out placeholders for Edit/Delete buttons for future use.
+
+Make sure to replace the content of these files in your local project with the updated versions above. This will enable category management in your SubHub MVP.
+---
+
+## Step 9: Enhance Dashboard UI & Functionality
+
+This step focuses on making the Dashboard more informative and visually appealing by improving the display of upcoming payments and adding a spending breakdown by category.
+
+**Instructions:**
+
+Replace the content of your `src/components/Dashboard.jsx` file with the code provided below.
+
+### Updated `src/components/Dashboard.jsx` (Enhanced)
+
+```javascript
+// src/components/Dashboard.jsx
+import React, { useContext } from 'react';
+// Adjust path if your SubscriptionContext.js is elsewhere
+import { SubscriptionContext } from '../context/SubscriptionContext'; 
+
+const Dashboard = () => {
+  const { subscriptions } = useContext(SubscriptionContext);
+
+  let totalMonthlyCost = 0;
+  let totalYearlyCost = 0;
+  const spendingByCategory = {};
+
+  subscriptions.forEach(sub => {
+    const cost = parseFloat(sub.cost) || 0;
+    if (sub.frequency === 'Monthly') {
+      totalMonthlyCost += cost;
+      totalYearlyCost += cost * 12;
+    } else if (sub.frequency === 'Yearly') {
+      totalMonthlyCost += cost / 12;
+      totalYearlyCost += cost;
+    }
+    // TODO: Add calculations for other frequencies if necessary
+
+    // Calculate spending by category
+    const category = sub.category || 'General';
+    spendingByCategory[category] = (spendingByCategory[category] || 0) + (sub.frequency === 'Monthly' ? cost : cost / 12); // Monthly equivalent for simplicity
+  });
+
+  const upcomingPayments = subscriptions.filter(sub => {
+    if (!sub.startDate) return false;
+    try {
+      const startDate = new Date(sub.startDate);
+      const today = new Date();
+      // Consider payments upcoming if their start date is today or in the future.
+      // This is a very basic filter. A real app needs to calculate specific next payment dates.
+      return startDate >= today; 
+    } catch (e) {
+      console.error("Error processing date for subscription: ", sub.name, e);
+      return false;
+    }
+  }).sort((a, b) => new Date(a.startDate) - new Date(b.startDate)); // Sort by date
+
+  return (
+    <div className="p-4 md:p-6 bg-slate-50 rounded-lg shadow-lg mb-8">
+      <h2 className="text-2xl md:text-3xl font-semibold text-slate-800 mb-6 border-b pb-3">Dashboard</h2>
+      
+      {/* Financial Overview Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+        <div className="p-4 bg-white rounded-xl shadow-md transition-shadow hover:shadow-lg">
+          <h3 className="text-lg font-medium text-slate-600">Total Monthly Cost</h3>
+          <p className="text-2xl font-bold text-sky-600">${totalMonthlyCost.toFixed(2)}</p>
+        </div>
+        <div className="p-4 bg-white rounded-xl shadow-md transition-shadow hover:shadow-lg">
+          <h3 className="text-lg font-medium text-slate-600">Estimated Yearly Cost</h3>
+          <p className="text-2xl font-bold text-emerald-600">${totalYearlyCost.toFixed(2)}</p>
+        </div>
+      </div>
+
+      {/* Spending by Category Section */}
+      <div className="mb-8 p-4 bg-white rounded-xl shadow-md transition-shadow hover:shadow-lg">
+        <h3 className="text-xl font-semibold text-slate-700 mb-3">Spending by Category (Monthly Est.)</h3>
+        {Object.keys(spendingByCategory).length > 0 ? (
+          <ul className="space-y-2">
+            {Object.entries(spendingByCategory).sort(([,a],[,b]) => b-a).map(([category, total]) => (
+              <li key={category} className="flex justify-between items-center p-3 bg-slate-50 rounded-md">
+                <span className="text-slate-700 font-medium">{category}</span>
+                <span className="text-slate-800 font-semibold">${total.toFixed(2)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-slate-500 italic">No subscriptions with categories yet.</p>
+        )}
+      </div>
+      
+      {/* Upcoming Payments Section */}
+      <div className="p-4 bg-white rounded-xl shadow-md transition-shadow hover:shadow-lg">
+        <h3 className="text-xl font-semibold text-slate-700 mb-3">Upcoming Payments (Sorted by Date)</h3>
+        {upcomingPayments.length > 0 ? (
+          <ul className="space-y-3">
+            {upcomingPayments.map(sub => (
+              <li key={sub.id} className="p-3 bg-slate-50 rounded-md shadow-sm">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="font-semibold text-slate-800">{sub.name}</span>
+                    {sub.category && (
+                      <span className="ml-2 px-2 py-0.5 text-xs font-semibold text-indigo-700 bg-indigo-100 rounded-full">
+                        {sub.category}
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-medium text-slate-700">${(parseFloat(sub.cost) || 0).toFixed(2)}</span>
+                </div>
+                <p className="text-sm text-slate-500">
+                  Due: {new Date(sub.startDate).toLocaleDateString()} ({sub.frequency})
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-slate-500 italic">No upcoming payments based on current data.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
+
+```
+
+**Key changes in this `Dashboard.jsx` version:**
+
+-   **Improved Styling**: Uses `slate`, `sky`, `emerald` Tailwind color shades for a more modern look. Added `shadow-lg` and transitions for some hover effects.
+-   **Spending by Category**:
+    -   Calculates total monthly spending for each category.
+    -   Displays this in a new section, sorted by amount.
+-   **Upcoming Payments**:
+    -   The filter logic is still basic (shows items with `startDate` today or in the future).
+    -   Payments are now sorted by `startDate`.
+    -   The display for each upcoming payment is slightly more detailed, including the category.
+-   **Layout**: Uses `md:` prefixes for responsive design adjustments on medium screens and above.
+
+Remember to integrate this updated `Dashboard.jsx` into your local project by replacing the old version. This should give you a more dynamic and visually organized dashboard.
 ```
