@@ -7,10 +7,17 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3001', // Your backend server
+        target: 'http://localhost:3001',
         changeOrigin: true,
-        secure: false, // If your backend is not HTTPS
+        secure: false,
       }
     }
-  }
+  },
+  // Add Vitest configuration
+  test: {
+    globals: true, // Allows using describe, it, expect, etc. without importing them
+    environment: 'jsdom', // Simulate browser environment
+    setupFiles: './src/test/setup.js', // Optional: for global test setup (e.g., extending expect)
+    css: true, // If you want to process CSS during tests (might need additional config if complex)
+  },
 })

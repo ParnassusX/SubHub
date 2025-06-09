@@ -3,7 +3,7 @@ const database = require('./database.js');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3001; // Keep PORT here, server.js will use it via app.listen
 const JWT_SECRET = 'your_very_secret_key_that_should_be_in_env_var'; // IMPORTANT: Use environment variable in production
 
 app.use(express.json());
@@ -64,29 +64,24 @@ app.post('/api/auth/login', (req, res) => {
   });
 });
 
-// --- Middleware to verify JWT (placeholder for now, will be used later) ---
+// --- Middleware to verify JWT ---
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
   if (token == null) return res.sendStatus(401); // if there isn't any token
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
+  jwt.verify(token, JWT_SECRET, (err, userPayload) => { // Renamed 'user' to 'userPayload' to avoid conflict with req.user
     if (err) return res.sendStatus(403); // if token is no longer valid
-    req.user = user; // Add user payload to request object
+    req.user = userPayload; // Add user payload to request object
     next(); // pass the execution to the downstream middlewares
   });
 };
 
-// --- Subscriptions CRUD (modified to use req.user.userId from JWT if available, else placeholder) ---
-// For now, we'll keep placeholderUserId for simplicity until frontend sends tokens.
-// In a subsequent step, we will replace placeholderUserId with req.user.userId from the authenticateToken middleware.
-const placeholderUserId = 1;
-
-
-app.post('/api/subscriptions', (req, res) => {
-  // const userId = req.user ? req.user.userId : placeholderUserId; // Example for future use
-  const userId = placeholderUserId;
+// --- Subscriptions CRUD (now protected and using authenticated user) ---
+// All routes starting with '/api/subscriptions' will use authenticateToken middleware
+app.post('/api/subscriptions', authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Use userId from JWT payload
   const { name, category, billingCycle, nextPaymentDate, amount } = req.body;
   if (!name || !category || !billingCycle || !nextPaymentDate || amount === undefined) {
     return res.status(400).json({ message: 'Missing required fields' });
@@ -99,9 +94,8 @@ app.post('/api/subscriptions', (req, res) => {
   });
 });
 
-app.get('/api/subscriptions', (req, res) => {
-  // const userId = req.user ? req.user.userId : placeholderUserId;
-  const userId = placeholderUserId;
+app.get('/api/subscriptions', authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Use userId from JWT payload
   const sql = "SELECT * FROM subscriptions WHERE userId = ?";
   database.db.all(sql, [userId], (err, rows) => {
     if (err) { return res.status(500).json({ message: 'Error fetching subscriptions', error: err.message }); }
@@ -109,24 +103,23 @@ app.get('/api/subscriptions', (req, res) => {
   });
 });
 
-app.get('/api/subscriptions/:id', (req, res) => {
-  // const userId = req.user ? req.user.userId : placeholderUserId;
-  const userId = placeholderUserId;
+app.get('/api/subscriptions/:id', authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Use userId from JWT payload
   const { id } = req.params;
   const sql = "SELECT * FROM subscriptions WHERE id = ? AND userId = ?";
   database.db.get(sql, [id, userId], (err, row) => {
     if (err) { return res.status(500).json({ message: 'Error fetching subscription', error: err.message }); }
     if (row) { res.json(row); }
-    else { res.status(404).json({ message: 'Subscription not found' }); }
+    else { res.status(404).json({ message: 'Subscription not found or not owned by user' }); } // Updated message
   });
 });
 
-app.put('/api/subscriptions/:id', (req, res) => {
-  // const userId = req.user ? req.user.userId : placeholderUserId;
-  const userId = placeholderUserId;
+app.put('/api/subscriptions/:id', authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Use userId from JWT payload
   const { id } = req.params;
   const { name, category, billingCycle, nextPaymentDate, amount } = req.body;
-  if (!name && !category && !billingCycle && !nextPaymentDate && amount === undefined) {
+  // Corrected validation: ensure at least one field is being updated
+  if (name === undefined && category === undefined && billingCycle === undefined && nextPaymentDate === undefined && amount === undefined) {
     return res.status(400).json({ message: 'No fields provided for update' });
   }
   const fields = []; const params = [];
@@ -136,31 +129,24 @@ app.put('/api/subscriptions/:id', (req, res) => {
   if (nextPaymentDate !== undefined) { fields.push("nextPaymentDate = ?"); params.push(nextPaymentDate); }
   if (amount !== undefined) { fields.push("amount = ?"); params.push(amount); }
   if (fields.length === 0) { return res.status(400).json({ message: "No valid fields to update." }); }
-  params.push(id); params.push(userId);
+  params.push(id); params.push(userId); // Ensure userId is used in the WHERE clause
   const sql = `UPDATE subscriptions SET ${fields.join(", ")} WHERE id = ? AND userId = ?`;
   database.db.run(sql, params, function(err) {
     if (err) { return res.status(500).json({ message: 'Error updating subscription', error: err.message }); }
-    if (this.changes === 0) { return res.status(404).json({ message: 'Subscription not found or no changes made' }); }
+    if (this.changes === 0) { return res.status(404).json({ message: 'Subscription not found, not owned by user, or no changes made' }); } // Updated message
     res.json({ message: 'Subscription updated successfully', id: id });
   });
 });
 
-app.delete('/api/subscriptions/:id', (req, res) => {
-  // const userId = req.user ? req.user.userId : placeholderUserId;
-  const userId = placeholderUserId;
+app.delete('/api/subscriptions/:id', authenticateToken, (req, res) => {
+  const userId = req.user.userId; // Use userId from JWT payload
   const { id } = req.params;
   const sql = 'DELETE FROM subscriptions WHERE id = ? AND userId = ?';
   database.db.run(sql, [id, userId], function(err) {
     if (err) { return res.status(500).json({ message: 'Error deleting subscription', error: err.message }); }
-    if (this.changes === 0) { return res.status(404).json({ message: 'Subscription not found' }); }
+    if (this.changes === 0) { return res.status(404).json({ message: 'Subscription not found or not owned by user' }); } // Updated message
     res.json({ message: 'Subscription deleted successfully', id: id });
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  database.initDb((err) => {
-    if (err) { console.error("Failed to initialize database:", err); }
-    else { console.log("Database initialized successfully."); }
-  });
-});
+module.exports = app; // Export the app instance for testing or for server.js to use
