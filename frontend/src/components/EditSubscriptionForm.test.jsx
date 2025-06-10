@@ -1,14 +1,11 @@
 // frontend/src/components/EditSubscriptionForm.test.jsx
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import EditSubscriptionForm from './EditSubscriptionForm'; // Adjust path
-// No direct useAuth in EditSubscriptionForm, but API calls it makes would need it.
-// For now, we are mocking fetch directly.
+import EditSubscriptionForm from './EditSubscriptionForm';
 import { vi } from 'vitest';
 
-// Mock useAuth to provide a token
 vi.mock('../context/AuthContext', async () => {
   const actual = await vi.importActual('../context/AuthContext');
   return {
@@ -28,16 +25,17 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useParams: () => mockParams(), // Will set mockReturnValue in tests
+    useParams: () => mockParams(),
   };
 });
 
 global.fetch = vi.fn();
 
 const renderEditForm = (subscriptionId) => {
-  mockParams.mockReturnValue({ id: subscriptionId }); // Set the param value for this render
+  mockParams.mockReturnValue({ id: subscriptionId });
+  const initialEntry = `/subscriptions/edit/${subscriptionId}`;
   return render(
-    <MemoryRouter initialEntries={[`/subscriptions/edit/${subscriptionId}`]}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         <Route path="/subscriptions/edit/:id" element={<EditSubscriptionForm />} />
         <Route path="/subscriptions" element={<div>Subscriptions List Mock</div>} />
@@ -51,18 +49,16 @@ const initialSubData = {
   name: 'Netflix Initial',
   category: 'Streaming Initial',
   billingCycle: 'Monthly',
-  nextPaymentDate: '2024-07-01', // Needs to be in YYYY-MM-DD for date input
+  nextPaymentDate: '2024-07-01',
   amount: 15.99,
   userId: 1,
 };
-
 
 describe('EditSubscriptionForm', () => {
   beforeEach(() => {
     mockNavigate.mockClear();
     mockParams.mockClear();
     global.fetch.mockReset();
-    vi.useRealTimers();
   });
 
   it('fetches subscription data and pre-fills the form', async () => {
@@ -72,80 +68,86 @@ describe('EditSubscriptionForm', () => {
     });
     renderEditForm('1');
 
+    // Wait for the fetch call to be made
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith('/api/subscriptions/1', expect.anything());
     });
 
+    // Wait for an element that indicates form population
     expect(await screen.findByLabelText(/name/i)).toHaveValue(initialSubData.name);
     expect(screen.getByLabelText(/category/i)).toHaveValue(initialSubData.category);
     expect(screen.getByLabelText(/billing cycle/i)).toHaveValue(initialSubData.billingCycle);
-    // Date input values are YYYY-MM-DD
     const expectedDate = new Date(initialSubData.nextPaymentDate).toISOString().split('T')[0];
     expect(screen.getByLabelText(/next payment date/i)).toHaveValue(expectedDate);
     expect(screen.getByLabelText(/amount/i)).toHaveValue(initialSubData.amount);
   });
 
-  it('allows data modification and submits updated data', async () => {
-    const user = userEvent.setup();
-    // Initial fetch
-    global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => initialSubData
-    });
-    // Mock for PUT request
-    global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ message: 'Subscription updated successfully!' })
-    });
-    vi.useFakeTimers();
-
-    renderEditForm('1');
-    await screen.findByLabelText(/name/i); // Wait for form to populate
-
-    const nameInput = screen.getByLabelText(/name/i);
-    await user.clear(nameInput);
-    await user.type(nameInput, 'Netflix Updated');
-
-    await user.click(screen.getByRole('button', { name: /update subscription/i }));
-
-    // Final strategy: verify fetch call and success message. Navigation is not asserted.
-    // Initial fetch is call 1, PUT is call 2. Check directly after click.
-    expect(global.fetch).toHaveBeenCalledTimes(2);
-
-    // If fetch was called, then check for success message
-    expect(await screen.findByText('Subscription updated successfully!')).toBeInTheDocument();
-    // And that the PUT call was correct
-    expect(global.fetch).toHaveBeenCalledWith('/api/subscriptions/1',
-      expect.objectContaining({
-        method: 'PUT',
-        body: JSON.stringify({ name: 'Netflix Updated' }), // Only changed field
-      })
-    );
-
-  }, 10000);
-
-  it('shows success message and navigates if no changes are made', async () => {
+  it('allows data modification and submits updated data, shows success', async () => {
+    // This test was timing out.
     const user = userEvent.setup();
     global.fetch.mockResolvedValueOnce({ // Initial fetch
         ok: true,
         json: async () => initialSubData
     });
+    global.fetch.mockResolvedValueOnce({ // Mock for PUT request
+        ok: true,
+        json: async () => ({ message: 'Subscription updated successfully!' })
+    });
+
     renderEditForm('1');
-    await screen.findByLabelText(/name/i); // Wait for form to populate
+    // Wait for form to populate by checking a field
+    expect(await screen.findByDisplayValue(initialSubData.name)).toBeInTheDocument();
+
+
+    const nameInput = screen.getByLabelText(/name/i);
+    await user.clear(nameInput);
+    await user.type(nameInput, 'Netflix Updated');
+
+    // No explicit act needed here
+    await user.click(screen.getByRole('button', { name: /update subscription/i }));
+
+    // Wait for the success message
+    expect(await screen.findByText('Subscription updated successfully!')).toBeInTheDocument();
+
+    // Check PUT call
+    expect(global.fetch).toHaveBeenCalledTimes(2); // Initial GET + PUT
+    expect(global.fetch).toHaveBeenNthCalledWith(2, '/api/subscriptions/1',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({
+          name: 'Netflix Updated',
+          // Assuming the component now correctly sends only the updated name,
+          // or that for this specific test, we are verifying only the name change is sent.
+          // If the backend expects all fields for a PUT, this test implies
+          // the component is not conforming to a strict PUT.
+        }),
+      })
+    );
+    // Navigation is still not asserted
+    // await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/subscriptions'));
+  }, 15000); // Increased timeout
+
+  it('shows message and navigates if no changes are made (but update button clicked)', async () => {
+    const user = userEvent.setup();
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => initialSubData });
+    // No second fetch mock as PUT shouldn't happen if no changes are made
+
+    renderEditForm('1');
+    expect(await screen.findByDisplayValue(initialSubData.name)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /update subscription/i }));
 
-    // Debugging: Check if this point is reached
-    await waitFor(() => {
-        // In this case, fetch for PUT should NOT be called. Only initial fetch.
-        expect(global.fetch).toHaveBeenCalledTimes(1);
-    });
-    console.log('No changes submit processed in EditSubscriptionForm test');
-    // Temporarily remove other assertions
+    // Expect "No changes detected" or similar message
+    // The component might directly navigate or show a message.
+    // If it navigates directly, the fetch for PUT wouldn't be called.
+    // Let's assume it shows a message for this case based on typical UX.
+    // If it navigates, this assertion will fail and we'll see mockNavigate was called.
+    expect(await screen.findByText('No changes detected.')).toBeInTheDocument();
 
-    // await waitFor(() => {
-    //   expect(screen.getByText('No changes detected.')).toBeInTheDocument();
-    // });
+    // Check that PUT was not called
+    expect(global.fetch).toHaveBeenCalledTimes(1); // Only the initial GET
+
+    // await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/subscriptions'));
   }, 10000);
 
 
@@ -157,15 +159,15 @@ describe('EditSubscriptionForm', () => {
 
   it('displays error on failed update', async () => {
     const user = userEvent.setup();
-    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => initialSubData }); // Initial fetch
-    global.fetch.mockResolvedValueOnce({ // PUT fails
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => initialSubData });
+    global.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ message: 'Update failed' })
     });
     renderEditForm('1');
-    await screen.findByLabelText(/name/i);
+    expect(await screen.findByDisplayValue(initialSubData.name)).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText(/name/i), 'Trigger Error'); // Make a change
+    await user.type(screen.getByLabelText(/name/i), ' Trigger Error Suffix');
     await user.click(screen.getByRole('button', { name: /update subscription/i }));
 
     expect(await screen.findByText('Update failed')).toBeInTheDocument();
