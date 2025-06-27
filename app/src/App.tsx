@@ -30,18 +30,18 @@ function App() {
             {/* Protected routes */}
             <Route path="/*" element={
               <ProtectedRoute>
-                <div className="flex flex-col h-screen w-screen bg-[#0f1a24] text-white overflow-hidden" style={{fontFamily: 'Epilogue, "Noto Sans", sans-serif'}}>
+                <div className="flex flex-col min-h-screen w-full max-w-full bg-[#0f1a24] text-white overflow-x-hidden" style={{fontFamily: 'Epilogue, "Noto Sans", sans-serif'}}>
                   {/* Mobile Navigation */}
                   <MobileNav />
 
-                  <div className="flex flex-1 h-full overflow-hidden">
+                  <div className="flex flex-1 min-h-0 overflow-hidden">
                     {/* Sidebar - Hidden on mobile, shown on desktop */}
-                    <div className="hidden lg:flex lg:w-80 lg:flex-shrink-0 lg:h-full">
+                    <div className="hidden lg:flex lg:w-80 lg:flex-shrink-0 lg:min-h-0">
                       <Sidebar />
                     </div>
 
                     {/* Main content */}
-                    <div className="flex-1 flex flex-col min-w-0 h-full overflow-auto">
+                    <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-auto">
                       <Routes>
                         <Route path="/" element={<Dashboard />} />
                         <Route path="/admin" element={

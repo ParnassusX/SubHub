@@ -137,48 +137,49 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto">
-      <div className="flex flex-wrap justify-between gap-3 p-4">
-        <p className="text-white tracking-light text-[32px] font-bold leading-tight min-w-72">Dashboard</p>
-      </div>
+    <div className="flex-1 bg-[#0f1a24] min-h-0 overflow-y-auto">
+      <div className="max-w-full">
+        <div className="flex flex-wrap justify-between gap-3 p-4">
+          <p className="text-white tracking-light text-[32px] font-bold leading-tight min-w-0 max-w-full">Dashboard</p>
+        </div>
       
-      {/* Summary Cards */}
-      <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Summary</h3>
-      <div className="flex flex-wrap gap-4 p-4">
-        <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#2e4e6b]">
+        {/* Summary Cards */}
+        <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Summary</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 max-w-full">
+          <div className="flex flex-col gap-2 rounded-xl p-6 border border-[#2e4e6b] min-w-0">
           <p className="text-white text-base font-medium leading-normal">Total Monthly</p>
           <p className="text-white tracking-light text-2xl font-bold leading-tight">
             ${stats.monthlySpending.toFixed(2)}
           </p>
           <p className="text-xs text-green-400">Real data from Supabase</p>
         </div>
-        <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#2e4e6b]">
-          <p className="text-white text-base font-medium leading-normal">Total Yearly</p>
-          <p className="text-white tracking-light text-2xl font-bold leading-tight">
-            ${stats.yearlySpending.toFixed(2)}
-          </p>
-          <p className="text-xs text-green-400">Real data from Supabase</p>
+          <div className="flex flex-col gap-2 rounded-xl p-6 border border-[#2e4e6b] min-w-0">
+            <p className="text-white text-base font-medium leading-normal">Total Yearly</p>
+            <p className="text-white tracking-light text-2xl font-bold leading-tight">
+              ${stats.yearlySpending.toFixed(2)}
+            </p>
+            <p className="text-xs text-green-400">Real data from Supabase</p>
+          </div>
+          <div className="flex flex-col gap-2 rounded-xl p-6 border border-[#2e4e6b] min-w-0">
+            <p className="text-white text-base font-medium leading-normal">Active Subscriptions</p>
+            <p className="text-white tracking-light text-2xl font-bold leading-tight">
+              {stats.totalSubscriptions}
+            </p>
+            <p className="text-xs text-green-400">Real data from Supabase</p>
+          </div>
+          <div className="flex flex-col gap-2 rounded-xl p-6 border border-[#2e4e6b] min-w-0">
+            <p className="text-white text-base font-medium leading-normal">Upcoming Renewals</p>
+            <p className="text-white tracking-light text-2xl font-bold leading-tight">
+              {stats.upcomingRenewals}
+            </p>
+            <p className="text-xs text-green-400">Next 7 days</p>
+          </div>
         </div>
-        <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#2e4e6b]">
-          <p className="text-white text-base font-medium leading-normal">Active Subscriptions</p>
-          <p className="text-white tracking-light text-2xl font-bold leading-tight">
-            {stats.totalSubscriptions}
-          </p>
-          <p className="text-xs text-green-400">Real data from Supabase</p>
-        </div>
-        <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#2e4e6b]">
-          <p className="text-white text-base font-medium leading-normal">Upcoming Renewals</p>
-          <p className="text-white tracking-light text-2xl font-bold leading-tight">
-            {stats.upcomingRenewals}
-          </p>
-          <p className="text-xs text-green-400">Next 7 days</p>
-        </div>
-      </div>
 
-      {/* Recent Subscriptions */}
-      <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Recent Subscriptions</h3>
-      <div className="p-4">
-        <div className="rounded-xl border border-[#2e4e6b] bg-[#1a2332] p-6">
+        {/* Recent Subscriptions */}
+        <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Recent Subscriptions</h3>
+        <div className="p-4 max-w-full">
+          <div className="rounded-xl border border-[#2e4e6b] bg-[#1a2332] p-6 max-w-full overflow-hidden">
           {subscriptions.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-400 text-lg mb-4">No subscriptions yet</p>
@@ -187,12 +188,12 @@ const Dashboard: React.FC = () => {
           ) : (
             <div className="space-y-4">
               {subscriptions.slice(0, 5).map((subscription) => (
-                <div key={subscription.id} className="flex items-center justify-between p-4 bg-[#0f1a24] rounded-lg">
-                  <div>
-                    <h4 className="text-white font-medium">{subscription.name}</h4>
-                    <p className="text-gray-400 text-sm">{subscription.category}</p>
+                <div key={subscription.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-[#0f1a24] rounded-lg gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-white font-medium truncate">{subscription.name}</h4>
+                    <p className="text-gray-400 text-sm truncate">{subscription.category}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right flex-shrink-0">
                     <p className="text-white font-bold">${subscription.cost}</p>
                     <p className="text-gray-400 text-sm">{subscription.frequency}</p>
                   </div>
@@ -232,6 +233,7 @@ const Dashboard: React.FC = () => {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 };
