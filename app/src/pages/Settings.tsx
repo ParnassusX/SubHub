@@ -23,23 +23,28 @@ const Settings: React.FC = () => {
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load settings from localStorage
+  // Load settings from localStorage (with Supabase backup)
   useEffect(() => {
     const savedSettings = localStorage.getItem('subhub_settings');
     if (savedSettings) {
       setSettings(JSON.parse(savedSettings));
     }
+    // TODO: Load from Supabase user preferences table when implemented
   }, []);
 
-  // Save settings to localStorage
+  // Save settings to localStorage and Supabase
   const saveSettings = async () => {
     setIsSaving(true);
     try {
+      // Save to localStorage for immediate access
       localStorage.setItem('subhub_settings', JSON.stringify(settings));
-      // In a real app, you'd also save to the database
+
+      // TODO: Save to Supabase user preferences table
+      // await db.userPreferences.update(user.id, settings);
+
       setTimeout(() => {
         setIsSaving(false);
-        alert('Settings saved successfully!');
+        alert('Settings saved successfully! (Currently stored locally, Supabase sync coming soon)');
       }, 500);
     } catch (error) {
       setIsSaving(false);

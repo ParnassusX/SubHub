@@ -1,0 +1,32 @@
+{
+  "name": "subhub",
+  "version": "1.0.0",
+  "description": "SubHub - Comprehensive subscription management tool",
+  "type": "module",
+  "scripts": {
+    "dev": "cd app && npm run dev",
+    "build": "cd app && npm run build",
+    "preview": "cd app && npm run preview",
+    "lint": "cd app && npm run lint",
+    "install-deps": "cd app && npm install"
+  },
+  "keywords": [
+    "subscription",
+    "management",
+    "tracking",
+    "expenses",
+    "recurring"
+  ],
+  "author": "SubHub Team",
+  "license": "MIT",
+  "dependencies": {
+    "@playwright/test": "^1.53.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  }
+}

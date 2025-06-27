@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  subhub:
+    build: .
+    ports:
+      - "8090:8090"
+    volumes:
+      - pb_data:/app/pb_data
+    restart: unless-stopped
+    environment:
+      - PB_ENCRYPTION_KEY=${PB_ENCRYPTION_KEY:-subhub-production-key-change-me}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - subhub
+    restart: unless-stopped
+
+volumes:
+  pb_data:
+    driver: local
+
+networks:
+  default:
+    name: subhub-network
