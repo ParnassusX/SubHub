@@ -29,8 +29,8 @@ import {
 
 // Lazy load admin and other pages
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'))
-// const Categories = React.lazy(() => import('./pages/Categories'))
-// const Help = React.lazy(() => import('./pages/Help'))
+const Categories = React.lazy(() => import('./pages/Categories'))
+const Help = React.lazy(() => import('./pages/Help'))
 const Renewals = React.lazy(() => import('./pages/Renewals'))
 
 // Performance optimized loading component
@@ -119,7 +119,7 @@ function App() {
                                   </PageErrorBoundary>
                                 }
                               />
-                              {/* <Route
+                              <Route
                                 path="/categories"
                                 element={
                                   <PageErrorBoundary>
@@ -128,7 +128,7 @@ function App() {
                                     </Suspense>
                                   </PageErrorBoundary>
                                 }
-                              /> */}
+                              />
                               <Route
                                 path="/settings"
                                 element={
@@ -139,7 +139,7 @@ function App() {
                                   </PageErrorBoundary>
                                 }
                               />
-                              {/* <Route
+                              <Route
                                 path="/help"
                                 element={
                                   <PageErrorBoundary>
@@ -148,7 +148,7 @@ function App() {
                                     </Suspense>
                                   </PageErrorBoundary>
                                 }
-                              /> */}
+                              />
                               <Route
                                 path="/renewals"
                                 element={
