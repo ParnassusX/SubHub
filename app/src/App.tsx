@@ -29,8 +29,9 @@ import {
 
 // Lazy load admin and other pages
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'))
-const Categories = React.lazy(() => import('./pages/Categories'))
-const Help = React.lazy(() => import('./pages/Help'))
+// const Categories = React.lazy(() => import('./pages/Categories'))
+// const Help = React.lazy(() => import('./pages/Help'))
+const Renewals = React.lazy(() => import('./pages/Renewals'))
 
 // Performance optimized loading component
 const PageLoader = ({ message = 'Loading...' }: { message?: string }) => (
@@ -61,18 +62,18 @@ function App() {
               {/* Protected routes with lazy loading and error boundaries */}
               <Route path="/*" element={
                 <ProtectedRoute>
-                  <div className="flex flex-col min-h-screen w-full max-w-full bg-[#0f1a24] text-white overflow-x-hidden" style={{fontFamily: 'Epilogue, "Noto Sans", sans-serif'}}>
+                  <div className="flex flex-col h-screen w-screen bg-background-primary text-white" style={{fontFamily: 'Epilogue, "Noto Sans", sans-serif'}}>
                     {/* Mobile Navigation */}
                     <MobileNav />
 
-                    <div className="flex flex-1 min-h-0 overflow-hidden">
+                    <div className="flex flex-1 overflow-hidden">
                       {/* Sidebar - Hidden on mobile, shown on desktop */}
-                      <div className="hidden lg:flex lg:w-80 lg:flex-shrink-0 lg:min-h-0">
+                      <div className="hidden lg:flex lg:w-80 lg:flex-shrink-0">
                         <Sidebar />
                       </div>
 
                       {/* Main content with Suspense for lazy loading */}
-                      <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-auto">
+                      <div className="flex-1 flex flex-col overflow-hidden">
                         <PageErrorBoundary>
                           <Suspense fallback={<PageLoader />}>
                             <Routes>
@@ -118,7 +119,7 @@ function App() {
                                   </PageErrorBoundary>
                                 }
                               />
-                              <Route
+                              {/* <Route
                                 path="/categories"
                                 element={
                                   <PageErrorBoundary>
@@ -127,7 +128,7 @@ function App() {
                                     </Suspense>
                                   </PageErrorBoundary>
                                 }
-                              />
+                              /> */}
                               <Route
                                 path="/settings"
                                 element={
@@ -138,12 +139,22 @@ function App() {
                                   </PageErrorBoundary>
                                 }
                               />
-                              <Route
+                              {/* <Route
                                 path="/help"
                                 element={
                                   <PageErrorBoundary>
                                     <Suspense fallback={<PageLoader message="Loading Help..." />}>
                                       <Help />
+                                    </Suspense>
+                                  </PageErrorBoundary>
+                                }
+                              /> */}
+                              <Route
+                                path="/renewals"
+                                element={
+                                  <PageErrorBoundary>
+                                    <Suspense fallback={<PageLoader message="Loading Renewals..." />}>
+                                      <Renewals />
                                     </Suspense>
                                   </PageErrorBoundary>
                                 }

@@ -7,6 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Enhanced Primary Brand Colors
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -18,7 +19,10 @@ export default {
           700: '#1d4ed8',
           800: '#1e40af',
           900: '#1e3a8a',
+          950: '#172554',
         },
+
+        // Professional Neutral Grays
         gray: {
           50: '#f9fafb',
           100: '#f3f4f6',
@@ -30,15 +34,90 @@ export default {
           700: '#374151',
           800: '#1f2937',
           900: '#111827',
+          950: '#030712',
+        },
+
+        // Dark Mode Background System
+        background: {
+          primary: '#0f172a',
+          secondary: '#1e293b',
+          tertiary: '#334155',
+          elevated: '#475569',
+        },
+
+        // Semantic Colors
+        success: {
+          50: '#f0fdf4',
+          100: '#dcfce7',
+          500: '#10b981',
+          600: '#059669',
+          700: '#047857',
+        },
+        warning: {
+          50: '#fffbeb',
+          100: '#fef3c7',
+          500: '#f59e0b',
+          600: '#d97706',
+          700: '#b45309',
+        },
+        error: {
+          50: '#fef2f2',
+          100: '#fee2e2',
+          500: '#ef4444',
+          600: '#dc2626',
+          700: '#b91c1c',
+        },
+        info: {
+          50: '#ecfeff',
+          100: '#cffafe',
+          500: '#06b6d4',
+          600: '#0891b2',
+          700: '#0e7490',
+        },
+
+        // Glass Effect Colors
+        glass: {
+          white: 'rgba(255, 255, 255, 0.05)',
+          border: 'rgba(255, 255, 255, 0.1)',
+          hover: 'rgba(255, 255, 255, 0.08)',
         },
       },
+
+      // Enhanced Typography
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        display: ['Poppins', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
+
+      fontSize: {
+        'display': ['2.25rem', { lineHeight: '1.2', letterSpacing: '-0.025em' }],
+        'heading-1': ['1.875rem', { lineHeight: '1.3', letterSpacing: '-0.015em' }],
+        'heading-2': ['1.5rem', { lineHeight: '1.4', letterSpacing: '-0.01em' }],
+        'body-large': ['1.125rem', { lineHeight: '1.6' }],
+        'body': ['1rem', { lineHeight: '1.6' }],
+        'caption': ['0.875rem', { lineHeight: '1.5' }],
+        'micro': ['0.75rem', { lineHeight: '1.4' }],
+      },
+
+      // Spacing System
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
+        '128': '32rem',
+      },
+
+      // Enhanced Animations
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
+        'slide-down': 'slideDown 0.3s ease-out',
+        'scale-in': 'scaleIn 0.2s ease-out',
+        'shimmer': 'shimmer 1.5s infinite',
+        'float': 'float 3s ease-in-out infinite',
+        'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
       },
+
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
@@ -48,6 +127,48 @@ export default {
           '0%': { transform: 'translateY(10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+        slideDown: {
+          '0%': { transform: 'translateY(-10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        scaleIn: {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '200% 0' },
+          '100%': { backgroundPosition: '-200% 0' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-4px)' },
+        },
+        pulseSoft: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.8' },
+        },
+      },
+
+      // Box Shadows for Depth
+      boxShadow: {
+        'glass': '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+        'elevated': '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
+        'elevated-hover': '0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)',
+        'floating': '0 10px 25px rgba(0, 0, 0, 0.15)',
+        'glow': '0 0 20px rgba(59, 130, 246, 0.3)',
+      },
+
+      // Border Radius
+      borderRadius: {
+        'xl': '0.75rem',
+        '2xl': '1rem',
+        '3xl': '1.5rem',
+      },
+
+      // Backdrop Blur
+      backdropBlur: {
+        'xs': '2px',
+        'glass': '10px',
       },
     },
   },

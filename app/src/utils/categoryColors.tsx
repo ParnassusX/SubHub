@@ -174,24 +174,24 @@ export const getAllCategoryColors = (): Array<{ category: string; color: string;
   }));
 };
 
-// Severity color system for insights
+// Severity color system for insights - Dark theme compatible
 export const SEVERITY_COLORS = {
   low: {
-    bg: 'bg-green-50',
-    border: 'border-green-200',
-    text: 'text-green-800',
+    bg: 'bg-success-500/10',
+    border: 'border-success-500/20',
+    text: 'text-success-400',
     icon: '✅'
   },
   medium: {
-    bg: 'bg-amber-50',
-    border: 'border-amber-200',
-    text: 'text-amber-800',
+    bg: 'bg-warning-500/10',
+    border: 'border-warning-500/20',
+    text: 'text-warning-400',
     icon: '⚠️'
   },
   high: {
-    bg: 'bg-red-50',
-    border: 'border-red-200',
-    text: 'text-red-800',
+    bg: 'bg-error-500/10',
+    border: 'border-error-500/20',
+    text: 'text-error-400',
     icon: '🚨'
   }
 } as const;

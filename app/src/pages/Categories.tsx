@@ -17,6 +17,7 @@ const Categories: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState<CategoryFormData>({ name: '', color: '#6b7280' });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const colorOptions = [
     { value: '#ef4444', label: 'Red' },
@@ -167,6 +168,11 @@ const Categories: React.FC = () => {
     setShowCreateForm(false);
   };
 
+  // Filter categories based on search term
+  const filteredCategories = categories.filter(category =>
+    category.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (!user) {
     return (
       <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto">
@@ -193,16 +199,28 @@ const Categories: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-6">
-        <h1 className="text-white tracking-light text-2xl sm:text-[32px] font-bold leading-tight">Categories</h1>
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors w-full sm:w-auto"
-        >
-          Add Category
-        </button>
-      </div>
+    <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto overflow-x-hidden">
+      {/* Page Container with proper constraints */}
+      <div className="w-full max-w-full min-w-0">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-6 w-full max-w-full">
+          <h1 className="text-white tracking-light text-2xl sm:text-[32px] font-bold leading-tight">Categories</h1>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <input
+              type="text"
+              placeholder="Search categories..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="px-3 py-2 bg-[#1a2332] border border-[#2e4e6b] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+            />
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors w-full sm:w-auto"
+            >
+              Add Category
+            </button>
+          </div>
+        </div>
 
       {/* Success/Error Messages */}
       {successMessage && (
@@ -275,10 +293,13 @@ const Categories: React.FC = () => {
         </div>
       )}
 
-      {/* Categories Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-        {categories.map((category) => (
-          <div key={category.id} className="bg-[#20364b] rounded-xl border border-[#2e4e6b] p-6 hover:bg-[#20364b]/80 transition-colors group">
+      {/* Main Content */}
+      <div className="w-full max-w-full min-w-0 p-4 sm:p-6">
+        <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
+          {/* Categories Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredCategories.map((category) => (
+          <div key={category.id} className="bg-[#0f1a24] rounded-xl border border-[#2e4e6b] p-6 hover:bg-[#243447] hover:border-[#3e5e7b] transition-all duration-200 group">
             <div className="flex items-center gap-4">
               <div
                 className="w-12 h-12 rounded-lg flex items-center justify-center"
@@ -323,7 +344,7 @@ const Categories: React.FC = () => {
         {/* Add New Category Card */}
         <div
           onClick={() => setShowCreateForm(true)}
-          className="bg-[#20364b] rounded-xl border border-[#2e4e6b] border-dashed p-6 hover:bg-[#20364b]/80 transition-colors cursor-pointer flex items-center justify-center"
+          className="bg-[#0f1a24] rounded-xl border border-[#2e4e6b] border-dashed p-6 hover:bg-[#243447] hover:border-[#3e5e7b] transition-all duration-200 cursor-pointer flex items-center justify-center"
         >
           <div className="text-center">
             <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center mx-auto mb-3">
@@ -334,12 +355,10 @@ const Categories: React.FC = () => {
             <p className="text-gray-400 text-sm">Add New Category</p>
           </div>
         </div>
-      </div>
 
-      {/* Category Analytics */}
-      <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Category Analytics</h3>
-      <div className="p-4">
-        <div className="bg-[#20364b] rounded-xl border border-[#2e4e6b] p-6">
+        {/* Category Analytics */}
+        <div className="mt-6 pt-6 border-t border-[#2e4e6b]">
+          <h3 className="text-white text-lg font-bold mb-4">Category Analytics</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <p className="text-2xl font-bold text-white">{categories.length}</p>

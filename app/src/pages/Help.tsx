@@ -25,8 +25,11 @@ const Help: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto">
-      <div className="flex flex-wrap justify-between gap-3 p-4 sm:p-6">
+    <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto overflow-x-hidden">
+      {/* Page Container with proper constraints */}
+      <div className="w-full max-w-full min-w-0">
+        {/* Header */}
+        <div className="flex flex-wrap justify-between gap-3 p-4 sm:p-6 w-full max-w-full">
         <h1 className="text-white tracking-light text-2xl sm:text-[32px] font-bold leading-tight">Help & Support</h1>
       </div>
 

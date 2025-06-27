@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
+import { Bell, X, Check, AlertTriangle, Info, Calendar } from 'lucide-react';
 
 interface Notification {
   id: string;
@@ -162,21 +163,19 @@ const NotificationCenter: React.FC = () => {
       {/* Notification Bell */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-white hover:bg-[#20364b] rounded-lg transition-colors"
+        className="relative p-2 text-white hover:bg-background-secondary rounded-lg transition-all interactive"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
-          <path d="M221.8,175.94C216.25,166.38,208,139.33,208,104a80,80,0,1,0-160,0c0,35.34-8.26,62.38-13.81,71.94A16,16,0,0,0,48,200H88.81a40,40,0,0,0,78.38,0H208a16,16,0,0,0,13.8-24.06ZM128,216a24,24,0,0,1-22.62-16h45.24A24,24,0,0,1,128,216ZM48,184c7.7-13.24,16-43.92,16-80a64,64,0,1,1,128,0c0,36.05,8.28,66.73,16,80Z"></path>
-        </svg>
+        <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 bg-error-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse-soft">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Notification Dropdown */}
+      {/* Notification Dropdown - Mobile Responsive */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-[#20364b] border border-[#2e4e6b] rounded-xl shadow-xl z-50 max-h-96 overflow-hidden">
+        <div className="fixed sm:absolute right-2 sm:right-0 top-16 sm:top-full mt-2 w-[calc(100vw-1rem)] sm:w-80 lg:w-96 glass-card shadow-floating z-50 max-h-[80vh] sm:max-h-96 overflow-hidden animate-slide-down">
           <div className="p-4 border-b border-[#2e4e6b] flex items-center justify-between">
             <h3 className="text-white font-medium">Notifications</h3>
             {unreadCount > 0 && (

@@ -1,6 +1,20 @@
 import React from 'react';
 import { SpendingInsight, RenewalInsight, CategoryInsight } from '../utils/insightCalculations';
 import { getSeverityColors, CategoryBadge } from '../utils/categoryColors';
+import {
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  Bell,
+  Calendar,
+  CreditCard,
+  DollarSign,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  ArrowRight,
+  Lightbulb
+} from 'lucide-react';
 
 // Spending Insight Card
 interface SpendingInsightCardProps {
@@ -17,39 +31,49 @@ export const SpendingInsightCard: React.FC<SpendingInsightCardProps> = ({
   const getIcon = () => {
     switch (insight.type) {
       case 'spending_increase':
-        return '📈';
+        return TrendingUp;
       case 'spending_decrease':
-        return '📉';
+        return TrendingDown;
       default:
-        return '📊';
+        return BarChart3;
     }
   };
 
+  const IconComponent = getIcon();
+
   return (
-    <div className={`rounded-xl border-2 p-6 transition-all hover:shadow-md ${severityColors.bg} ${severityColors.border}`}>
+    <div className="elevated-card p-6 interactive">
       <div className="flex items-start justify-between">
-        <div className="flex items-center space-x-3">
-          <span className="text-2xl">{getIcon()}</span>
+        <div className="flex items-center space-x-4">
+          <div className="p-3 rounded-xl bg-primary-500/20">
+            <IconComponent className="w-6 h-6 text-primary-400" />
+          </div>
           <div>
-            <h3 className={`font-semibold ${severityColors.text}`}>Spending Trend</h3>
-            <p className={`text-sm opacity-80 ${severityColors.text}`}>{insight.message}</p>
+            <h3 className="text-heading-2 font-semibold text-white">Spending Trend</h3>
+            <p className="text-body text-gray-300 mt-1">{insight.message}</p>
           </div>
         </div>
-        
+
         {insight.severity !== 'low' && onViewDetails && (
-          <button 
+          <button
             onClick={onViewDetails}
-            className="rounded-lg bg-white px-3 py-1 text-sm font-medium shadow-sm hover:shadow-md transition-shadow"
+            className="btn-glass flex items-center space-x-2 group"
           >
-            View Details
+            <span>View Details</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         )}
       </div>
-      
+
       {insight.recommendation && (
-        <div className="mt-4 rounded-lg bg-white bg-opacity-50 p-3">
-          <p className={`text-sm font-medium ${severityColors.text}`}>💡 Recommendation</p>
-          <p className={`text-sm opacity-80 ${severityColors.text}`}>{insight.recommendation}</p>
+        <div className="mt-6 glass-card p-4">
+          <div className="flex items-start space-x-3">
+            <Lightbulb className="w-5 h-5 text-warning-400 mt-0.5" />
+            <div>
+              <p className="text-caption font-medium text-warning-400 uppercase tracking-wide">Recommendation</p>
+              <p className="text-body text-gray-300 mt-1">{insight.recommendation}</p>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -75,22 +99,25 @@ export const RenewalInsightCard: React.FC<RenewalInsightCardProps> = ({
   const severityColors = getSeverityColors(getSeverityLevel());
 
   return (
-    <div className={`rounded-xl border-2 p-6 transition-all hover:shadow-md ${severityColors.bg} ${severityColors.border}`}>
+    <div className="elevated-card p-6 interactive">
       <div className="flex items-start justify-between">
-        <div className="flex items-center space-x-3">
-          <span className="text-2xl">🔔</span>
+        <div className="flex items-center space-x-4">
+          <div className="p-3 rounded-xl bg-warning-500/20">
+            <Bell className="w-6 h-6 text-warning-400" />
+          </div>
           <div>
-            <h3 className={`font-semibold ${severityColors.text}`}>Upcoming Renewals</h3>
-            <p className={`text-sm opacity-80 ${severityColors.text}`}>{insight.message}</p>
+            <h3 className="text-heading-2 font-semibold text-white">Upcoming Renewals</h3>
+            <p className="text-body text-gray-300 mt-1">{insight.message}</p>
           </div>
         </div>
-        
+
         {insight.actionable && onViewUpcoming && (
-          <button 
+          <button
             onClick={onViewUpcoming}
-            className="rounded-lg bg-white px-3 py-1 text-sm font-medium shadow-sm hover:shadow-md transition-shadow"
+            className="btn-glass flex items-center space-x-2 group"
           >
-            View All
+            <span>View All</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         )}
       </div>
@@ -126,22 +153,25 @@ export const CategoryInsightCard: React.FC<CategoryInsightCardProps> = ({
 }) => {
 
   return (
-    <div className="rounded-xl border-2 p-6 transition-all hover:shadow-md border-[#2e4e6b] bg-[#1a2332]">
+    <div className="elevated-card p-6 interactive">
       <div className="flex items-start justify-between">
-        <div className="flex items-center space-x-3">
-          <span className="text-2xl">📊</span>
+        <div className="flex items-center space-x-4">
+          <div className="p-3 rounded-xl bg-info-500/20">
+            <BarChart3 className="w-6 h-6 text-info-400" />
+          </div>
           <div>
-            <h3 className="font-semibold text-white">Category Breakdown</h3>
-            <p className="text-sm opacity-80 text-gray-300">{insight.message}</p>
+            <h3 className="text-heading-2 font-semibold text-white">Category Breakdown</h3>
+            <p className="text-body text-gray-300 mt-1">{insight.message}</p>
           </div>
         </div>
-        
+
         {onViewBreakdown && (
-          <button 
+          <button
             onClick={onViewBreakdown}
-            className="rounded-lg bg-white px-3 py-1 text-sm font-medium shadow-sm hover:shadow-md transition-shadow text-gray-800"
+            className="btn-glass flex items-center space-x-2 group"
           >
-            View All
+            <span>View All</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         )}
       </div>
@@ -169,7 +199,7 @@ export const CategoryInsightCard: React.FC<CategoryInsightCardProps> = ({
   );
 };
 
-// Quick Action Button
+// Quick Action Button with Professional Icons
 interface QuickActionButtonProps {
   onClick: () => void;
   icon: string;
@@ -183,13 +213,24 @@ export const QuickActionButton: React.FC<QuickActionButtonProps> = ({
   label,
   className = ''
 }) => {
+  // Map emoji icons to Lucide icons
+  const getIconComponent = () => {
+    switch (icon) {
+      case '➕':
+        return <CreditCard className="w-4 h-4" />;
+      default:
+        return <span>{icon}</span>;
+    }
+  };
+
   return (
     <button
       onClick={onClick}
-      className={`flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors ${className}`}
+      className={`btn-primary flex items-center space-x-2 group ${className}`}
     >
-      <span>{icon}</span>
+      {getIconComponent()}
       <span>{label}</span>
+      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
     </button>
   );
 };
@@ -226,32 +267,54 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   const getTrendIcon = () => {
     switch (trend) {
       case 'up':
-        return '↗️';
+        return TrendingUp;
       case 'down':
-        return '↘️';
+        return TrendingDown;
       default:
-        return '➡️';
+        return ArrowRight;
     }
   };
 
+  const TrendIcon = getTrendIcon();
+
+  // Map emoji icons to Lucide icons
+  const getIconComponent = () => {
+    switch (icon) {
+      case '💰':
+        return DollarSign;
+      case '📅':
+        return Calendar;
+      case '📱':
+        return CreditCard;
+      case '🔔':
+        return Bell;
+      default:
+        return BarChart3;
+    }
+  };
+
+  const IconComponent = getIconComponent();
+
   return (
-    <div className="flex flex-col gap-2 rounded-xl p-6 border border-[#2e4e6b] bg-[#1a2332] min-w-0">
-      <div className="flex items-center justify-between">
-        <p className="text-white text-base font-medium leading-normal">{title}</p>
-        {icon && <span className="text-lg">{icon}</span>}
+    <div className="elevated-card p-6 min-w-0 interactive">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-white text-body font-medium">{title}</p>
+        <div className="p-2 rounded-lg bg-primary-500/20">
+          <IconComponent className="w-5 h-5 text-primary-400" />
+        </div>
       </div>
-      
-      <p className="text-white tracking-light text-2xl font-bold leading-tight">
+
+      <p className="text-white text-heading-1 font-bold mb-3">
         {typeof value === 'number' ? `$${value.toFixed(2)}` : value}
       </p>
-      
+
       <div className="flex items-center justify-between">
         {subtitle && (
-          <p className="text-xs text-gray-400">{subtitle}</p>
+          <p className="text-caption text-gray-400">{subtitle}</p>
         )}
         {trend && trendValue && (
-          <div className={`flex items-center space-x-1 text-xs ${getTrendColor()}`}>
-            <span>{getTrendIcon()}</span>
+          <div className={`flex items-center space-x-1 text-caption ${getTrendColor()}`}>
+            <TrendIcon className="w-3 h-3" />
             <span>{trendValue}</span>
           </div>
         )}

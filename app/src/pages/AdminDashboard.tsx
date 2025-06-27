@@ -143,27 +143,30 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto">
-      <div className="flex flex-wrap justify-between gap-3 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <h1 className="text-white tracking-light text-2xl sm:text-[32px] font-bold leading-tight">App Owner Dashboard</h1>
-          <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded-full font-medium">Admin</span>
+    <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto overflow-x-hidden">
+      {/* Page Container with proper constraints */}
+      <div className="w-full max-w-full min-w-0">
+        {/* Header */}
+        <div className="flex flex-wrap justify-between gap-3 p-4 sm:p-6 w-full max-w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <h1 className="text-white tracking-light text-2xl sm:text-[32px] font-bold leading-tight">App Owner Dashboard</h1>
+            <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded-full font-medium">Admin</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={exportAdminData}
+              className="bg-blue-600 hover:bg-blue-700 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white text-sm font-medium transition-colors"
+            >
+              Export Data
+            </button>
+            <button
+              onClick={() => alert('Notification system ready! Feature can be implemented based on specific requirements.')}
+              className="bg-green-600 hover:bg-green-700 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white text-sm font-medium transition-colors"
+            >
+              Send Notifications
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={exportAdminData}
-            className="bg-blue-600 hover:bg-blue-700 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white text-sm font-medium transition-colors"
-          >
-            Export Data
-          </button>
-          <button
-            onClick={() => alert('Notification system ready! Feature can be implemented based on specific requirements.')}
-            className="bg-green-600 hover:bg-green-700 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white text-sm font-medium transition-colors"
-          >
-            Send Notifications
-          </button>
-        </div>
-      </div>
 
       {/* Key Metrics */}
       <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 sm:px-6 pb-2 pt-4">Key Metrics</h3>
@@ -333,6 +336,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
     </div>
+  </div>
   );
 };
 
