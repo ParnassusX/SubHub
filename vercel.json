@@ -1,22 +1,13 @@
 {
   "version": 2,
-  "name": "subhub",
-  "builds": [
+  "buildCommand": "cd app && npm run build",
+  "outputDirectory": "app/dist",
+  "installCommand": "cd app && npm install",
+  "framework": "vite",
+  "rewrites": [
     {
-      "src": "app/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
