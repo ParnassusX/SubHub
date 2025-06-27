@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "name": "subhub",
+  "builds": [
+    {
+      "src": "app/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "app/dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/app/dist/$1"
+    }
+  ],
+  "installCommand": "cd app && npm install",
+  "buildCommand": "cd app && npm run build",
+  "outputDirectory": "app/dist",
+  "framework": "vite"
+}
