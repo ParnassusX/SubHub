@@ -88,6 +88,9 @@ export type Database = {
           name: string | null
           role: string | null
           updated_at: string | null
+          timezone: string | null
+          currency: string | null
+          date_format: string | null
         }
         Insert: {
           created_at?: string | null
@@ -96,6 +99,9 @@ export type Database = {
           name?: string | null
           role?: string | null
           updated_at?: string | null
+          timezone?: string | null
+          currency?: string | null
+          date_format?: string | null
         }
         Update: {
           created_at?: string | null
@@ -104,6 +110,9 @@ export type Database = {
           name?: string | null
           role?: string | null
           updated_at?: string | null
+          timezone?: string | null
+          currency?: string | null
+          date_format?: string | null
         }
         Relationships: []
       }
@@ -146,6 +155,60 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           website?: string | null
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          id: string
+          user_id: string
+          email_notifications: boolean
+          push_notifications: boolean
+          renewal_alerts: boolean
+          spending_alerts: boolean
+          weekly_summary: boolean
+          monthly_report: boolean
+          reminder_frequency: string
+          theme: string
+          language: string
+          auto_categorize: boolean
+          data_export_format: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          email_notifications?: boolean
+          push_notifications?: boolean
+          renewal_alerts?: boolean
+          spending_alerts?: boolean
+          weekly_summary?: boolean
+          monthly_report?: boolean
+          reminder_frequency?: string
+          theme?: string
+          language?: string
+          auto_categorize?: boolean
+          data_export_format?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          email_notifications?: boolean
+          push_notifications?: boolean
+          renewal_alerts?: boolean
+          spending_alerts?: boolean
+          weekly_summary?: boolean
+          monthly_report?: boolean
+          reminder_frequency?: string
+          theme?: string
+          language?: string
+          auto_categorize?: boolean
+          data_export_format?: string
+          created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }

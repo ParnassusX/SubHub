@@ -1,207 +1,486 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { SettingsService } from '../services/settingsService';
+import { Database } from '../types/supabase';
 import ImportExport from '../components/ImportExport';
 
-interface UserSettings {
-  currency: string;
-  dateFormat: string;
-  emailNotifications: boolean;
-  pushNotifications: boolean;
-  reminderFrequency: string;
-  darkMode: boolean;
+type Profile = Database['public']['Tables']['profiles']['Row'];
+type UserPreferences = Database['public']['Tables']['user_preferences']['Row'];
+
+interface SettingsState {
+  profile: Profile | null;
+  preferences: UserPreferences | null;
 }
+
+const CURRENCY_OPTIONS = [
+  { value: 'USD', label: 'US Dollar ($)' },
+  { value: 'EUR', label: 'Euro (€)' },
+  { value: 'GBP', label: 'British Pound (£)' },
+  { value: 'CAD', label: 'Canadian Dollar (C$)' },
+];
+
+
+
+const LANGUAGE_OPTIONS = [
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Español' },
+  { value: 'fr', label: 'Français' },
+];
 
 const Settings: React.FC = () => {
   const { user } = useAuth();
-  const [settings, setSettings] = useState<UserSettings>({
-    currency: 'USD',
-    dateFormat: 'MM/DD/YYYY',
-    emailNotifications: true,
-    pushNotifications: false,
-    reminderFrequency: '3 days before',
-    darkMode: true,
+  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'privacy'>('profile');
+  const [settings, setSettings] = useState<SettingsState>({
+    profile: null,
+    preferences: null
   });
+
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Load settings from localStorage (with Supabase backup)
+  // Load settings from Supabase database
   useEffect(() => {
-    const savedSettings = localStorage.getItem('subhub_settings');
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
-    }
-    // TODO: Load from Supabase user preferences table when implemented
-  }, []);
+    const loadSettings = async () => {
+      if (!user) return;
 
-  // Save settings to localStorage and Supabase
+      setIsLoading(true);
+      try {
+        const { profile, preferences } = await SettingsService.getAllSettings();
+
+        // If no settings exist, initialize with defaults
+        if (!profile || !preferences) {
+          const defaultSettings = await SettingsService.initializeDefaultSettings();
+          setSettings(defaultSettings);
+        } else {
+          setSettings({ profile, preferences });
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        setError('Failed to load settings');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, [user]);
+
+  // Helper functions for showing messages
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setTimeout(() => setSuccessMessage(null), 3000);
+  };
+
+  const showError = (message: string) => {
+    setError(message);
+    setTimeout(() => setError(null), 5000);
+  };
+
+  // Save settings handler
   const saveSettings = async () => {
+    if (!settings.profile || !settings.preferences) {
+      showError('Settings not loaded');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // Save to localStorage for immediate access
-      localStorage.setItem('subhub_settings', JSON.stringify(settings));
+      // Save both profile and preferences
+      await Promise.all([
+        SettingsService.updateProfile({
+          timezone: settings.profile.timezone,
+          currency: settings.profile.currency,
+          date_format: settings.profile.date_format
+        }),
+        SettingsService.updatePreferences({
+          email_notifications: settings.preferences.email_notifications,
+          push_notifications: settings.preferences.push_notifications,
+          renewal_alerts: settings.preferences.renewal_alerts,
+          spending_alerts: settings.preferences.spending_alerts,
+          weekly_summary: settings.preferences.weekly_summary,
+          monthly_report: settings.preferences.monthly_report,
+          reminder_frequency: settings.preferences.reminder_frequency,
+          theme: settings.preferences.theme,
+          language: settings.preferences.language,
+          auto_categorize: settings.preferences.auto_categorize,
+          data_export_format: settings.preferences.data_export_format
+        })
+      ]);
 
-      // TODO: Save to Supabase user preferences table
-      // await db.userPreferences.update(user.id, settings);
-
-      setTimeout(() => {
-        setIsSaving(false);
-        alert('Settings saved successfully! (Currently stored locally, Supabase sync coming soon)');
-      }, 500);
-    } catch (error) {
+      showSuccess('Settings saved successfully');
+    } catch (error: any) {
+      console.error('Error saving settings:', error);
+      showError('Failed to save settings');
+    } finally {
       setIsSaving(false);
-      alert('Failed to save settings');
     }
   };
 
-  const updateSetting = (key: keyof UserSettings, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+  // Update setting helpers
+  const updateProfileSetting = (key: keyof Profile, value: any) => {
+    if (!settings.profile) return;
+    setSettings(prev => ({
+      ...prev,
+      profile: { ...prev.profile!, [key]: value }
+    }));
   };
 
-  return (
-    <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto">
-      <div className="flex flex-wrap justify-between gap-3 p-4 sm:p-6">
-        <h1 className="text-white tracking-light text-2xl sm:text-[32px] font-bold leading-tight">Settings</h1>
-        <button
-          onClick={saveSettings}
-          disabled={isSaving}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors"
-        >
-          {isSaving ? 'Saving...' : 'Save Settings'}
-        </button>
-      </div>
+  const updatePreferenceSetting = (key: keyof UserPreferences, value: any) => {
+    if (!settings.preferences) return;
+    setSettings(prev => ({
+      ...prev,
+      preferences: { ...prev.preferences!, [key]: value }
+    }));
+  };
 
-      {/* Account Settings */}
-      <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Account</h3>
-      <div className="p-4">
-        <div className="bg-[#20364b] rounded-xl border border-[#2e4e6b] p-6 space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-xl font-bold">
-                {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
-              </span>
-            </div>
-            <div className="flex-1">
-              <h4 className="text-white text-lg font-medium">{user?.name || 'User'}</h4>
-              <p className="text-gray-400">{user?.email || 'user@example.com'}</p>
-            </div>
-            <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors">
-              Edit Profile
+  if (!user) {
+    return (
+      <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <p className="text-white text-lg">Please log in to access settings</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-white text-lg">Loading settings...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!settings.profile || !settings.preferences) {
+    return (
+      <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <p className="text-white text-lg">Failed to load settings</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Retry
             </button>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Notifications */}
-      <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Notifications</h3>
-      <div className="p-4">
-        <div className="bg-[#20364b] rounded-xl border border-[#2e4e6b] p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-white font-medium">Email notifications</h4>
-              <p className="text-gray-400 text-sm">Receive email alerts for upcoming payments</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={settings.emailNotifications}
-                onChange={(e) => updateSetting('emailNotifications', e.target.checked)}
-              />
-              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
+  return (
+    <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto overflow-x-hidden">
+      <div className="w-full max-w-full min-w-0">
+        {/* Header */}
+        <div className="flex flex-wrap justify-between gap-3 p-4 sm:p-6 w-full max-w-full">
+          <h1 className="text-white tracking-light text-2xl sm:text-[32px] font-bold leading-tight min-w-0">Settings</h1>
+        </div>
+
+        {/* Success/Error Messages */}
+        {successMessage && (
+          <div className="mx-4 sm:mx-6 mb-4 p-4 bg-green-900/20 border border-green-700 rounded-lg">
+            <p className="text-green-400">{successMessage}</p>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-white font-medium">Push notifications</h4>
-              <p className="text-gray-400 text-sm">Get notified on your device</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={settings.pushNotifications}
-                onChange={(e) => updateSetting('pushNotifications', e.target.checked)}
-              />
-              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
+        )}
+        
+        {error && (
+          <div className="mx-4 sm:mx-6 mb-4 p-4 bg-red-900/20 border border-red-700 rounded-lg">
+            <p className="text-red-400">{error}</p>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-white font-medium">Reminder frequency</h4>
-              <p className="text-gray-400 text-sm">How often to remind you before payments</p>
-            </div>
-            <select
-              className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-              value={settings.reminderFrequency}
-              onChange={(e) => updateSetting('reminderFrequency', e.target.value)}
-            >
-              <option value="1 day before">1 day before</option>
-              <option value="3 days before">3 days before</option>
-              <option value="1 week before">1 week before</option>
-              <option value="2 weeks before">2 weeks before</option>
-              <option value="1 month before">1 month before</option>
-            </select>
+        )}
+
+        {/* Tab Navigation */}
+        <div className="px-4 sm:px-6 mb-6">
+          <div className="border-b border-gray-700">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { id: 'profile', label: 'Profile', icon: '👤' },
+                { id: 'notifications', label: 'Notifications', icon: '🔔' },
+                { id: 'appearance', label: 'Appearance', icon: '🎨' },
+                { id: 'privacy', label: 'Privacy', icon: '🔒' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-400'
+                      : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
+                  }`}
+                >
+                  <span>{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </nav>
           </div>
         </div>
-      </div>
 
-      {/* Preferences */}
-      <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Preferences</h3>
-      <div className="p-4">
-        <div className="bg-[#20364b] rounded-xl border border-[#2e4e6b] p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-white font-medium">Currency</h4>
-              <p className="text-gray-400 text-sm">Default currency for new subscriptions</p>
+        {/* Tab Content */}
+        <div className="px-4 sm:px-6">
+          {activeTab === 'profile' && (
+            <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Profile Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={user?.email || ''}
+                    disabled
+                    className="w-full px-3 py-2 bg-gray-600 border border-gray-600 rounded-md text-gray-300 cursor-not-allowed"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Currency</label>
+                  <select
+                    value={settings.profile?.currency || 'USD'}
+                    onChange={(e) => updateProfileSetting('currency', e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {CURRENCY_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Date Format</label>
+                  <select
+                    value={settings.profile?.date_format || 'MM/DD/YYYY'}
+                    onChange={(e) => updateProfileSetting('date_format', e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                    <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                    <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Timezone</label>
+                  <select
+                    value={settings.profile?.timezone || 'UTC'}
+                    onChange={(e) => updateProfileSetting('timezone', e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="UTC">UTC</option>
+                    <option value="America/New_York">Eastern Time</option>
+                    <option value="America/Chicago">Central Time</option>
+                    <option value="America/Denver">Mountain Time</option>
+                    <option value="America/Los_Angeles">Pacific Time</option>
+                    <option value="Europe/London">London</option>
+                    <option value="Europe/Paris">Paris</option>
+                    <option value="Asia/Tokyo">Tokyo</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={saveSettings}
+                  disabled={isSaving}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+                >
+                  {isSaving ? 'Saving...' : 'Save Profile'}
+                </button>
+              </div>
             </div>
-            <select className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm">
-              <option>USD ($)</option>
-              <option>EUR (€)</option>
-              <option>GBP (£)</option>
-              <option>CAD ($)</option>
-            </select>
-          </div>
+          )}
           
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-white font-medium">Date format</h4>
-              <p className="text-gray-400 text-sm">How dates are displayed</p>
+          {activeTab === 'notifications' && (
+            <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Notification Preferences</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-white font-medium">Email Notifications</h4>
+                    <p className="text-gray-400 text-sm">Receive email alerts for renewals</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={settings.preferences?.email_notifications || false}
+                      onChange={(e) => updatePreferenceSetting('email_notifications', e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-white font-medium">Push Notifications</h4>
+                    <p className="text-gray-400 text-sm">Browser notifications for important updates</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={settings.preferences?.push_notifications || false}
+                      onChange={(e) => updatePreferenceSetting('push_notifications', e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-white font-medium">Renewal Alerts</h4>
+                    <p className="text-gray-400 text-sm">Get notified before subscriptions renew</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={settings.preferences?.renewal_alerts || false}
+                      onChange={(e) => updatePreferenceSetting('renewal_alerts', e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-white font-medium">Spending Alerts</h4>
+                    <p className="text-gray-400 text-sm">Alerts when spending exceeds thresholds</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={settings.preferences?.spending_alerts || false}
+                      onChange={(e) => updatePreferenceSetting('spending_alerts', e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Reminder Frequency</label>
+                  <select
+                    value={settings.preferences?.reminder_frequency || '3_days'}
+                    onChange={(e) => updatePreferenceSetting('reminder_frequency', e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="1_day">1 day before</option>
+                    <option value="3_days">3 days before</option>
+                    <option value="1_week">1 week before</option>
+                    <option value="2_weeks">2 weeks before</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={saveSettings}
+                  disabled={isSaving}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+                >
+                  {isSaving ? 'Saving...' : 'Save Notifications'}
+                </button>
+              </div>
             </div>
-            <select className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm">
-              <option>MM/DD/YYYY</option>
-              <option>DD/MM/YYYY</option>
-              <option>YYYY-MM-DD</option>
-            </select>
-          </div>
+          )}
           
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-white font-medium">Dark mode</h4>
-              <p className="text-gray-400 text-sm">Use dark theme</p>
+          {activeTab === 'appearance' && (
+            <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Appearance Settings</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Theme</label>
+                  <select
+                    value={settings.preferences?.theme || 'dark'}
+                    onChange={(e) => updatePreferenceSetting('theme', e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                    <option value="system">System</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Language</label>
+                  <select
+                    value={settings.preferences?.language || 'en'}
+                    onChange={(e) => updatePreferenceSetting('language', e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {LANGUAGE_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  onClick={saveSettings}
+                  disabled={isSaving}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+                >
+                  {isSaving ? 'Saving...' : 'Save Appearance'}
+                </button>
+              </div>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
+          )}
+
+          {activeTab === 'privacy' && (
+            <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Privacy Settings</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-white font-medium">Auto-categorize</h4>
+                    <p className="text-gray-400 text-sm">Automatically assign categories to new subscriptions</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={settings.preferences?.auto_categorize || false}
+                      onChange={(e) => updatePreferenceSetting('auto_categorize', e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Data Export Format</label>
+                  <select
+                    value={settings.preferences?.data_export_format || 'csv'}
+                    onChange={(e) => updatePreferenceSetting('data_export_format', e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="csv">CSV</option>
+                    <option value="json">JSON</option>
+                    <option value="pdf">PDF</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={saveSettings}
+                  disabled={isSaving}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+                >
+                  {isSaving ? 'Saving...' : 'Save Privacy'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Import & Export */}
-      <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 sm:px-6 pb-2 pt-4">Import & Export</h3>
-      <div className="p-4 sm:p-6">
-        <ImportExport />
-      </div>
-
-      {/* Data & Privacy */}
-      <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 sm:px-6 pb-2 pt-4">Data & Privacy</h3>
-      <div className="p-4 sm:p-6">
-        <div className="bg-[#20364b] rounded-xl border border-[#2e4e6b] p-6 space-y-4">
-          <button className="w-full text-left p-4 bg-red-900/20 hover:bg-red-900/30 border border-red-800 rounded-lg transition-colors">
-            <h4 className="text-red-400 font-medium">Delete account</h4>
-            <p className="text-red-300 text-sm">Permanently delete your account and all data</p>
-          </button>
+        {/* Import/Export Section */}
+        <div className="px-4 sm:px-6 mt-8">
+          <h2 className="text-white text-xl font-bold mb-4">Data Management</h2>
+          <ImportExport />
         </div>
       </div>
     </div>

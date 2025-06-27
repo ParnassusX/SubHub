@@ -41,6 +41,37 @@ body {
   overflow-x: hidden;
 }
 
+/* Responsive container utilities */
+.page-container {
+  @apply w-full max-w-full min-w-0 overflow-x-hidden;
+}
+
+.content-wrapper {
+  @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.section-container {
+  @apply w-full max-w-full min-w-0;
+}
+
+/* Prevent flex children from overflowing */
+.flex-container {
+  @apply flex w-full max-w-full min-w-0;
+}
+
+.flex-container > * {
+  min-width: 0;
+}
+
+/* Grid container utilities */
+.grid-container {
+  @apply grid w-full max-w-full;
+}
+
+.grid-container > * {
+  min-width: 0;
+}
+
 /* Responsive breakpoints */
 @media (max-width: 320px) {
   body {

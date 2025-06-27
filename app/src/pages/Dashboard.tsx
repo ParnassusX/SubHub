@@ -2,6 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
 import { db } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import {
+  calculateSpendingInsights,
+  generateRenewalInsights,
+  generateCategoryInsights,
+  SpendingInsight,
+  RenewalInsight,
+  CategoryInsight
+} from '../utils/insightCalculations';
+import {
+  SpendingInsightCard,
+  RenewalInsightCard,
+  CategoryInsightCard,
+  QuickActionButton,
+  SummaryCard
+} from '../components/InsightCards';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardStats {
   totalSubscriptions: number;
@@ -14,6 +30,8 @@ interface DashboardStats {
 const Dashboard: React.FC = () => {
   const { subscriptions, isLoading: subscriptionsLoading } = useSubscriptions();
   const { user } = useAuth();
+  const navigate = useNavigate();
+
   const [stats, setStats] = useState<DashboardStats>({
     totalSubscriptions: 0,
     monthlySpending: 0,
@@ -23,32 +41,52 @@ const Dashboard: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load dashboard stats from Supabase
+  // New insight states
+  const [spendingInsight, setSpendingInsight] = useState<SpendingInsight | null>(null);
+  const [renewalInsight, setRenewalInsight] = useState<RenewalInsight | null>(null);
+  const [categoryInsight, setCategoryInsight] = useState<CategoryInsight | null>(null);
+
+  // Load dashboard stats and insights
   useEffect(() => {
-    const loadDashboardStats = async () => {
-      if (!user) return;
-      
+    const loadDashboardData = async () => {
+      if (!user || subscriptionsLoading) return;
+
       setIsLoading(true);
       try {
-        // Get stats from Supabase function
-        const { data, error } = await db.dashboard.getUserStats();
-        
-        if (error) {
-          console.error('Error loading dashboard stats:', error);
-          // Fallback to calculating from subscriptions
+        // Calculate insights from subscriptions
+        const spendingInsightData = calculateSpendingInsights(subscriptions);
+        const renewalInsightData = generateRenewalInsights(subscriptions);
+        const categoryInsightData = generateCategoryInsights(subscriptions);
+
+        setSpendingInsight(spendingInsightData);
+        setRenewalInsight(renewalInsightData);
+        setCategoryInsight(categoryInsightData);
+
+        // Try to get stats from Supabase function, fallback to calculation
+        try {
+          const { data, error } = await db.dashboard.getUserStats();
+
+          if (error) {
+            console.error('Error loading dashboard stats:', error);
+            calculateStatsFromSubscriptions();
+          } else if (data && data.length > 0) {
+            const statsData = data[0];
+            setStats({
+              totalSubscriptions: Number(statsData.total_subscriptions),
+              monthlySpending: Number(statsData.monthly_spending),
+              yearlySpending: Number(statsData.yearly_spending),
+              upcomingRenewals: Number(statsData.upcoming_renewals),
+              notificationsCount: Number(statsData.notifications_count)
+            });
+          } else {
+            calculateStatsFromSubscriptions();
+          }
+        } catch (dbError) {
+          console.error('Database error:', dbError);
           calculateStatsFromSubscriptions();
-        } else if (data && data.length > 0) {
-          const statsData = data[0];
-          setStats({
-            totalSubscriptions: Number(statsData.total_subscriptions),
-            monthlySpending: Number(statsData.monthly_spending),
-            yearlySpending: Number(statsData.yearly_spending),
-            upcomingRenewals: Number(statsData.upcoming_renewals),
-            notificationsCount: Number(statsData.notifications_count)
-          });
         }
       } catch (error) {
-        console.error('Error loading dashboard stats:', error);
+        console.error('Error loading dashboard data:', error);
         calculateStatsFromSubscriptions();
       } finally {
         setIsLoading(false);
@@ -96,35 +134,11 @@ const Dashboard: React.FC = () => {
     };
 
     if (user && !subscriptionsLoading) {
-      loadDashboardStats();
+      loadDashboardData();
     }
   }, [user, subscriptions, subscriptionsLoading]);
 
-  // Get upcoming payments for display
-  const getUpcomingPayments = () => {
-    const today = new Date();
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    
-    return subscriptions.filter(sub => {
-      const startDate = new Date(sub.startDate);
-      const nextBilling = new Date(startDate);
-      
-      // Calculate next billing date
-      if (sub.frequency === 'Monthly') {
-        while (nextBilling < today) {
-          nextBilling.setMonth(nextBilling.getMonth() + 1);
-        }
-      } else {
-        while (nextBilling < today) {
-          nextBilling.setFullYear(nextBilling.getFullYear() + 1);
-        }
-      }
-      
-      return nextBilling >= today && nextBilling <= nextWeek;
-    });
-  };
 
-  const upcomingPayments = getUpcomingPayments();
 
   if (isLoading || subscriptionsLoading) {
     return (
@@ -138,101 +152,129 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="flex-1 bg-[#0f1a24] min-h-0 overflow-y-auto">
-      <div className="max-w-full">
-        <div className="flex flex-wrap justify-between gap-3 p-4">
-          <p className="text-white tracking-light text-[32px] font-bold leading-tight min-w-0 max-w-full">Dashboard</p>
+      <div className="max-w-full space-y-8 p-6">
+        {/* Header with Quick Actions */}
+        <div className="flex flex-wrap justify-between items-center gap-4">
+          <h1 className="text-white tracking-light text-[32px] font-bold leading-tight min-w-0">Dashboard</h1>
+          <QuickActionButton
+            onClick={() => navigate('/subscriptions?action=add')}
+            icon="➕"
+            label="Add Subscription"
+            className="hidden lg:flex"
+          />
         </div>
-      
-        {/* Summary Cards */}
-        <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Summary</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 max-w-full">
-          <div className="flex flex-col gap-2 rounded-xl p-6 border border-[#2e4e6b] min-w-0">
-          <p className="text-white text-base font-medium leading-normal">Total Monthly</p>
-          <p className="text-white tracking-light text-2xl font-bold leading-tight">
-            ${stats.monthlySpending.toFixed(2)}
-          </p>
-          <p className="text-xs text-green-400">Real data from Supabase</p>
-        </div>
-          <div className="flex flex-col gap-2 rounded-xl p-6 border border-[#2e4e6b] min-w-0">
-            <p className="text-white text-base font-medium leading-normal">Total Yearly</p>
-            <p className="text-white tracking-light text-2xl font-bold leading-tight">
-              ${stats.yearlySpending.toFixed(2)}
-            </p>
-            <p className="text-xs text-green-400">Real data from Supabase</p>
+
+        {/* Key Insights Section */}
+        <section>
+          <h2 className="text-white text-xl font-bold mb-4">Your Insights</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {spendingInsight && (
+              <SpendingInsightCard
+                insight={spendingInsight}
+                onViewDetails={() => navigate('/reports')}
+              />
+            )}
+            {categoryInsight && (
+              <CategoryInsightCard
+                insight={categoryInsight}
+                onViewBreakdown={() => navigate('/reports')}
+              />
+            )}
           </div>
-          <div className="flex flex-col gap-2 rounded-xl p-6 border border-[#2e4e6b] min-w-0">
-            <p className="text-white text-base font-medium leading-normal">Active Subscriptions</p>
-            <p className="text-white tracking-light text-2xl font-bold leading-tight">
-              {stats.totalSubscriptions}
-            </p>
-            <p className="text-xs text-green-400">Real data from Supabase</p>
+        </section>
+
+        {/* Upcoming Renewals Section */}
+        {renewalInsight && (
+          <section>
+            <h2 className="text-white text-xl font-bold mb-4">Upcoming Renewals</h2>
+            <RenewalInsightCard
+              insight={renewalInsight}
+              onViewUpcoming={() => navigate('/subscriptions')}
+            />
+          </section>
+        )}
+
+        {/* Summary Statistics */}
+        <section>
+          <h2 className="text-white text-xl font-bold mb-4">Summary</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <SummaryCard
+              title="Monthly Total"
+              value={stats.monthlySpending}
+              subtitle="Current month spending"
+              icon="💰"
+            />
+            <SummaryCard
+              title="Yearly Total"
+              value={stats.yearlySpending}
+              subtitle="Projected annual cost"
+              icon="📅"
+            />
+            <SummaryCard
+              title="Active Subscriptions"
+              value={stats.totalSubscriptions}
+              subtitle="Currently tracked"
+              icon="📱"
+            />
+            <SummaryCard
+              title="This Month's Renewals"
+              value={stats.upcomingRenewals}
+              subtitle="Next 30 days"
+              icon="🔔"
+            />
           </div>
-          <div className="flex flex-col gap-2 rounded-xl p-6 border border-[#2e4e6b] min-w-0">
-            <p className="text-white text-base font-medium leading-normal">Upcoming Renewals</p>
-            <p className="text-white tracking-light text-2xl font-bold leading-tight">
-              {stats.upcomingRenewals}
-            </p>
-            <p className="text-xs text-green-400">Next 7 days</p>
-          </div>
-        </div>
+        </section>
 
         {/* Recent Subscriptions */}
-        <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Recent Subscriptions</h3>
-        <div className="p-4 max-w-full">
-          <div className="rounded-xl border border-[#2e4e6b] bg-[#1a2332] p-6 max-w-full overflow-hidden">
-          {subscriptions.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-400 text-lg mb-4">No subscriptions yet</p>
-              <p className="text-gray-500">Add your first subscription to get started!</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {subscriptions.slice(0, 5).map((subscription) => (
-                <div key={subscription.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-[#0f1a24] rounded-lg gap-2">
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-white font-medium truncate">{subscription.name}</h4>
-                    <p className="text-gray-400 text-sm truncate">{subscription.category}</p>
-                  </div>
-                  <div className="text-left sm:text-right flex-shrink-0">
-                    <p className="text-white font-bold">${subscription.cost}</p>
-                    <p className="text-gray-400 text-sm">{subscription.frequency}</p>
-                  </div>
-                </div>
-              ))}
-              {subscriptions.length > 5 && (
-                <div className="text-center pt-4">
-                  <p className="text-gray-400">And {subscriptions.length - 5} more...</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Upcoming Payments */}
-      {upcomingPayments.length > 0 && (
-        <>
-          <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Upcoming Payments</h3>
-          <div className="p-4">
-            <div className="rounded-xl border border-[#2e4e6b] bg-[#1a2332] p-6">
+        <section>
+          <h2 className="text-white text-xl font-bold mb-4">Recent Subscriptions</h2>
+          <div className="rounded-xl border border-[#2e4e6b] bg-[#1a2332] p-6">
+            {subscriptions.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-400 text-lg mb-4">No subscriptions yet</p>
+                <p className="text-gray-500 mb-6">Add your first subscription to get started!</p>
+                <QuickActionButton
+                  onClick={() => navigate('/subscriptions?action=add')}
+                  icon="➕"
+                  label="Add Your First Subscription"
+                />
+              </div>
+            ) : (
               <div className="space-y-4">
-                {upcomingPayments.map((subscription) => (
-                  <div key={subscription.id} className="flex items-center justify-between p-4 bg-[#0f1a24] rounded-lg border-l-4 border-orange-500">
-                    <div>
-                      <h4 className="text-white font-medium">{subscription.name}</h4>
-                      <p className="text-gray-400 text-sm">Due within 7 days</p>
+                {subscriptions.slice(0, 5).map((subscription) => (
+                  <div key={subscription.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-[#0f1a24] rounded-lg gap-2 hover:bg-[#1a2332] transition-colors">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-white font-medium truncate">{subscription.name}</h4>
+                      <p className="text-gray-400 text-sm truncate">{subscription.category}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right flex-shrink-0">
                       <p className="text-white font-bold">${subscription.cost}</p>
                       <p className="text-gray-400 text-sm">{subscription.frequency}</p>
                     </div>
                   </div>
                 ))}
+                {subscriptions.length > 5 && (
+                  <div className="text-center pt-4">
+                    <button
+                      onClick={() => navigate('/subscriptions')}
+                      className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+                    >
+                      View all {subscriptions.length} subscriptions →
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
           </div>
-        </>
-      )}
+        </section>
+
+        {/* Floating Action Button for Mobile */}
+        <QuickActionButton
+          onClick={() => navigate('/subscriptions?action=add')}
+          icon="➕"
+          label=""
+          className="fixed bottom-6 right-6 lg:hidden !rounded-full !p-4 shadow-lg z-50"
+        />
       </div>
     </div>
   );

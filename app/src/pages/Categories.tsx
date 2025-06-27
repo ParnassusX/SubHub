@@ -1,49 +1,330 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { CategoriesService, CategoryWithStats } from '../services/categoriesService';
+import { useAuth } from '../contexts/AuthContext';
+
+interface CategoryFormData {
+  name: string;
+  color: string;
+}
 
 const Categories: React.FC = () => {
-  const [categories] = useState([
-    { id: 1, name: 'Entertainment', count: 3, color: 'bg-purple-500' },
-    { id: 2, name: 'Productivity', count: 2, color: 'bg-blue-500' },
-    { id: 3, name: 'Health & Fitness', count: 1, color: 'bg-green-500' },
-    { id: 4, name: 'News & Media', count: 2, color: 'bg-orange-500' },
-    { id: 5, name: 'Cloud Storage', count: 1, color: 'bg-cyan-500' },
-  ]);
+  const { user } = useAuth();
+  const [categories, setCategories] = useState<CategoryWithStats[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<CategoryWithStats | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [formData, setFormData] = useState<CategoryFormData>({ name: '', color: '#6b7280' });
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const colorOptions = [
+    { value: '#ef4444', label: 'Red' },
+    { value: '#f97316', label: 'Orange' },
+    { value: '#f59e0b', label: 'Yellow' },
+    { value: '#84cc16', label: 'Lime' },
+    { value: '#10b981', label: 'Green' },
+    { value: '#06b6d4', label: 'Cyan' },
+    { value: '#3b82f6', label: 'Blue' },
+    { value: '#6366f1', label: 'Indigo' },
+    { value: '#8b5cf6', label: 'Purple' },
+    { value: '#ec4899', label: 'Pink' },
+    { value: '#6b7280', label: 'Gray' },
+  ];
+
+  // Load categories from database
+  useEffect(() => {
+    const loadCategories = async () => {
+      if (!user) return;
+
+      setIsLoading(true);
+      try {
+        const data = await CategoriesService.getCategories();
+
+        // If no categories exist, initialize with defaults
+        if (data.length === 0) {
+          await CategoriesService.initializeDefaultCategories();
+          const defaultData = await CategoriesService.getCategories();
+          setCategories(defaultData);
+        } else {
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        setError('Failed to load categories');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, [user]);
+
+  // Helper functions
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setTimeout(() => setSuccessMessage(null), 3000);
+  };
+
+  const showError = (message: string) => {
+    setError(message);
+    setTimeout(() => setError(null), 5000);
+  };
+
+  // Create category
+  const handleCreateCategory = async () => {
+    if (!formData.name.trim()) {
+      showError('Category name is required');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      await CategoriesService.createCategory({
+        name: formData.name.trim(),
+        color: formData.color
+      });
+
+      // Reload categories
+      const updatedCategories = await CategoriesService.getCategories();
+      setCategories(updatedCategories);
+
+      // Reset form
+      setFormData({ name: '', color: '#6b7280' });
+      setShowCreateForm(false);
+      showSuccess('Category created successfully');
+    } catch (error: any) {
+      showError(error.message || 'Failed to create category');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // Update category
+  const handleUpdateCategory = async () => {
+    if (!editingCategory || !formData.name.trim()) {
+      showError('Category name is required');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      await CategoriesService.updateCategory(editingCategory.id, {
+        name: formData.name.trim(),
+        color: formData.color
+      });
+
+      // Reload categories
+      const updatedCategories = await CategoriesService.getCategories();
+      setCategories(updatedCategories);
+
+      // Reset form
+      setEditingCategory(null);
+      setFormData({ name: '', color: '#6b7280' });
+      showSuccess('Category updated successfully');
+    } catch (error: any) {
+      showError(error.message || 'Failed to update category');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // Delete category
+  const handleDeleteCategory = async (category: CategoryWithStats) => {
+    if (category.subscription_count > 0) {
+      showError('Cannot delete category with subscriptions. Please reassign subscriptions first.');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete "${category.name}"?`)) {
+      return;
+    }
+
+    try {
+      await CategoriesService.deleteCategory(category.id);
+
+      // Reload categories
+      const updatedCategories = await CategoriesService.getCategories();
+      setCategories(updatedCategories);
+
+      showSuccess('Category deleted successfully');
+    } catch (error: any) {
+      showError(error.message || 'Failed to delete category');
+    }
+  };
+
+  // Start editing
+  const startEditing = (category: CategoryWithStats) => {
+    setEditingCategory(category);
+    setFormData({ name: category.name, color: category.color });
+    setShowCreateForm(true);
+  };
+
+  // Cancel editing
+  const cancelEditing = () => {
+    setEditingCategory(null);
+    setFormData({ name: '', color: '#6b7280' });
+    setShowCreateForm(false);
+  };
+
+  if (!user) {
+    return (
+      <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <p className="text-white text-lg">Please log in to manage categories</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-white text-lg">Loading categories...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-6">
         <h1 className="text-white tracking-light text-2xl sm:text-[32px] font-bold leading-tight">Categories</h1>
-        <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors w-full sm:w-auto">
+        <button
+          onClick={() => setShowCreateForm(true)}
+          className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors w-full sm:w-auto"
+        >
           Add Category
         </button>
       </div>
 
+      {/* Success/Error Messages */}
+      {successMessage && (
+        <div className="mx-4 sm:mx-6 mb-4 p-4 bg-green-900/20 border border-green-700 rounded-lg">
+          <p className="text-green-400">{successMessage}</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="mx-4 sm:mx-6 mb-4 p-4 bg-red-900/20 border border-red-700 rounded-lg">
+          <p className="text-red-400">{error}</p>
+        </div>
+      )}
+
+      {/* Create/Edit Form */}
+      {showCreateForm && (
+        <div className="mx-4 sm:mx-6 mb-6">
+          <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              {editingCategory ? 'Edit Category' : 'Create New Category'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Category Name</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter category name"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Color</label>
+                <div className="flex flex-wrap gap-2">
+                  {colorOptions.map(option => (
+                    <button
+                      key={option.value}
+                      onClick={() => setFormData(prev => ({ ...prev, color: option.value }))}
+                      className={`w-8 h-8 rounded-full border-2 transition-all ${
+                        formData.color === option.value
+                          ? 'border-white scale-110'
+                          : 'border-gray-600 hover:border-gray-400'
+                      }`}
+                      style={{ backgroundColor: option.value }}
+                      title={option.label}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={editingCategory ? handleUpdateCategory : handleCreateCategory}
+                  disabled={isCreating || !formData.name.trim()}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+                >
+                  {isCreating ? 'Saving...' : (editingCategory ? 'Update Category' : 'Create Category')}
+                </button>
+                <button
+                  onClick={cancelEditing}
+                  className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
         {categories.map((category) => (
-          <div key={category.id} className="bg-[#20364b] rounded-xl border border-[#2e4e6b] p-6 hover:bg-[#20364b]/80 transition-colors cursor-pointer">
+          <div key={category.id} className="bg-[#20364b] rounded-xl border border-[#2e4e6b] p-6 hover:bg-[#20364b]/80 transition-colors group">
             <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 ${category.color} rounded-lg flex items-center justify-center`}>
+              <div
+                className="w-12 h-12 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: category.color }}
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 256 256">
                   <path d="M216,64H176a48,48,0,0,0-96,0H40A16,16,0,0,0,24,80V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64ZM128,32a32,32,0,0,1,32,32H96A32,32,0,0,1,128,32Zm88,168H40V80H80V96a8,8,0,0,0,16,0V80h64V96a8,8,0,0,0,16,0V80h40Z"></path>
                 </svg>
               </div>
               <div className="flex-1">
                 <h3 className="text-white text-lg font-semibold">{category.name}</h3>
-                <p className="text-gray-400 text-sm">{category.count} subscriptions</p>
+                <p className="text-gray-400 text-sm">{category.subscription_count} subscriptions</p>
+                <p className="text-green-400 text-xs">${category.total_cost.toFixed(2)}/month</p>
               </div>
             </div>
             <div className="mt-4 flex justify-between items-center">
-              <span className="text-gray-400 text-sm">Manage</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="text-gray-400" viewBox="0 0 256 256">
-                <path d="m221.66,133.66-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z"></path>
-              </svg>
+              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => startEditing(category)}
+                  className="text-blue-400 hover:text-blue-300 text-sm"
+                  title="Edit category"
+                >
+                  Edit
+                </button>
+                {category.subscription_count === 0 && (
+                  <button
+                    onClick={() => handleDeleteCategory(category)}
+                    className="text-red-400 hover:text-red-300 text-sm"
+                    title="Delete category"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+              <span className="text-gray-400 text-sm">
+                {category.subscription_count > 0 ? 'In Use' : 'Empty'}
+              </span>
             </div>
           </div>
         ))}
-        
+
         {/* Add New Category Card */}
-        <div className="bg-[#20364b] rounded-xl border border-[#2e4e6b] border-dashed p-6 hover:bg-[#20364b]/80 transition-colors cursor-pointer flex items-center justify-center">
+        <div
+          onClick={() => setShowCreateForm(true)}
+          className="bg-[#20364b] rounded-xl border border-[#2e4e6b] border-dashed p-6 hover:bg-[#20364b]/80 transition-colors cursor-pointer flex items-center justify-center"
+        >
           <div className="text-center">
             <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center mx-auto mb-3">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 256 256">
@@ -55,33 +336,61 @@ const Categories: React.FC = () => {
         </div>
       </div>
 
-      {/* Category Management */}
-      <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Category Management</h3>
+      {/* Category Analytics */}
+      <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Category Analytics</h3>
       <div className="p-4">
         <div className="bg-[#20364b] rounded-xl border border-[#2e4e6b] p-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-white font-medium">Auto-categorization</h4>
-                <p className="text-gray-400 text-sm">Automatically assign categories to new subscriptions</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
-                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-white">{categories.length}</p>
+              <p className="text-gray-400 text-sm">Total Categories</p>
             </div>
-            
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-white font-medium">Color coding</h4>
-                <p className="text-gray-400 text-sm">Use colors to distinguish categories in charts</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
-                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-white">
+                {categories.filter(cat => cat.subscription_count > 0).length}
+              </p>
+              <p className="text-gray-400 text-sm">In Use</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-white">
+                {categories.reduce((total, cat) => total + cat.subscription_count, 0)}
+              </p>
+              <p className="text-gray-400 text-sm">Total Subscriptions</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-400">
+                ${categories.reduce((total, cat) => total + cat.total_cost, 0).toFixed(2)}
+              </p>
+              <p className="text-gray-400 text-sm">Monthly Spending</p>
             </div>
           </div>
+
+          {categories.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-600">
+              <h4 className="text-white font-medium mb-3">Most Used Categories</h4>
+              <div className="space-y-2">
+                {categories
+                  .filter(cat => cat.subscription_count > 0)
+                  .sort((a, b) => b.subscription_count - a.subscription_count)
+                  .slice(0, 3)
+                  .map(category => (
+                    <div key={category.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <span className="text-white text-sm">{category.name}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-white text-sm">{category.subscription_count} subs</span>
+                        <span className="text-gray-400 text-xs ml-2">${category.total_cost.toFixed(2)}/mo</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

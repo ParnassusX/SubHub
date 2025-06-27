@@ -27,6 +27,24 @@ export const db = {
     },
   },
 
+  // User Preferences
+  userPreferences: {
+    get: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user?.id) throw new Error('User not authenticated');
+      return supabase.from('user_preferences').select('*').eq('user_id', user.user.id).single();
+    },
+    create: async (data: Database['public']['Tables']['user_preferences']['Insert']) =>
+      supabase.from('user_preferences').insert(data).select().single(),
+    update: async (data: Database['public']['Tables']['user_preferences']['Update']) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user?.id) throw new Error('User not authenticated');
+      return supabase.from('user_preferences').update(data).eq('user_id', user.user.id).select().single();
+    },
+    upsert: async (data: Database['public']['Tables']['user_preferences']['Insert']) =>
+      supabase.from('user_preferences').upsert(data).select().single(),
+  },
+
   // Subscriptions
   subscriptions: {
     getAll: () => supabase.from('subscriptions').select('*').order('created_at', { ascending: false }),
@@ -47,6 +65,8 @@ export const db = {
       supabase.from('categories').update(data).eq('id', id).select().single(),
     delete: (id: string) => supabase.from('categories').delete().eq('id', id),
   },
+
+
 
   // Notifications
   notifications: {

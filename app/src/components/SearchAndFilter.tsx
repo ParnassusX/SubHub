@@ -94,56 +94,59 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({ onFilteredResults }) 
   const hasActiveFilters = searchTerm || selectedCategory || selectedFrequency || costRange.min || costRange.max;
 
   return (
-    <div className="bg-[#20364b] rounded-xl border border-[#2e4e6b] p-4 mb-6">
-      <div className="flex flex-col lg:flex-row gap-4">
+    <div className="bg-[#20364b] rounded-xl border border-[#2e4e6b] p-4 mb-6 w-full max-w-full overflow-hidden">
+      <div className="flex flex-col lg:flex-row gap-4 w-full max-w-full">
         {/* Search */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <label className="block text-sm font-medium text-gray-300 mb-2">Search</label>
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by name, description, or category..."
-            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            className="w-full max-w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
           />
         </div>
 
-        {/* Category Filter */}
-        <div className="w-full lg:w-48">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-          >
-            <option value="">All Categories</option>
-            {categories.map(category => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
-        </div>
+        {/* Filter Controls - Responsive Layout */}
+        <div className="flex flex-col sm:flex-row gap-4 lg:gap-3 flex-shrink-0">
+          {/* Category Filter */}
+          <div className="w-full sm:w-auto sm:min-w-[140px] lg:min-w-[160px]">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All Categories</option>
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
 
-        {/* Frequency Filter */}
-        <div className="w-full lg:w-32">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Frequency</label>
-          <select
-            value={selectedFrequency}
-            onChange={(e) => setSelectedFrequency(e.target.value)}
-            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-          >
-            <option value="">All</option>
-            <option value="Monthly">Monthly</option>
-            <option value="Yearly">Yearly</option>
-          </select>
+          {/* Frequency Filter */}
+          <div className="w-full sm:w-auto sm:min-w-[100px] lg:min-w-[120px]">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Frequency</label>
+            <select
+              value={selectedFrequency}
+              onChange={(e) => setSelectedFrequency(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">All</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Yearly">Yearly</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Second Row */}
-      <div className="flex flex-col lg:flex-row gap-4 mt-4">
+      <div className="flex flex-col lg:flex-row gap-4 mt-4 w-full max-w-full">
         {/* Cost Range */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <label className="block text-sm font-medium text-gray-300 mb-2">Monthly Cost Range</label>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full max-w-full">
             <input
               type="number"
               value={costRange.min}
@@ -151,9 +154,9 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({ onFilteredResults }) 
               placeholder="Min"
               min="0"
               step="0.01"
-              className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="flex-1 min-w-0 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
             />
-            <span className="text-gray-400 self-center">to</span>
+            <span className="text-gray-400 self-center flex-shrink-0">to</span>
             <input
               type="number"
               value={costRange.max}
@@ -161,37 +164,40 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({ onFilteredResults }) 
               placeholder="Max"
               min="0"
               step="0.01"
-              className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="flex-1 min-w-0 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
             />
           </div>
         </div>
 
-        {/* Sort By */}
-        <div className="w-full lg:w-40">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Sort By</label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-          >
-            <option value="name">Name</option>
-            <option value="cost">Cost</option>
-            <option value="category">Category</option>
-            <option value="startDate">Start Date</option>
-          </select>
-        </div>
+        {/* Sort Controls - Responsive Layout */}
+        <div className="flex flex-col sm:flex-row gap-4 lg:gap-3 flex-shrink-0">
+          {/* Sort By */}
+          <div className="w-full sm:w-auto sm:min-w-[120px] lg:min-w-[140px]">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Sort By</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="name">Name</option>
+              <option value="cost">Cost</option>
+              <option value="category">Category</option>
+              <option value="startDate">Start Date</option>
+            </select>
+          </div>
 
-        {/* Sort Order */}
-        <div className="w-full lg:w-32">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Order</label>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-          >
-            <option value="asc">A-Z / Low-High</option>
-            <option value="desc">Z-A / High-Low</option>
-          </select>
+          {/* Sort Order */}
+          <div className="w-full sm:w-auto sm:min-w-[100px] lg:min-w-[120px]">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Order</label>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="asc">A-Z / Low-High</option>
+              <option value="desc">Z-A / High-Low</option>
+            </select>
+          </div>
         </div>
 
         {/* Clear Filters */}
