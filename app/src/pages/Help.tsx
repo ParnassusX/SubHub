@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Search, HelpCircle, Book, MessageCircle, Mail, ExternalLink, ChevronDown, ChevronRight, Star, Clock, Shield } from 'lucide-react'
+import { useState } from 'react'
+import { Search, HelpCircle, Book, MessageCircle, Mail, ExternalLink, ChevronDown, ChevronRight, Clock, Shield } from 'lucide-react'
 
 interface FAQItem {
   id: string

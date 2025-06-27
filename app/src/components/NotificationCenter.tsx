@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
-import { Bell, X, Check, AlertTriangle, Info, Calendar } from 'lucide-react';
+import { Bell } from 'lucide-react';
 
 interface Notification {
   id: string;

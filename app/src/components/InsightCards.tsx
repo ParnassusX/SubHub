@@ -9,9 +9,6 @@ import {
   Calendar,
   CreditCard,
   DollarSign,
-  AlertTriangle,
-  CheckCircle,
-  Info,
   ArrowRight,
   Lightbulb
 } from 'lucide-react';
@@ -22,12 +19,10 @@ interface SpendingInsightCardProps {
   onViewDetails?: () => void;
 }
 
-export const SpendingInsightCard: React.FC<SpendingInsightCardProps> = ({ 
-  insight, 
-  onViewDetails 
+export const SpendingInsightCard: React.FC<SpendingInsightCardProps> = ({
+  insight,
+  onViewDetails
 }) => {
-  const severityColors = getSeverityColors(insight.severity);
-  
   const getIcon = () => {
     switch (insight.type) {
       case 'spending_increase':

@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, Plus, Edit2, Trash2, Tag, Palette } from 'lucide-react'
 import { db } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useSubscriptions } from '../contexts/SubscriptionContext'
+import { Database } from '../types/supabase'
 
-interface Category {
-  id: string
-  name: string
-  color: string
-  user_id: string
-  created_at: string
-  updated_at: string | null
+type Category = Database['public']['Tables']['categories']['Row'] & {
+  subscription_count?: number
 }
 
 export default function Categories() {
   const { user } = useAuth()
+  const { subscriptions } = useSubscriptions()
   const [categories, setCategories] = useState<Category[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
@@ -40,6 +38,17 @@ export default function Categories() {
     }
   }, [user])
 
+  // Update category counts when subscriptions change
+  useEffect(() => {
+    if (categories.length > 0) {
+      const updatedCategories = categories.map((category) => {
+        const count = subscriptions.filter(sub => sub.category === category.name).length
+        return { ...category, subscription_count: count }
+      })
+      setCategories(updatedCategories)
+    }
+  }, [subscriptions])
+
   const fetchCategories = async () => {
     try {
       setLoading(true)
@@ -53,7 +62,13 @@ export default function Categories() {
         return
       }
 
-      setCategories(data)
+      // Add subscription counts for each category using context data
+      const categoriesWithCounts = data.map((category) => {
+        const count = subscriptions.filter(sub => sub.category === category.name).length
+        return { ...category, subscription_count: count }
+      })
+
+      setCategories(categoriesWithCounts)
     } catch (error) {
       console.error('Error fetching categories:', error)
       // Fallback to showing default categories
@@ -62,7 +77,8 @@ export default function Categories() {
         ...cat,
         user_id: user?.id || '',
         created_at: new Date().toISOString(),
-        updated_at: null
+        updated_at: null,
+        subscription_count: 0
       })))
     } finally {
       setLoading(false)
@@ -80,8 +96,15 @@ export default function Categories() {
       )
 
       const results = await Promise.all(promises)
-      const newCategories = results.map(result => result.data).filter(Boolean)
-      setCategories(newCategories)
+      const newCategories = results.map(result => result.data).filter((data): data is Category => data !== null)
+
+      // Add subscription counts to new categories
+      const categoriesWithCounts = newCategories.map(cat => ({
+        ...cat,
+        subscription_count: 0
+      }))
+
+      setCategories(categoriesWithCounts)
     } catch (error) {
       console.error('Error creating default categories:', error)
     }
@@ -99,7 +122,7 @@ export default function Categories() {
 
       if (error) throw error
       if (data) {
-        setCategories(prev => [...prev, data])
+        setCategories(prev => [...prev, { ...data, subscription_count: 0 }])
         setNewCategory({ name: '', color: '#3b82f6' })
         setShowAddForm(false)
       }
@@ -114,7 +137,11 @@ export default function Categories() {
 
       if (error) throw error
       if (data) {
-        setCategories(prev => prev.map(cat => cat.id === id ? data : cat))
+        setCategories(prev => prev.map(cat =>
+          cat.id === id
+            ? { ...data, subscription_count: cat.subscription_count }
+            : cat
+        ))
         setEditingCategory(null)
       }
     } catch (error) {
@@ -303,7 +330,7 @@ export default function Categories() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <Tag className="w-4 h-4" />
-                    <span>0 subscriptions</span>
+                    <span>{category.subscription_count || 0} subscription{(category.subscription_count || 0) !== 1 ? 's' : ''}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Palette className="w-4 h-4 text-gray-400" />
