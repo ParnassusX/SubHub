@@ -355,6 +355,7 @@ const Categories: React.FC = () => {
             <p className="text-gray-400 text-sm">Add New Category</p>
           </div>
         </div>
+          </div>
 
         {/* Category Analytics */}
         <div className="mt-6 pt-6 border-t border-[#2e4e6b]">
