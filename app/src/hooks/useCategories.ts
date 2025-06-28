@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { db } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Database } from '../types/supabase';
-import { defaultCategories } from '../utils/categoryColors';
+import { defaultCategories, updateDynamicCategories } from '../utils/categoryColors';
 
 type Category = Database['public']['Tables']['categories']['Row'] & {
   subscription_count?: number;
@@ -36,7 +36,11 @@ export const useCategories = () => {
         return;
       }
 
-      setCategories(data || []);
+      const categoriesData = data || [];
+      setCategories(categoriesData);
+
+      // Update dynamic color system
+      updateDynamicCategories(categoriesData.map(cat => ({ name: cat.name, color: cat.color })));
     } catch (err) {
       console.error('Error fetching categories:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch categories');
@@ -73,8 +77,11 @@ export const useCategories = () => {
         .map(result => result.data)
         .filter((data): data is Category => data !== null)
         .map(cat => ({ ...cat, subscription_count: 0 }));
-      
+
       setCategories(newCategories);
+
+      // Update dynamic color system
+      updateDynamicCategories(newCategories.map(cat => ({ name: cat.name, color: cat.color })));
     } catch (error) {
       console.error('Error creating default categories:', error);
       setError('Failed to create default categories');
@@ -113,11 +120,16 @@ export const useCategories = () => {
       if (error) throw error;
       
       if (data) {
-        setCategories(prev => prev.map(cat => 
-          cat.id === id 
-            ? { ...data, subscription_count: cat.subscription_count } 
+        const updatedCategories = categories.map(cat =>
+          cat.id === id
+            ? { ...data, subscription_count: cat.subscription_count }
             : cat
-        ));
+        );
+        setCategories(updatedCategories);
+
+        // Update dynamic color system
+        updateDynamicCategories(updatedCategories.map(cat => ({ name: cat.name, color: cat.color })));
+
         return data;
       }
     } catch (error) {

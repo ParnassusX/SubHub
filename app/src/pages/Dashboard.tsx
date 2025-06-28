@@ -10,6 +10,7 @@ import {
   RenewalInsight,
   CategoryInsight
 } from '../utils/insightCalculations';
+import { getCategoryHex } from '../utils/categoryColors';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -432,7 +433,10 @@ const Dashboard: React.FC = () => {
                     {subscriptions.slice(0, 4).map((subscription) => (
                       <div key={subscription.id} className="flex items-center justify-between p-3 bg-[#0f1a24] rounded-lg border border-[#2e4e6b] hover:border-[#3e5e7b] transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center"
+                            style={{ backgroundColor: getCategoryHex(subscription.category) }}
+                          >
                             <span className="text-white text-xs font-bold">
                               {subscription.name.charAt(0).toUpperCase()}
                             </span>

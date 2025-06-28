@@ -108,9 +108,30 @@ export const defaultCategories = [
   { name: 'Other', color: '#6b7280' }
 ];
 
+// Dynamic category storage for real-time updates
+let dynamicCategoryMap: Record<string, CategoryColor> = { ...categoryColorMap };
+
+// Function to update dynamic categories from database
+export const updateDynamicCategories = (categories: Array<{ name: string; color: string }>) => {
+  const newMap = { ...categoryColorMap };
+
+  categories.forEach(cat => {
+    newMap[cat.name] = {
+      name: cat.name,
+      hex: cat.color,
+      css: `bg-[${cat.color}]`,
+      rgb: hexToRgb(cat.color),
+      tailwindBg: `bg-[${cat.color}]`,
+      tailwindText: `text-[${cat.color}]`
+    };
+  });
+
+  dynamicCategoryMap = newMap;
+};
+
 // Utility functions
 export const getCategoryColor = (categoryName: string): CategoryColor => {
-  return categoryColorMap[categoryName] || categoryColorMap['Other'];
+  return dynamicCategoryMap[categoryName] || dynamicCategoryMap['Other'];
 };
 
 export const getCategoryHex = (categoryName: string): string => {

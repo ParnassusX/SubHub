@@ -175,7 +175,7 @@ const NotificationCenter: React.FC = () => {
 
       {/* Notification Dropdown - Mobile Responsive */}
       {isOpen && (
-        <div className="fixed sm:absolute right-2 sm:right-0 top-16 sm:top-full mt-2 w-[calc(100vw-1rem)] sm:w-80 lg:w-96 glass-card shadow-floating z-50 max-h-[80vh] sm:max-h-96 overflow-hidden animate-slide-down">
+        <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 lg:w-96 glass-card shadow-floating z-50 max-h-96 overflow-hidden animate-slide-down">
           <div className="p-4 border-b border-[#2e4e6b] flex items-center justify-between">
             <h3 className="text-white font-medium">Notifications</h3>
             {unreadCount > 0 && (

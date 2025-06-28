@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { db } from '../lib/supabase';
+import { getCategoryHex } from '../utils/categoryColors';
 
 interface AdminStats {
   totalUsers: number;
@@ -57,18 +58,17 @@ const AdminDashboard: React.FC = () => {
         // Get real category breakdown data
         const { data: categoryBreakdown, error: categoryError } = await db.dashboard.getCategoryBreakdown();
         if (!categoryError && categoryBreakdown) {
-          const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1'];
-          setCategoryData(categoryBreakdown.map((item: any, index: number) => ({
+          setCategoryData(categoryBreakdown.map((item: any) => ({
             name: item.category || 'Other',
             value: Number(item.count) || 0,
-            color: colors[index % colors.length]
+            color: getCategoryHex(item.category || 'Other')
           })));
         } else {
           // Fallback to sample data if real data unavailable
           setCategoryData([
-            { name: 'Entertainment', value: 2, color: '#8884d8' },
-            { name: 'Productivity', value: 1, color: '#82ca9d' },
-            { name: 'Development', value: 1, color: '#ffc658' },
+            { name: 'Entertainment', value: 2, color: getCategoryHex('Entertainment') },
+            { name: 'Productivity', value: 1, color: getCategoryHex('Productivity') },
+            { name: 'Development', value: 1, color: getCategoryHex('Other') },
           ]);
         }
 
