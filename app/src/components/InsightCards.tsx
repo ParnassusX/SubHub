@@ -1,6 +1,6 @@
 import React from 'react';
 import { SpendingInsight, RenewalInsight, CategoryInsight } from '../utils/insightCalculations';
-import { getSeverityColors, CategoryBadge } from '../utils/categoryColors';
+import { getCategoryHex } from '../utils/categoryColors';
 import {
   TrendingUp,
   TrendingDown,
@@ -91,6 +91,14 @@ export const RenewalInsightCard: React.FC<RenewalInsightCardProps> = ({
     return 'low';
   };
 
+  const getSeverityColors = (level: string) => {
+    switch (level) {
+      case 'high': return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500' };
+      case 'medium': return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500' };
+      default: return { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500' };
+    }
+  };
+
   const severityColors = getSeverityColors(getSeverityLevel());
 
   return (
@@ -175,7 +183,11 @@ export const CategoryInsightCard: React.FC<CategoryInsightCardProps> = ({
         {insight.breakdown.slice(0, 3).map((category) => (
           <div key={category.category} className="flex items-center justify-between p-2 rounded-lg bg-[#0f1a24]">
             <div className="flex items-center space-x-2">
-              <CategoryBadge category={category.category} />
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: getCategoryHex(category.category) }}
+              />
+              <span className="text-gray-300 text-sm">{category.category}</span>
             </div>
             <div className="text-right">
               <p className="text-white font-medium">${category.amount.toFixed(2)}</p>

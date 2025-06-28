@@ -27,60 +27,150 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Session refresh interval
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        handleUserSession(session.user)
-      } else {
-        setIsLoading(false)
+    const refreshSession = async () => {
+      try {
+        const { error } = await supabase.auth.refreshSession();
+        if (error) {
+          console.warn('Session refresh failed:', error);
+        }
+      } catch (error) {
+        console.warn('Session refresh error:', error);
       }
-    })
+    };
+
+    // Refresh session every 30 minutes
+    const interval = setInterval(refreshSession, 30 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Get initial session with timeout
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Session timeout')), 10000)
+        );
+
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+
+        if (!mounted) return;
+
+        if (session?.user) {
+          await handleUserSession(session.user);
+        } else {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        await handleUserSession(session.user)
-      } else {
-        setUser(null)
-        setProfile(null)
-        setIsLoading(false)
-      }
-    })
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
 
-    return () => subscription.unsubscribe()
+      console.log('Auth state change:', event, !!session?.user);
+
+      if (session?.user) {
+        await handleUserSession(session.user);
+      } else {
+        setUser(null);
+        setProfile(null);
+        setIsLoading(false);
+      }
+    });
+
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [])
 
   const handleUserSession = async (supabaseUser: SupabaseUser) => {
     try {
-      // Get user profile
-      const { data: profileData, error } = await supabase
+      // Set basic user data immediately to prevent loading state
+      const basicUserData: User = {
+        id: supabaseUser.id,
+        email: supabaseUser.email!,
+        name: supabaseUser.user_metadata?.name || undefined,
+        role: 'user' // Default role
+      };
+
+      setUser(basicUserData);
+      setIsLoading(false);
+
+      // Try to get profile data with timeout
+      const profilePromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', supabaseUser.id)
-        .single()
+        .single();
 
-      if (error) {
-        console.error('Error fetching profile:', error)
-        setIsLoading(false)
-        return
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+      );
+
+      try {
+        const { data: profileData, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
+
+        if (!error && profileData) {
+          const enhancedUserData: User = {
+            ...basicUserData,
+            name: profileData.name || basicUserData.name,
+            role: (profileData.role as 'user' | 'admin') || 'user'
+          };
+
+          setUser(enhancedUserData);
+          setProfile(profileData);
+        } else if (error) {
+          console.warn('Profile fetch failed, using basic user data:', error);
+          // Create basic profile if it doesn't exist
+          if (error.code === 'PGRST116') {
+            await createBasicProfile(supabaseUser);
+          }
+        }
+      } catch (profileError) {
+        console.warn('Profile fetch timeout or error, continuing with basic user data:', profileError);
       }
-
-      const userData: User = {
-        id: supabaseUser.id,
-        email: supabaseUser.email!,
-        name: profileData?.name || undefined,
-        role: (profileData?.role as 'user' | 'admin') || 'user'
-      }
-
-      setUser(userData)
-      setProfile(profileData)
     } catch (error) {
-      console.error('Error in handleUserSession:', error)
-    } finally {
-      setIsLoading(false)
+      console.error('Critical error in handleUserSession:', error);
+      setIsLoading(false);
+    }
+  };
+
+  const createBasicProfile = async (supabaseUser: SupabaseUser) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          id: supabaseUser.id,
+          email: supabaseUser.email!,
+          name: supabaseUser.user_metadata?.name || null,
+          role: 'user',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.warn('Failed to create basic profile:', error);
     }
   }
 

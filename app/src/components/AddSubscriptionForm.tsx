@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
+import { useCategories } from '../hooks/useCategories';
+import { ComponentLoader } from './UnifiedLoading';
 
 const AddSubscriptionForm: React.FC = () => {
   const { addSubscription, isLoading } = useSubscriptions();
+  const { categories, loading: categoriesLoading } = useCategories();
   const [name, setName] = useState('');
   const [cost, setCost] = useState('');
   const [frequency, setFrequency] = useState<'Monthly' | 'Yearly'>('Monthly');
-  const [category, setCategory] = useState('Entertainment');
+  const [category, setCategory] = useState('');
   const [startDate, setStartDate] = useState('');
   const [description, setDescription] = useState('');
   const [website, setWebsite] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Set default category when categories load
+  React.useEffect(() => {
+    if (categories.length > 0 && !category) {
+      setCategory(categories[0].name);
+    }
+  }, [categories, category]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,22 +109,26 @@ const AddSubscriptionForm: React.FC = () => {
         <label htmlFor="category" className="block text-sm font-medium text-gray-300">
           Category
         </label>
-        <select
-          id="category"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-        >
-          <option value="Entertainment">Entertainment</option>
-          <option value="Productivity">Productivity</option>
-          <option value="Health & Fitness">Health & Fitness</option>
-          <option value="News & Media">News & Media</option>
-          <option value="Cloud Storage">Cloud Storage</option>
-          <option value="Software">Software</option>
-          <option value="Music">Music</option>
-          <option value="Gaming">Gaming</option>
-          <option value="Other">Other</option>
-        </select>
+        {categoriesLoading ? (
+          <ComponentLoader message="Loading categories..." />
+        ) : (
+          <select
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          >
+            {categories.length === 0 ? (
+              <option disabled>No categories available</option>
+            ) : (
+              categories.map(cat => (
+                <option key={cat.id} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))
+            )}
+          </select>
+        )}
       </div>
 
       <div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Subscription, useSubscriptions } from '../contexts/SubscriptionContext';
+import { getCategoryBadgeProps } from '../utils/categoryColors';
 
 interface SubscriptionListItemProps {
   subscription: Subscription;
@@ -41,28 +42,13 @@ const SubscriptionListItem: React.FC<SubscriptionListItemProps> = ({ subscriptio
     }
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors: { [key: string]: string } = {
-      'Entertainment': 'bg-purple-600',
-      'Productivity': 'bg-blue-600',
-      'Health & Fitness': 'bg-green-600',
-      'News & Media': 'bg-yellow-600',
-      'Cloud Storage': 'bg-red-600',
-      'Software': 'bg-indigo-600',
-      'Music': 'bg-pink-600',
-      'Gaming': 'bg-orange-600',
-      'Other': 'bg-gray-600',
-    };
-    return colors[category] || 'bg-gray-600';
-  };
-
   return (
     <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600 hover:bg-gray-650 transition-colors">
       <div className="flex-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h3 className="text-lg font-medium text-white">{subscription.name}</h3>
-            <span className={`px-2 py-1 text-xs text-white rounded-full ${getCategoryColor(subscription.category)}`}>
+            <span {...getCategoryBadgeProps(subscription.category)}>
               {subscription.category}
             </span>
           </div>

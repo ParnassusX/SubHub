@@ -21,27 +21,16 @@ import {
   Subscriptions,
   Reports,
   Settings,
-  DashboardLoader,
-  SubscriptionsLoader,
-  ReportsLoader,
-  SettingsLoader,
 } from './components/LazyComponents'
+
+// Unified loading system
+import { PageLoader, ComponentLoader } from './components/UnifiedLoading'
 
 // Lazy load admin and other pages
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'))
 const Categories = React.lazy(() => import('./pages/Categories'))
 const Help = React.lazy(() => import('./pages/Help'))
 const Renewals = React.lazy(() => import('./pages/Renewals'))
-
-// Performance optimized loading component
-const PageLoader = ({ message = 'Loading...' }: { message?: string }) => (
-  <div className="flex items-center justify-center h-screen bg-[#0f1a24]">
-    <div className="text-center">
-      <div className="animate-spin text-4xl mb-4">⚙️</div>
-      <p className="text-white text-lg">{message}</p>
-    </div>
-  </div>
-)
 
 function App() {
   // Initialize performance optimizations and error handling
@@ -81,7 +70,7 @@ function App() {
                                 path="/"
                                 element={
                                   <PageErrorBoundary>
-                                    <Suspense fallback={<DashboardLoader />}>
+                                    <Suspense fallback={<ComponentLoader message="Loading Dashboard..." />}>
                                       <Dashboard />
                                     </Suspense>
                                   </PageErrorBoundary>
@@ -92,7 +81,7 @@ function App() {
                                 element={
                                   <AdminRoute>
                                     <PageErrorBoundary>
-                                      <Suspense fallback={<PageLoader message="Loading Admin Dashboard..." />}>
+                                      <Suspense fallback={<ComponentLoader message="Loading Admin Dashboard..." />}>
                                         <AdminDashboard />
                                       </Suspense>
                                     </PageErrorBoundary>
@@ -103,7 +92,7 @@ function App() {
                                 path="/subscriptions"
                                 element={
                                   <PageErrorBoundary>
-                                    <Suspense fallback={<SubscriptionsLoader />}>
+                                    <Suspense fallback={<ComponentLoader message="Loading Subscriptions..." />}>
                                       <Subscriptions />
                                     </Suspense>
                                   </PageErrorBoundary>
@@ -113,7 +102,7 @@ function App() {
                                 path="/reports"
                                 element={
                                   <PageErrorBoundary>
-                                    <Suspense fallback={<ReportsLoader />}>
+                                    <Suspense fallback={<ComponentLoader message="Loading Reports..." />}>
                                       <Reports />
                                     </Suspense>
                                   </PageErrorBoundary>
@@ -123,7 +112,7 @@ function App() {
                                 path="/categories"
                                 element={
                                   <PageErrorBoundary>
-                                    <Suspense fallback={<PageLoader message="Loading Categories..." />}>
+                                    <Suspense fallback={<ComponentLoader message="Loading Categories..." />}>
                                       <Categories />
                                     </Suspense>
                                   </PageErrorBoundary>
@@ -133,7 +122,7 @@ function App() {
                                 path="/settings"
                                 element={
                                   <PageErrorBoundary>
-                                    <Suspense fallback={<SettingsLoader />}>
+                                    <Suspense fallback={<ComponentLoader message="Loading Settings..." />}>
                                       <Settings />
                                     </Suspense>
                                   </PageErrorBoundary>
@@ -143,7 +132,7 @@ function App() {
                                 path="/help"
                                 element={
                                   <PageErrorBoundary>
-                                    <Suspense fallback={<PageLoader message="Loading Help..." />}>
+                                    <Suspense fallback={<ComponentLoader message="Loading Help..." />}>
                                       <Help />
                                     </Suspense>
                                   </PageErrorBoundary>
@@ -153,7 +142,7 @@ function App() {
                                 path="/renewals"
                                 element={
                                   <PageErrorBoundary>
-                                    <Suspense fallback={<PageLoader message="Loading Renewals..." />}>
+                                    <Suspense fallback={<ComponentLoader message="Loading Renewals..." />}>
                                       <Renewals />
                                     </Suspense>
                                   </PageErrorBoundary>

@@ -1,6 +1,6 @@
 import { Subscription } from '../contexts/SubscriptionContext';
 import { normalizeToMonthly } from './insightCalculations';
-import { getCategoryColor } from './categoryColors';
+import { getCategoryHex } from './categoryColors';
 
 // Analytics data types
 export interface MonthlyTrend {
@@ -110,7 +110,7 @@ export const generateCategoryBreakdown = (subscriptions: Subscription[]): Catego
       category,
       amount: data.amount,
       percentage: totalSpending > 0 ? (data.amount / totalSpending) * 100 : 0,
-      color: getCategoryColor(category),
+      color: getCategoryHex(category),
       subscriptionCount: data.count
     }))
     .sort((a, b) => b.amount - a.amount);

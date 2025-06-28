@@ -1,20 +1,22 @@
 import { useState, useEffect } from 'react'
 import { Search, Plus, Edit2, Trash2, Tag, Palette } from 'lucide-react'
-import { db } from '../lib/supabase'
-import { useAuth } from '../contexts/AuthContext'
 import { useSubscriptions } from '../contexts/SubscriptionContext'
-import { Database } from '../types/supabase'
-
-type Category = Database['public']['Tables']['categories']['Row'] & {
-  subscription_count?: number
-}
+import { getCategoryDotProps } from '../utils/categoryColors'
+import { useCategories } from '../hooks/useCategories'
+import { ComponentLoader } from '../components/UnifiedLoading'
 
 export default function Categories() {
-  const { user } = useAuth()
   const { subscriptions } = useSubscriptions()
-  const [categories, setCategories] = useState<Category[]>([])
+  const {
+    categories,
+    loading,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    updateSubscriptionCounts
+  } = useCategories()
+
   const [searchTerm, setSearchTerm] = useState('')
-  const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingCategory, setEditingCategory] = useState<string | null>(null)
   const [newCategory, setNewCategory] = useState({
@@ -22,128 +24,34 @@ export default function Categories() {
     color: '#3b82f6'
   })
 
-  // Default categories that every user gets
-  const defaultCategories = [
-    { name: 'Entertainment', color: '#ef4444' },
-    { name: 'Productivity', color: '#3b82f6' },
-    { name: 'Health & Fitness', color: '#10b981' },
-    { name: 'Education', color: '#f59e0b' },
-    { name: 'Business', color: '#8b5cf6' },
-    { name: 'Other', color: '#6b7280' }
-  ]
-
-  useEffect(() => {
-    if (user) {
-      fetchCategories()
-    }
-  }, [user])
-
   // Update category counts when subscriptions change
   useEffect(() => {
     if (categories.length > 0) {
-      const updatedCategories = categories.map((category) => {
-        const count = subscriptions.filter(sub => sub.category === category.name).length
-        return { ...category, subscription_count: count }
-      })
-      setCategories(updatedCategories)
+      updateSubscriptionCounts(subscriptions)
     }
-  }, [subscriptions])
+  }, [subscriptions, categories.length, updateSubscriptionCounts])
 
-  const fetchCategories = async () => {
-    try {
-      setLoading(true)
-      const { data, error } = await db.categories.getAll()
 
-      if (error) throw error
-
-      // If no categories exist, create default ones
-      if (!data || data.length === 0) {
-        await createDefaultCategories()
-        return
-      }
-
-      // Add subscription counts for each category using context data
-      const categoriesWithCounts = data.map((category) => {
-        const count = subscriptions.filter(sub => sub.category === category.name).length
-        return { ...category, subscription_count: count }
-      })
-
-      setCategories(categoriesWithCounts)
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-      // Fallback to showing default categories
-      setCategories(defaultCategories.map((cat, index) => ({
-        id: `default-${index}`,
-        ...cat,
-        user_id: user?.id || '',
-        created_at: new Date().toISOString(),
-        updated_at: null,
-        subscription_count: 0
-      })))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const createDefaultCategories = async () => {
-    try {
-      const promises = defaultCategories.map(cat =>
-        db.categories.create({
-          name: cat.name,
-          color: cat.color,
-          user_id: user?.id || ''
-        })
-      )
-
-      const results = await Promise.all(promises)
-      const newCategories = results.map(result => result.data).filter((data): data is Category => data !== null)
-
-      // Add subscription counts to new categories
-      const categoriesWithCounts = newCategories.map(cat => ({
-        ...cat,
-        subscription_count: 0
-      }))
-
-      setCategories(categoriesWithCounts)
-    } catch (error) {
-      console.error('Error creating default categories:', error)
-    }
-  }
 
   const handleAddCategory = async () => {
-    if (!newCategory.name.trim() || !user?.id) return
+    if (!newCategory.name.trim()) return
 
     try {
-      const { data, error } = await db.categories.create({
+      await createCategory({
         name: newCategory.name,
-        color: newCategory.color,
-        user_id: user.id
+        color: newCategory.color
       })
-
-      if (error) throw error
-      if (data) {
-        setCategories(prev => [...prev, { ...data, subscription_count: 0 }])
-        setNewCategory({ name: '', color: '#3b82f6' })
-        setShowAddForm(false)
-      }
+      setNewCategory({ name: '', color: '#3b82f6' })
+      setShowAddForm(false)
     } catch (error) {
       console.error('Error adding category:', error)
     }
   }
 
-  const handleUpdateCategory = async (id: string, updates: Partial<Category>) => {
+  const handleUpdateCategory = async (id: string, updates: { name?: string; color?: string }) => {
     try {
-      const { data, error } = await db.categories.update(id, updates)
-
-      if (error) throw error
-      if (data) {
-        setCategories(prev => prev.map(cat =>
-          cat.id === id
-            ? { ...data, subscription_count: cat.subscription_count }
-            : cat
-        ))
-        setEditingCategory(null)
-      }
+      await updateCategory(id, updates)
+      setEditingCategory(null)
     } catch (error) {
       console.error('Error updating category:', error)
     }
@@ -153,10 +61,7 @@ export default function Categories() {
     if (!confirm('Are you sure you want to delete this category?')) return
 
     try {
-      const { error } = await db.categories.delete(id)
-
-      if (error) throw error
-      setCategories(prev => prev.filter(cat => cat.id !== id))
+      await deleteCategory(id)
     } catch (error) {
       console.error('Error deleting category:', error)
     }
@@ -170,12 +75,7 @@ export default function Categories() {
     return (
       <div className="flex-1 bg-[#0f1a24] text-white">
         <div className="w-full max-w-full min-w-0">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-400">Loading categories...</p>
-            </div>
-          </div>
+          <ComponentLoader message="Loading categories..." />
         </div>
       </div>
     )
@@ -282,10 +182,7 @@ export default function Categories() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3 flex-1">
-                    <div
-                      className="w-4 h-4 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: category.color }}
-                    />
+                    <div {...getCategoryDotProps(category.name)} />
                     {editingCategory === category.id ? (
                       <input
                         type="text"
