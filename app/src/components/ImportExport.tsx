@@ -1,14 +1,22 @@
 import React, { useState } from 'react';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
+import { FileText, CheckCircle, AlertCircle } from 'lucide-react';
 
 const ImportExport: React.FC = () => {
   const { subscriptions, addSubscription } = useSubscriptions();
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState('');
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error' | 'info';
+    message: string;
+  } | null>(null);
 
   const exportToCSV = () => {
     if (subscriptions.length === 0) {
-      alert('No subscriptions to export');
+      setNotification({
+        type: 'info',
+        message: 'No subscriptions to export'
+      });
       return;
     }
 
@@ -39,7 +47,10 @@ const ImportExport: React.FC = () => {
 
   const exportToJSON = () => {
     if (subscriptions.length === 0) {
-      alert('No subscriptions to export');
+      setNotification({
+        type: 'info',
+        message: 'No subscriptions to export'
+      });
       return;
     }
 
@@ -150,7 +161,10 @@ const ImportExport: React.FC = () => {
         }
       }
 
-      alert(`Successfully imported ${successCount} out of ${importedData.length} subscriptions!`);
+      setNotification({
+        type: 'success',
+        message: `Successfully imported ${successCount} out of ${importedData.length} subscriptions!`
+      });
       
       // Reset file input
       event.target.value = '';
@@ -231,6 +245,33 @@ Netflix,15.99,Monthly,Entertainment,2024-01-15
 Adobe Creative,239.88,Yearly,Productivity,2024-03-01`}
         </pre>
       </div>
+
+      {/* Notification Modal */}
+      {notification && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#1a2332] border border-[#2e4e6b] rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              {notification.type === 'success' && <CheckCircle className="w-6 h-6 text-green-400" />}
+              {notification.type === 'error' && <AlertCircle className="w-6 h-6 text-red-400" />}
+              {notification.type === 'info' && <FileText className="w-6 h-6 text-blue-400" />}
+              <h3 className="text-white text-lg font-semibold">
+                {notification.type === 'success' && 'Success'}
+                {notification.type === 'error' && 'Error'}
+                {notification.type === 'info' && 'Information'}
+              </h3>
+            </div>
+            <p className="text-gray-300 mb-6">{notification.message}</p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setNotification(null)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

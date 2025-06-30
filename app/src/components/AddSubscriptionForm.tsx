@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
 import { useCategories } from '../hooks/useCategories';
+import { AlertCircle, X } from 'lucide-react';
 import { ComponentLoader } from './UnifiedLoading';
 
 const AddSubscriptionForm: React.FC = () => {
@@ -14,6 +15,7 @@ const AddSubscriptionForm: React.FC = () => {
   const [description, setDescription] = useState('');
   const [website, setWebsite] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Set default category when categories load
   React.useEffect(() => {
@@ -25,7 +27,7 @@ const AddSubscriptionForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !cost || !startDate || !category) {
-      alert('Please fill in all required fields.');
+      setError('Please fill in all required fields.');
       return;
     }
 
@@ -50,7 +52,7 @@ const AddSubscriptionForm: React.FC = () => {
       setDescription('');
       setWebsite('');
     } catch (error) {
-      alert('Failed to add subscription. Please try again.');
+      setError('Failed to add subscription. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -59,7 +61,22 @@ const AddSubscriptionForm: React.FC = () => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-gray-800 shadow-lg rounded-lg border border-gray-700">
       <h2 className="text-xl font-semibold text-white mb-4">Add New Subscription</h2>
-      
+
+      {/* Error Display */}
+      {error && (
+        <div className="flex items-center gap-3 p-4 bg-red-900/20 border border-red-600 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+          <p className="text-red-300 text-sm">{error}</p>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="ml-auto text-red-400 hover:text-red-300"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <div>
         <label htmlFor="subscriptionName" className="block text-sm font-medium text-gray-300">
           Subscription Name

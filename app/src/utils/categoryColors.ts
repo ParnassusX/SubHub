@@ -170,8 +170,11 @@ export const hexToRgb = (hex: string): string => {
 export const getCategoryBadgeProps = (categoryName: string) => {
   const color = getCategoryColor(categoryName);
   return {
-    style: { backgroundColor: color.hex },
-    className: `px-2 py-1 text-xs text-white rounded-full ${color.tailwindBg}`,
+    style: {
+      backgroundColor: color.hex,
+      color: getCategoryTextColor(categoryName)
+    },
+    className: `px-2 py-1 text-xs rounded-full`,
     'data-category': categoryName
   };
 };

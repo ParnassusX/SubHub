@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Subscription, useSubscriptions } from '../contexts/SubscriptionContext';
 import { getCategoryBadgeProps } from '../utils/categoryColors';
 import { useCurrency } from '../hooks/useCurrency';
+import { AlertCircle } from 'lucide-react';
 
 interface SubscriptionListItemProps {
   subscription: Subscription;
@@ -10,14 +11,15 @@ interface SubscriptionListItemProps {
 const SubscriptionListItem: React.FC<SubscriptionListItemProps> = ({ subscription }) => {
   const { deleteSubscription } = useSubscriptions();
   const { formatPrice } = useCurrency();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleDelete = async () => {
-    if (window.confirm(`Are you sure you want to delete ${subscription.name}?`)) {
-      try {
-        await deleteSubscription(subscription.id);
-      } catch (error) {
-        alert('Failed to delete subscription. Please try again.');
-      }
+    try {
+      await deleteSubscription(subscription.id);
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      setError('Failed to delete subscription. Please try again.');
     }
   };
 
@@ -87,12 +89,59 @@ const SubscriptionListItem: React.FC<SubscriptionListItemProps> = ({ subscriptio
 
       <div className="ml-4">
         <button
-          onClick={handleDelete}
+          onClick={() => setShowDeleteConfirm(true)}
           className="px-3 py-1 text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded transition-colors"
         >
           Delete
         </button>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#1a2332] border border-[#2e4e6b] rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-white text-lg font-semibold mb-4">Delete Subscription</h3>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to delete <strong>{subscription.name}</strong>? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Modal */}
+      {error && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#1a2332] border border-[#2e4e6b] rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertCircle className="w-6 h-6 text-red-400" />
+              <h3 className="text-white text-lg font-semibold">Error</h3>
+            </div>
+            <p className="text-gray-300 mb-6">{error}</p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setError(null)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

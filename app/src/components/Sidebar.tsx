@@ -64,7 +64,9 @@ const Sidebar: React.FC = () => {
     <div className="w-full lg:w-80 bg-background-primary p-6 flex flex-col h-full justify-between border-r border-glass-border overflow-y-auto">
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-heading-2 font-bold text-white">SubscriptionHub</h1>
+          <Link to="/" className="text-heading-2 font-bold text-white hover:text-blue-400 transition-colors cursor-pointer">
+            SubHub
+          </Link>
           <NotificationCenter />
         </div>
         <div className="flex flex-col gap-2">

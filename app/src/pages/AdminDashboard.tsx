@@ -160,10 +160,11 @@ const AdminDashboard: React.FC = () => {
               Export Data
             </button>
             <button
-              onClick={() => alert('Notification system ready! Feature can be implemented based on specific requirements.')}
-              className="bg-green-600 hover:bg-green-700 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white text-sm font-medium transition-colors"
+              onClick={() => {/* Notification system - Coming Soon */}}
+              className="bg-gray-600 hover:bg-gray-700 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white text-sm font-medium transition-colors cursor-not-allowed opacity-50"
+              disabled
             >
-              Send Notifications
+              Send Notifications (Coming Soon)
             </button>
           </div>
         </div>

@@ -19,6 +19,7 @@ export default function Categories() {
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingCategory, setEditingCategory] = useState<string | null>(null)
+  const [deletingCategory, setDeletingCategory] = useState<string | null>(null)
   const [newCategory, setNewCategory] = useState({
     name: '',
     color: '#3b82f6'
@@ -58,10 +59,9 @@ export default function Categories() {
   }
 
   const handleDeleteCategory = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this category?')) return
-
     try {
       await deleteCategory(id)
+      setDeletingCategory(null)
     } catch (error) {
       console.error('Error deleting category:', error)
     }
@@ -216,7 +216,7 @@ export default function Categories() {
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDeleteCategory(category.id)}
+                      onClick={() => setDeletingCategory(category.id)}
                       className="p-1 text-gray-400 hover:text-red-400 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -263,6 +263,32 @@ export default function Categories() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deletingCategory && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#1a2332] border border-[#2e4e6b] rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-white text-lg font-semibold mb-4">Delete Category</h3>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to delete this category? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeletingCategory(null)}
+                className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteCategory(deletingCategory)}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
