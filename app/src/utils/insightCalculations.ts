@@ -111,17 +111,17 @@ export const calculateSpendingInsights = (subscriptions: Subscription[]): Spendi
   let severity: 'low' | 'medium' | 'high';
   
   if (Math.abs(percentage) < 5) {
-    message = `Your spending is stable at $${currentMonthSpending.toFixed(2)} this month`;
+    message = `Your spending is stable at ${currentMonthSpending.toFixed(2)} this month`;
     severity = 'low';
   } else if (percentage > 0) {
-    message = `You're spending ${percentage.toFixed(1)}% more this month ($${difference.toFixed(2)} increase)`;
+    message = `You're spending ${percentage.toFixed(1)}% more this month (${difference.toFixed(2)} increase)`;
     if (primaryCategory) {
       message += ` - mostly on ${primaryCategory.name} subscriptions`;
     }
     severity = percentage > 20 ? 'high' : 'medium';
     recommendation = percentage > 15 ? 'Consider reviewing your recent subscriptions' : undefined;
   } else {
-    message = `You're spending ${Math.abs(percentage).toFixed(1)}% less this month ($${Math.abs(difference).toFixed(2)} savings)`;
+    message = `You're spending ${Math.abs(percentage).toFixed(1)}% less this month (${Math.abs(difference).toFixed(2)} savings)`;
     if (primaryCategory) {
       message += ` - mainly from ${primaryCategory.name} changes`;
     }

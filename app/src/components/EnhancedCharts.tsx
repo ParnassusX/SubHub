@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 import { ChartErrorBoundary, ChartNoData } from './ChartErrorBoundary';
 import { MonthlyTrend, CategoryBreakdown, RenewalForecast } from '../utils/analyticsEngine';
+import { useCurrency } from '../hooks/useCurrency';
 
 // Enhanced Spending Trends Chart
 interface SpendingTrendsChartProps {
@@ -25,10 +26,11 @@ interface SpendingTrendsChartProps {
   title?: string;
 }
 
-export const SpendingTrendsChart: React.FC<SpendingTrendsChartProps> = ({ 
-  data, 
-  title = "Monthly Spending Trends" 
+export const SpendingTrendsChart: React.FC<SpendingTrendsChartProps> = ({
+  data,
+  title = "Monthly Spending Trends"
 }) => {
+  const { formatPrice } = useCurrency();
   if (!data || data.length === 0) {
     return <ChartNoData title="No Spending Data" message="Add subscriptions to see spending trends over time." />;
   }
@@ -54,10 +56,10 @@ export const SpendingTrendsChart: React.FC<SpendingTrendsChartProps> = ({
             <YAxis 
               stroke="#9ca3af" 
               fontSize={12}
-              tickFormatter={(value) => `$${value.toFixed(0)}`}
+              tickFormatter={(value) => formatPrice(value).replace(/\.\d+$/, '')}
             />
             <Tooltip 
-              formatter={(value: number) => [`$${value.toFixed(2)}`, 'Spending']}
+              formatter={(value: number) => [formatPrice(value), 'Spending']}
               labelFormatter={(label) => `Month: ${label}`}
               contentStyle={{ 
                 backgroundColor: '#1f2937', 
@@ -86,10 +88,11 @@ interface CategoryBreakdownChartProps {
   title?: string;
 }
 
-export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({ 
-  data, 
-  title = "Spending by Category" 
+export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
+  data,
+  title = "Spending by Category"
 }) => {
+  const { formatPrice } = useCurrency();
   if (!data || data.length === 0) {
     return <ChartNoData title="No Category Data" message="Add subscriptions to see category breakdown." />;
   }
@@ -122,7 +125,7 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
               ))}
             </Pie>
             <Tooltip 
-              formatter={(value: number) => [`$${value.toFixed(2)}`, 'Monthly Amount']}
+              formatter={(value: number) => [formatPrice(value), 'Monthly Amount']}
               contentStyle={{ 
                 backgroundColor: '#1f2937', 
                 border: '1px solid #374151',
@@ -144,10 +147,11 @@ interface RenewalForecastChartProps {
   title?: string;
 }
 
-export const RenewalForecastChart: React.FC<RenewalForecastChartProps> = ({ 
-  data, 
-  title = "Upcoming Renewals" 
+export const RenewalForecastChart: React.FC<RenewalForecastChartProps> = ({
+  data,
+  title = "Upcoming Renewals"
 }) => {
+  const { formatPrice } = useCurrency();
   if (!data || data.length === 0) {
     return <ChartNoData title="No Renewal Data" message="Add subscriptions to see renewal forecasts." />;
   }
@@ -167,11 +171,11 @@ export const RenewalForecastChart: React.FC<RenewalForecastChartProps> = ({
             <YAxis 
               stroke="#9ca3af" 
               fontSize={12}
-              tickFormatter={(value) => `$${value.toFixed(0)}`}
+              tickFormatter={(value) => formatPrice(value).replace(/\.\d+$/, '')}
             />
             <Tooltip 
               formatter={(value: number, name: string) => [
-                name === 'amount' ? `$${value.toFixed(2)}` : value,
+                name === 'amount' ? formatPrice(value) : value,
                 name === 'amount' ? 'Renewal Amount' : 'Renewals Count'
               ]}
               labelFormatter={(label) => `Month: ${label}`}

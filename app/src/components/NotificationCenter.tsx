@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
 import { Bell } from 'lucide-react';
 
@@ -19,6 +19,7 @@ const NotificationCenter: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Generate notifications based on subscriptions
   useEffect(() => {
@@ -82,6 +83,23 @@ const NotificationCenter: React.FC = () => {
 
     generateNotifications();
   }, [subscriptions]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   const markAsRead = (notificationId: string) => {
     setNotifications(prev => 
@@ -159,7 +177,7 @@ const NotificationCenter: React.FC = () => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       {/* Notification Bell */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -175,7 +193,7 @@ const NotificationCenter: React.FC = () => {
 
       {/* Notification Dropdown - Mobile Responsive */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 lg:w-96 glass-card shadow-floating z-50 max-h-96 overflow-hidden animate-slide-down">
+        <div className="fixed sm:absolute right-2 sm:right-0 top-16 sm:top-full mt-2 w-[calc(100vw-1rem)] sm:w-80 lg:w-96 max-w-sm glass-card shadow-floating z-50 max-h-[80vh] sm:max-h-96 overflow-hidden animate-slide-down">
           <div className="p-4 border-b border-[#2e4e6b] flex items-center justify-between">
             <h3 className="text-white font-medium">Notifications</h3>
             {unreadCount > 0 && (
@@ -188,7 +206,7 @@ const NotificationCenter: React.FC = () => {
             )}
           </div>
           
-          <div className="max-h-80 overflow-y-auto">
+          <div className="max-h-[60vh] sm:max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-6 text-center">
                 <p className="text-gray-400">No notifications</p>

@@ -3,6 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { SettingsService } from '../services/settingsService';
 import { Database } from '../types/supabase';
 import ImportExport from '../components/ImportExport';
+import { getUserLanguage, setUserLanguage, SupportedLanguage } from '../utils/localization';
+import { useTranslation } from '../hooks/useTranslation';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserPreferences = Database['public']['Tables']['user_preferences']['Row'];
@@ -23,17 +25,18 @@ const CURRENCY_OPTIONS = [
 
 const LANGUAGE_OPTIONS = [
   { value: 'en', label: 'English' },
-  { value: 'es', label: 'Español' },
-  { value: 'fr', label: 'Français' },
+  { value: 'it', label: 'Italiano' },
 ];
 
 const Settings: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'privacy'>('profile');
   const [settings, setSettings] = useState<SettingsState>({
     profile: null,
     preferences: null
   });
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(getUserLanguage());
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -121,6 +124,17 @@ const Settings: React.FC = () => {
   // Update setting helpers
   const updateProfileSetting = (key: keyof Profile, value: any) => {
     if (!settings.profile) return;
+
+    // Handle currency change specially for immediate UI updates
+    if (key === 'currency') {
+      // Trigger a storage event to notify currency hook
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'subhub-currency',
+        newValue: value,
+        oldValue: settings.profile.currency
+      }));
+    }
+
     setSettings(prev => ({
       ...prev,
       profile: { ...prev.profile!, [key]: value }
@@ -129,6 +143,21 @@ const Settings: React.FC = () => {
 
   const updatePreferenceSetting = (key: keyof UserPreferences, value: any) => {
     if (!settings.preferences) return;
+
+    // Handle language change specially
+    if (key === 'language') {
+      const newLanguage = value as SupportedLanguage;
+      setCurrentLanguage(newLanguage);
+      setUserLanguage(newLanguage);
+
+      // Trigger a storage event to notify other components
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'subhub-language',
+        newValue: newLanguage,
+        oldValue: currentLanguage
+      }));
+    }
+
     setSettings(prev => ({
       ...prev,
       preferences: { ...prev.preferences!, [key]: value }
@@ -204,10 +233,10 @@ const Settings: React.FC = () => {
           <div className="border-b border-gray-700">
             <nav className="-mb-px flex space-x-8">
               {[
-                { id: 'profile', label: 'Profile', icon: '👤' },
-                { id: 'notifications', label: 'Notifications', icon: '🔔' },
-                { id: 'appearance', label: 'Appearance', icon: '🎨' },
-                { id: 'privacy', label: 'Privacy', icon: '🔒' },
+                { id: 'profile', label: t('profile'), icon: '👤' },
+                { id: 'notifications', label: t('notifications'), icon: '🔔' },
+                { id: 'appearance', label: t('appearance'), icon: '🎨' },
+                { id: 'privacy', label: t('privacy'), icon: '🔒' },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -292,7 +321,7 @@ const Settings: React.FC = () => {
                   disabled={isSaving}
                   className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 px-4 py-2 rounded-lg text-white font-medium transition-colors"
                 >
-                  {isSaving ? 'Saving...' : 'Save Profile'}
+                  {isSaving ? t('loading') : t('save')}
                 </button>
               </div>
             </div>
@@ -411,7 +440,7 @@ const Settings: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Language</label>
                   <select
-                    value={settings.preferences?.language || 'en'}
+                    value={settings.preferences?.language || currentLanguage}
                     onChange={(e) => updatePreferenceSetting('language', e.target.value)}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
@@ -426,7 +455,7 @@ const Settings: React.FC = () => {
                   disabled={isSaving}
                   className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 px-4 py-2 rounded-lg text-white font-medium transition-colors"
                 >
-                  {isSaving ? 'Saving...' : 'Save Appearance'}
+                  {isSaving ? t('loading') : t('save')}
                 </button>
               </div>
             </div>

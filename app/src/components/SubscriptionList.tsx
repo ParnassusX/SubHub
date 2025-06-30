@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSubscriptions, Subscription } from '../contexts/SubscriptionContext';
 import SubscriptionListItem from './SubscriptionListItem';
+import { useCurrency } from '../hooks/useCurrency';
 
 interface SubscriptionListProps {
   filteredSubscriptions?: Subscription[];
@@ -8,6 +9,7 @@ interface SubscriptionListProps {
 
 const SubscriptionList: React.FC<SubscriptionListProps> = ({ filteredSubscriptions }) => {
   const { subscriptions } = useSubscriptions();
+  const { formatPrice } = useCurrency();
 
   // Use filtered subscriptions if provided, otherwise use all subscriptions
   const displaySubscriptions = filteredSubscriptions || subscriptions;
@@ -47,8 +49,8 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({ filteredSubscriptio
         <h2 className="text-xl font-semibold text-white">Your Subscriptions</h2>
         <div className="text-right">
           <p className="text-sm text-gray-400">Monthly Total</p>
-          <p className="text-lg font-semibold text-green-400">${totalMonthlyCost.toFixed(2)}</p>
-          <p className="text-xs text-gray-500">${totalYearlyCost.toFixed(2)}/year</p>
+          <p className="text-lg font-semibold text-green-400">{formatPrice(totalMonthlyCost)}</p>
+          <p className="text-xs text-gray-500">{formatPrice(totalYearlyCost)}/year</p>
         </div>
       </div>
       

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Subscription, useSubscriptions } from '../contexts/SubscriptionContext';
 import { getCategoryBadgeProps } from '../utils/categoryColors';
+import { useCurrency } from '../hooks/useCurrency';
 
 interface SubscriptionListItemProps {
   subscription: Subscription;
@@ -8,6 +9,7 @@ interface SubscriptionListItemProps {
 
 const SubscriptionListItem: React.FC<SubscriptionListItemProps> = ({ subscription }) => {
   const { deleteSubscription } = useSubscriptions();
+  const { formatPrice } = useCurrency();
 
   const handleDelete = async () => {
     if (window.confirm(`Are you sure you want to delete ${subscription.name}?`)) {
@@ -54,7 +56,7 @@ const SubscriptionListItem: React.FC<SubscriptionListItemProps> = ({ subscriptio
           </div>
           <div className="text-right">
             <p className="text-lg font-semibold text-green-400">
-              ${subscription.cost.toFixed(2)}
+              {formatPrice(subscription.cost)}
             </p>
             <p className="text-xs text-gray-400">{subscription.frequency}</p>
           </div>

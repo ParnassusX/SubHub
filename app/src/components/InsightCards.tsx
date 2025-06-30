@@ -1,6 +1,7 @@
 import React from 'react';
 import { SpendingInsight, RenewalInsight, CategoryInsight } from '../utils/insightCalculations';
 import { getCategoryHex } from '../utils/categoryColors';
+import { useCurrency } from '../hooks/useCurrency';
 import {
   TrendingUp,
   TrendingDown,
@@ -154,6 +155,7 @@ export const CategoryInsightCard: React.FC<CategoryInsightCardProps> = ({
   insight,
   onViewBreakdown
 }) => {
+  const { formatPrice } = useCurrency();
 
   return (
     <div className="elevated-card p-6 interactive">
@@ -190,7 +192,7 @@ export const CategoryInsightCard: React.FC<CategoryInsightCardProps> = ({
               <span className="text-gray-300 text-sm">{category.category}</span>
             </div>
             <div className="text-right">
-              <p className="text-white font-medium">${category.amount.toFixed(2)}</p>
+              <p className="text-white font-medium">{formatPrice(category.amount)}</p>
               <p className="text-gray-400 text-xs">{category.percentage.toFixed(1)}%</p>
             </div>
           </div>
@@ -260,6 +262,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   trend,
   trendValue
 }) => {
+  const { formatPrice } = useCurrency();
   const getTrendColor = () => {
     switch (trend) {
       case 'up':
@@ -312,7 +315,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
       </div>
 
       <p className="text-white text-heading-1 font-bold mb-3">
-        {typeof value === 'number' ? `$${value.toFixed(2)}` : value}
+        {typeof value === 'number' ? formatPrice(value) : value}
       </p>
 
       <div className="flex items-center justify-between">

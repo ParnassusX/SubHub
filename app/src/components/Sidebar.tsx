@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../hooks/useTranslation';
 import NotificationCenter from './NotificationCenter';
 import {
   Home,
@@ -18,11 +19,12 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const { isAdmin } = useAuth();
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
 
   const menuItems = [
     {
       path: '/',
-      name: 'Dashboard',
+      name: t('dashboard'),
       icon: Home
     },
     {
@@ -33,27 +35,27 @@ const Sidebar: React.FC = () => {
     },
     {
       path: '/subscriptions',
-      name: 'Subscriptions',
+      name: t('subscriptions'),
       icon: CreditCard
     },
     {
       path: '/reports',
-      name: 'Reports',
+      name: t('reports'),
       icon: BarChart3
     },
     {
       path: '/categories',
-      name: 'Categories',
+      name: t('categories'),
       icon: FolderOpen
     },
     {
       path: '/settings',
-      name: 'Settings',
+      name: t('settings'),
       icon: Settings
     },
     {
       path: '/help',
-      name: 'Help',
+      name: t('help'),
       icon: HelpCircle
     }
   ];

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
 import { calculateNextRenewal, calculateDaysUntil } from '../utils/insightCalculations';
+import { useCurrency } from '../hooks/useCurrency';
 import { useNavigate } from 'react-router-dom';
 
 interface RenewalItem {
@@ -16,6 +17,7 @@ interface RenewalItem {
 
 const Renewals: React.FC = () => {
   const { subscriptions } = useSubscriptions();
+  const { formatPrice } = useCurrency();
   const navigate = useNavigate();
   const [renewals, setRenewals] = useState<RenewalItem[]>([]);
   const [filter, setFilter] = useState<'all' | 'overdue' | 'urgent' | 'soon' | 'upcoming'>('all');
@@ -192,7 +194,7 @@ const Renewals: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-white text-xl font-bold">${renewal.cost.toFixed(2)}</p>
+                      <p className="text-white text-xl font-bold">{formatPrice(renewal.cost)}</p>
                       <p className="text-gray-400 text-sm">
                         {renewal.nextRenewalDate.toLocaleDateString()}
                       </p>
@@ -209,7 +211,7 @@ const Renewals: React.FC = () => {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-white">
-                    ${filteredRenewals.reduce((sum, r) => sum + r.cost, 0).toFixed(2)}
+                    {formatPrice(filteredRenewals.reduce((sum, r) => sum + r.cost, 0))}
                   </p>
                   <p className="text-gray-400 text-sm">Total Amount</p>
                 </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { SavingsOpportunity, TopSubscription } from '../utils/analyticsEngine';
+import { useCurrency } from '../hooks/useCurrency';
 
 // Savings Opportunities Component
 interface SavingsOpportunitiesProps {
@@ -7,6 +8,7 @@ interface SavingsOpportunitiesProps {
 }
 
 export const SavingsOpportunities: React.FC<SavingsOpportunitiesProps> = ({ opportunities }) => {
+  const { formatPrice } = useCurrency();
   if (!opportunities || opportunities.length === 0) {
     return (
       <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
@@ -46,7 +48,7 @@ export const SavingsOpportunities: React.FC<SavingsOpportunitiesProps> = ({ oppo
         <h3 className="text-lg font-semibold text-white">💡 Savings Opportunities</h3>
         <div className="text-right">
           <p className="text-sm text-gray-400">Potential Annual Savings</p>
-          <p className="text-xl font-bold text-green-400">${totalSavings.toFixed(2)}</p>
+          <p className="text-xl font-bold text-green-400">{formatPrice(totalSavings)}</p>
         </div>
       </div>
       
@@ -65,7 +67,7 @@ export const SavingsOpportunities: React.FC<SavingsOpportunitiesProps> = ({ oppo
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-bold text-green-400">${opportunity.potentialSavings.toFixed(2)}</p>
+                <p className="font-bold text-green-400">{formatPrice(opportunity.potentialSavings)}</p>
                 <p className="text-xs text-gray-400">per year</p>
               </div>
             </div>
@@ -103,10 +105,11 @@ interface TopSubscriptionsTableProps {
   title?: string;
 }
 
-export const TopSubscriptionsTable: React.FC<TopSubscriptionsTableProps> = ({ 
-  data, 
-  title = "Top Subscriptions by Cost" 
+export const TopSubscriptionsTable: React.FC<TopSubscriptionsTableProps> = ({
+  data,
+  title = "Top Subscriptions by Cost"
 }) => {
+  const { formatPrice } = useCurrency();
   if (!data || data.length === 0) {
     return (
       <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
@@ -152,10 +155,10 @@ export const TopSubscriptionsTable: React.FC<TopSubscriptionsTableProps> = ({
                   </span>
                 </td>
                 <td className="py-3 px-2 text-right text-white font-medium">
-                  ${subscription.monthlyAmount.toFixed(2)}
+                  {formatPrice(subscription.monthlyAmount)}
                 </td>
                 <td className="py-3 px-2 text-right text-gray-300">
-                  ${subscription.yearlyAmount.toFixed(2)}
+                  {formatPrice(subscription.yearlyAmount)}
                 </td>
                 <td className="py-3 px-2 text-right">
                   <div className="flex items-center justify-end space-x-2">
@@ -190,6 +193,7 @@ interface YearOverYearProps {
 }
 
 export const YearOverYearComparison: React.FC<YearOverYearProps> = ({ data }) => {
+  const { formatPrice } = useCurrency();
   const isIncrease = data.change > 0;
   const changeColor = isIncrease ? 'text-red-400' : 'text-green-400';
   const changeIcon = isIncrease ? '📈' : '📉';
@@ -201,12 +205,12 @@ export const YearOverYearComparison: React.FC<YearOverYearProps> = ({ data }) =>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="text-center">
           <p className="text-gray-400 text-sm mb-2">Previous Year</p>
-          <p className="text-2xl font-bold text-white">${data.previousYear.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-white">{formatPrice(data.previousYear)}</p>
         </div>
         
         <div className="text-center">
           <p className="text-gray-400 text-sm mb-2">Current Year</p>
-          <p className="text-2xl font-bold text-white">${data.currentYear.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-white">{formatPrice(data.currentYear)}</p>
         </div>
         
         <div className="text-center">
@@ -215,7 +219,7 @@ export const YearOverYearComparison: React.FC<YearOverYearProps> = ({ data }) =>
             <span className="text-xl">{changeIcon}</span>
             <div>
               <p className={`text-xl font-bold ${changeColor}`}>
-                {isIncrease ? '+' : ''}${data.change.toFixed(2)}
+                {isIncrease ? '+' : ''}{formatPrice(Math.abs(data.change))}
               </p>
               <p className={`text-sm ${changeColor}`}>
                 ({isIncrease ? '+' : ''}{data.changePercentage.toFixed(1)}%)
@@ -228,8 +232,8 @@ export const YearOverYearComparison: React.FC<YearOverYearProps> = ({ data }) =>
       <div className="mt-6 p-4 bg-gray-800/50 rounded-lg">
         <p className="text-gray-300 text-sm">
           {isIncrease 
-            ? `Your subscription spending has increased by $${data.change.toFixed(2)} (${data.changePercentage.toFixed(1)}%) compared to last year.`
-            : `Great job! You've reduced your subscription spending by $${Math.abs(data.change).toFixed(2)} (${Math.abs(data.changePercentage).toFixed(1)}%) compared to last year.`
+            ? `Your subscription spending has increased by ${formatPrice(data.change)} (${data.changePercentage.toFixed(1)}%) compared to last year.`
+            : `Great job! You've reduced your subscription spending by ${formatPrice(Math.abs(data.change))} (${Math.abs(data.changePercentage).toFixed(1)}%) compared to last year.`
           }
         </p>
       </div>

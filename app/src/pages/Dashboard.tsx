@@ -11,6 +11,7 @@ import {
   CategoryInsight
 } from '../utils/insightCalculations';
 import { getCategoryHex } from '../utils/categoryColors';
+import { useCurrency } from '../hooks/useCurrency';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -25,6 +26,7 @@ interface DashboardStats {
 const Dashboard: React.FC = () => {
   const { subscriptions, isLoading: subscriptionsLoading } = useSubscriptions();
   const { user } = useAuth();
+  const { formatPrice } = useCurrency();
   const navigate = useNavigate();
 
   const [stats, setStats] = useState<DashboardStats>({
@@ -233,7 +235,7 @@ const Dashboard: React.FC = () => {
                       <span className="text-blue-400 text-lg">💰</span>
                     </div>
                     <div className="text-left">
-                      <p className="text-white text-lg font-bold">${stats.monthlySpending.toFixed(2)}</p>
+                      <p className="text-white text-lg font-bold">{formatPrice(stats.monthlySpending)}</p>
                       <p className="text-gray-400 text-xs">Monthly</p>
                     </div>
                   </div>
@@ -248,7 +250,7 @@ const Dashboard: React.FC = () => {
                       <span className="text-green-400 text-lg">📅</span>
                     </div>
                     <div className="text-left">
-                      <p className="text-white text-lg font-bold">${stats.yearlySpending.toFixed(0)}</p>
+                      <p className="text-white text-lg font-bold">{formatPrice(stats.yearlySpending)}</p>
                       <p className="text-gray-400 text-xs">Yearly</p>
                     </div>
                   </div>
@@ -311,7 +313,7 @@ const Dashboard: React.FC = () => {
                           {spendingInsight.message}
                         </p>
                         <p className="text-gray-400 text-xs">
-                          ${spendingInsight.amount.toFixed(2)} {spendingInsight.type.includes('increase') ? 'increase' : 'change'} {spendingInsight.primaryCategory ? `- mostly on ${spendingInsight.primaryCategory}` : ''}
+                          {formatPrice(spendingInsight.amount)} {spendingInsight.type.includes('increase') ? 'increase' : 'change'} {spendingInsight.primaryCategory ? `- mostly on ${spendingInsight.primaryCategory}` : ''}
                         </p>
                       </div>
                     </div>
@@ -402,7 +404,7 @@ const Dashboard: React.FC = () => {
                           <p className="text-orange-300 text-sm font-medium">Next: {renewalInsight.nextRenewal.name}</p>
                           <p className="text-orange-200 text-xs">In {renewalInsight.nextRenewal.daysUntil} days</p>
                         </div>
-                        <p className="text-orange-300 text-lg font-bold">${renewalInsight.nextRenewal.cost.toFixed(2)}</p>
+                        <p className="text-orange-300 text-lg font-bold">{formatPrice(renewalInsight.nextRenewal.cost)}</p>
                       </div>
                     </div>
                   )}
@@ -447,7 +449,7 @@ const Dashboard: React.FC = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-white font-bold text-sm">${subscription.cost.toFixed(2)}</p>
+                          <p className="text-white font-bold text-sm">{formatPrice(subscription.cost)}</p>
                           <p className="text-gray-400 text-xs">{subscription.frequency}</p>
                         </div>
                       </div>
