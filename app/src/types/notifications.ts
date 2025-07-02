@@ -75,6 +75,17 @@ export interface SpendingAlert {
   severity: 'warning' | 'critical';
 }
 
+export interface UnusedSubscription {
+  subscription_id: string;
+  subscription_name: string;
+  subscription_cost: number;
+  subscription_frequency: string;
+  days_since_last_activity: number;
+  threshold_days: number;
+  severity: 'warning' | 'critical';
+  potential_savings: number;
+}
+
 export interface UnusedSubscriptionAlert {
   subscription_id: string;
   subscription_name: string;

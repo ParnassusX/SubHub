@@ -2,16 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
 import { db } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  calculateSpendingInsights,
-  SpendingInsight
-} from '../utils/insightCalculations';
+
 import { getCategoryHex } from '../utils/categoryColors';
 import { useCurrency } from '../hooks/useCurrency';
 
 import OfflineIndicator from '../components/OfflineIndicator';
 import UpcomingRenewals from '../components/notifications/UpcomingRenewals';
 import SpendingAlerts from '../components/notifications/SpendingAlerts';
+import UnusedSubscriptions from '../components/notifications/UnusedSubscriptions';
 import HeroMetrics from '../components/dashboard/HeroMetrics';
 import CriticalAlerts from '../components/dashboard/CriticalAlerts';
 import ExpandableSection from '../components/dashboard/ExpandableSection';
@@ -43,8 +41,7 @@ const Dashboard: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // New insight states
-  const [spendingInsight, setSpendingInsight] = useState<SpendingInsight | null>(null);
+
 
   // Load dashboard stats and insights
   useEffect(() => {
@@ -53,9 +50,7 @@ const Dashboard: React.FC = () => {
 
       setIsLoading(true);
       try {
-        // Calculate insights from subscriptions
-        const spendingInsightData = calculateSpendingInsights(subscriptions);
-        setSpendingInsight(spendingInsightData);
+        // Calculate insights from subscriptions (placeholder for future use)
 
         // Try to get stats from Supabase function, fallback to calculation
         try {
@@ -244,12 +239,12 @@ const Dashboard: React.FC = () => {
             <CriticalAlerts
               alerts={[
                 // Mock alerts for now - will be replaced with real data
-                ...(spendingInsight?.budgetUtilization >= 80 ? [{
+                ...(stats.monthlySpending > 400 ? [{
                   id: 'budget-warning',
                   type: 'budget_warning' as const,
                   title: 'Budget Warning',
-                  message: `You've used ${spendingInsight.budgetUtilization.toFixed(0)}% of your monthly budget`,
-                  severity: spendingInsight.budgetUtilization >= 100 ? 'critical' as const : 'warning' as const,
+                  message: `You've used ${((stats.monthlySpending / 500) * 100).toFixed(0)}% of your monthly budget`,
+                  severity: (stats.monthlySpending / 500) >= 1 ? 'critical' as const : 'warning' as const,
                   actionLabel: 'Adjust Budget',
                   actionPath: '/settings'
                 }] : [])
@@ -281,6 +276,17 @@ const Dashboard: React.FC = () => {
                 }
               >
                 <SpendingAlerts maxItems={10} showProcessButton={true} />
+              </ExpandableSection>
+
+              {/* Unused Subscriptions Analysis */}
+              <ExpandableSection
+                title="Usage Analysis"
+                subtitle="Unused and underutilized subscriptions"
+                previewContent={
+                  <UnusedSubscriptions maxItems={2} showProcessButton={false} variant="compact" />
+                }
+              >
+                <UnusedSubscriptions maxItems={10} showProcessButton={true} variant="full" />
               </ExpandableSection>
             </div>
 
