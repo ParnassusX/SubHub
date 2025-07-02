@@ -4,14 +4,18 @@ import { db } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
   calculateSpendingInsights,
-  generateRenewalInsights,
   generateCategoryInsights,
   SpendingInsight,
-  RenewalInsight,
   CategoryInsight
 } from '../utils/insightCalculations';
 import { getCategoryHex } from '../utils/categoryColors';
 import { useCurrency } from '../hooks/useCurrency';
+import BudgetOverview from '../components/budget/BudgetOverview';
+import CategoryBudgetStatus from '../components/budget/CategoryBudgetStatus';
+import BudgetInsights from '../components/budget/BudgetInsights';
+import OfflineIndicator from '../components/OfflineIndicator';
+import UpcomingRenewals from '../components/notifications/UpcomingRenewals';
+import SpendingAlerts from '../components/notifications/SpendingAlerts';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -27,6 +31,7 @@ const Dashboard: React.FC = () => {
   const { subscriptions, isLoading: subscriptionsLoading } = useSubscriptions();
   const { user } = useAuth();
   const { formatPrice } = useCurrency();
+  // Budget hook is used by budget components
   const navigate = useNavigate();
 
   const [stats, setStats] = useState<DashboardStats>({
@@ -40,7 +45,6 @@ const Dashboard: React.FC = () => {
 
   // New insight states
   const [spendingInsight, setSpendingInsight] = useState<SpendingInsight | null>(null);
-  const [renewalInsight, setRenewalInsight] = useState<RenewalInsight | null>(null);
   const [categoryInsight, setCategoryInsight] = useState<CategoryInsight | null>(null);
 
   // Load dashboard stats and insights
@@ -52,11 +56,9 @@ const Dashboard: React.FC = () => {
       try {
         // Calculate insights from subscriptions
         const spendingInsightData = calculateSpendingInsights(subscriptions);
-        const renewalInsightData = generateRenewalInsights(subscriptions);
         const categoryInsightData = generateCategoryInsights(subscriptions);
 
         setSpendingInsight(spendingInsightData);
-        setRenewalInsight(renewalInsightData);
         setCategoryInsight(categoryInsightData);
 
         // Try to get stats from Supabase function, fallback to calculation
@@ -220,6 +222,9 @@ const Dashboard: React.FC = () => {
 
         {/* Main Content Grid */}
         <div className="w-full max-w-full min-w-0 p-4 sm:p-6">
+          {/* Offline Indicator */}
+          <OfflineIndicator className="mb-4" />
+
           <div className="grid grid-cols-1 gap-4 sm:gap-6 w-full max-w-full">
 
             {/* Interactive Quick Stats - Full Width */}
@@ -288,9 +293,33 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* Budget Overview Row */}
+            <div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                {/* Budget Overview */}
+                <BudgetOverview
+                  showDetails={false}
+                  onEditBudget={() => navigate('/settings')}
+                />
+
+                {/* Category Budget Status */}
+                <CategoryBudgetStatus
+                  maxCategories={3}
+                  showAllCategories={false}
+                  onEditCategory={() => navigate('/settings')}
+                />
+
+                {/* Budget Insights */}
+                <BudgetInsights
+                  maxInsights={2}
+                  showRecommendations={true}
+                />
+              </div>
+            </div>
+
             {/* Insights and Renewals Row */}
             <div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
 
                 {/* Spending Insight */}
                 {spendingInsight && (
@@ -368,49 +397,20 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Upcoming Renewals */}
+                <UpcomingRenewals
+                  maxItems={4}
+                  showProcessButton={true}
+                />
+
+                {/* Spending Alerts */}
+                <SpendingAlerts
+                  maxItems={4}
+                  showProcessButton={true}
+                />
               </div>
             </div>
-
-            {/* Upcoming Renewals */}
-            {renewalInsight && (
-              <div>
-                <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-white text-lg font-bold">Upcoming Renewals</h3>
-                    <button
-                      onClick={() => navigate('/subscriptions')}
-                      className="text-blue-400 hover:text-blue-300 text-sm font-medium"
-                    >
-                      View All →
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-orange-600/20 rounded-lg flex items-center justify-center">
-                      <span className="text-orange-400 text-xl">🔔</span>
-                    </div>
-                    <div>
-                      <p className="text-white text-sm">
-                        {renewalInsight.weekCount} renewals coming up this week
-                      </p>
-                      <p className="text-gray-400 text-xs">
-                        {renewalInsight.nextRenewal ? `Next is ${renewalInsight.nextRenewal.name} in ${renewalInsight.nextRenewal.daysUntil} days` : 'No upcoming renewals'}
-                      </p>
-                    </div>
-                  </div>
-                  {renewalInsight.nextRenewal && (
-                    <div className="bg-orange-600/10 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-orange-300 text-sm font-medium">Next: {renewalInsight.nextRenewal.name}</p>
-                          <p className="text-orange-200 text-xs">In {renewalInsight.nextRenewal.daysUntil} days</p>
-                        </div>
-                        <p className="text-orange-300 text-lg font-bold">{formatPrice(renewalInsight.nextRenewal.cost)}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Recent Subscriptions */}
             <div>

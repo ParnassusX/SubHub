@@ -36,6 +36,34 @@ export interface CategoryInsight {
   }>;
 }
 
+export interface BudgetInsight {
+  type: 'budget_exceeded' | 'budget_warning' | 'budget_healthy' | 'no_budget_set' | 'budget_optimization';
+  budgetType: 'monthly' | 'yearly' | 'category';
+  categoryName?: string;
+  currentSpending: number;
+  budgetAmount: number;
+  percentageUsed: number;
+  variance: number;
+  message: string;
+  recommendation?: string;
+  severity: 'low' | 'medium' | 'high';
+  actionable: boolean;
+}
+
+export interface BudgetComparison {
+  monthlyBudgetStatus: 'over' | 'warning' | 'healthy' | 'not_set';
+  yearlyBudgetStatus: 'over' | 'warning' | 'healthy' | 'not_set';
+  categoryBudgetIssues: Array<{
+    category: string;
+    status: 'over' | 'warning';
+    percentageUsed: number;
+    overage: number;
+  }>;
+  overallHealthScore: number; // 0-100
+  totalVariance: number;
+  recommendations: string[];
+}
+
 // Utility functions
 export const normalizeToMonthly = (cost: number, frequency: 'Monthly' | 'Yearly'): number => {
   return frequency === 'Monthly' ? cost : cost / 12;
@@ -260,5 +288,287 @@ export const generateCategoryInsights = (subscriptions: Subscription[]): Categor
         percentage: (amount / totalSpending) * 100
       }))
       .sort((a, b) => b.amount - a.amount)
+  };
+};
+
+// Budget comparison functions
+export const calculateBudgetInsights = (
+  subscriptions: Subscription[],
+  monthlyBudget?: number,
+  yearlyBudget?: number,
+  categoryBudgets?: Record<string, number>
+): BudgetInsight[] => {
+  const insights: BudgetInsight[] = [];
+
+  // Calculate current spending
+  const monthlySpending = subscriptions.reduce((total, sub) => {
+    return total + normalizeToMonthly(sub.cost, sub.frequency);
+  }, 0);
+
+  const yearlySpending = monthlySpending * 12;
+
+  // Monthly budget insights
+  if (monthlyBudget && monthlyBudget > 0) {
+    const percentageUsed = (monthlySpending / monthlyBudget) * 100;
+    const variance = monthlySpending - monthlyBudget;
+
+    if (percentageUsed > 100) {
+      insights.push({
+        type: 'budget_exceeded',
+        budgetType: 'monthly',
+        currentSpending: monthlySpending,
+        budgetAmount: monthlyBudget,
+        percentageUsed,
+        variance,
+        message: `You've exceeded your monthly budget by ${Math.abs(variance).toFixed(2)}`,
+        recommendation: 'Consider reviewing your subscriptions or adjusting your budget',
+        severity: 'high',
+        actionable: true
+      });
+    } else if (percentageUsed > 75) {
+      insights.push({
+        type: 'budget_warning',
+        budgetType: 'monthly',
+        currentSpending: monthlySpending,
+        budgetAmount: monthlyBudget,
+        percentageUsed,
+        variance,
+        message: `You've used ${percentageUsed.toFixed(1)}% of your monthly budget`,
+        recommendation: 'Monitor your spending to stay within budget',
+        severity: 'medium',
+        actionable: true
+      });
+    } else if (percentageUsed < 50) {
+      insights.push({
+        type: 'budget_optimization',
+        budgetType: 'monthly',
+        currentSpending: monthlySpending,
+        budgetAmount: monthlyBudget,
+        percentageUsed,
+        variance,
+        message: `You're only using ${percentageUsed.toFixed(1)}% of your monthly budget`,
+        recommendation: 'Consider reallocating unused budget or saving the difference',
+        severity: 'low',
+        actionable: true
+      });
+    } else {
+      insights.push({
+        type: 'budget_healthy',
+        budgetType: 'monthly',
+        currentSpending: monthlySpending,
+        budgetAmount: monthlyBudget,
+        percentageUsed,
+        variance,
+        message: `Your monthly spending is well within budget`,
+        severity: 'low',
+        actionable: false
+      });
+    }
+  } else {
+    insights.push({
+      type: 'no_budget_set',
+      budgetType: 'monthly',
+      currentSpending: monthlySpending,
+      budgetAmount: 0,
+      percentageUsed: 0,
+      variance: 0,
+      message: 'No monthly budget set',
+      recommendation: 'Set a monthly budget to track your spending',
+      severity: 'medium',
+      actionable: true
+    });
+  }
+
+  // Yearly budget insights
+  if (yearlyBudget && yearlyBudget > 0) {
+    const percentageUsed = (yearlySpending / yearlyBudget) * 100;
+    const variance = yearlySpending - yearlyBudget;
+
+    if (percentageUsed > 100) {
+      insights.push({
+        type: 'budget_exceeded',
+        budgetType: 'yearly',
+        currentSpending: yearlySpending,
+        budgetAmount: yearlyBudget,
+        percentageUsed,
+        variance,
+        message: `Your yearly spending exceeds budget by ${Math.abs(variance).toFixed(2)}`,
+        recommendation: 'Review your annual subscriptions and consider canceling unused services',
+        severity: 'high',
+        actionable: true
+      });
+    } else if (percentageUsed > 75) {
+      insights.push({
+        type: 'budget_warning',
+        budgetType: 'yearly',
+        currentSpending: yearlySpending,
+        budgetAmount: yearlyBudget,
+        percentageUsed,
+        variance,
+        message: `You're using ${percentageUsed.toFixed(1)}% of your yearly budget`,
+        recommendation: 'Monitor your annual spending to stay on track',
+        severity: 'medium',
+        actionable: true
+      });
+    }
+  }
+
+  // Category budget insights
+  if (categoryBudgets) {
+    const categorySpending = calculateCategorySpending(subscriptions);
+
+    Object.entries(categoryBudgets).forEach(([category, budget]) => {
+      const spending = categorySpending[category] || 0;
+      const percentageUsed = budget > 0 ? (spending / budget) * 100 : 0;
+      const variance = spending - budget;
+
+      if (percentageUsed > 100) {
+        insights.push({
+          type: 'budget_exceeded',
+          budgetType: 'category',
+          categoryName: category,
+          currentSpending: spending,
+          budgetAmount: budget,
+          percentageUsed,
+          variance,
+          message: `${category} spending exceeds budget by ${Math.abs(variance).toFixed(2)}`,
+          recommendation: `Review your ${category} subscriptions`,
+          severity: 'high',
+          actionable: true
+        });
+      } else if (percentageUsed > 75) {
+        insights.push({
+          type: 'budget_warning',
+          budgetType: 'category',
+          categoryName: category,
+          currentSpending: spending,
+          budgetAmount: budget,
+          percentageUsed,
+          variance,
+          message: `${category} is at ${percentageUsed.toFixed(1)}% of budget`,
+          recommendation: `Monitor ${category} spending`,
+          severity: 'medium',
+          actionable: true
+        });
+      }
+    });
+  }
+
+  return insights;
+};
+
+export const calculateCategorySpending = (subscriptions: Subscription[]): Record<string, number> => {
+  return subscriptions.reduce((acc, subscription) => {
+    const category = subscription.category || 'Other';
+    const monthlyAmount = normalizeToMonthly(subscription.cost, subscription.frequency);
+    acc[category] = (acc[category] || 0) + monthlyAmount;
+    return acc;
+  }, {} as Record<string, number>);
+};
+
+export const generateBudgetComparison = (
+  subscriptions: Subscription[],
+  monthlyBudget?: number,
+  yearlyBudget?: number,
+  categoryBudgets?: Record<string, number>
+): BudgetComparison => {
+  const monthlySpending = subscriptions.reduce((total, sub) => {
+    return total + normalizeToMonthly(sub.cost, sub.frequency);
+  }, 0);
+
+  const yearlySpending = monthlySpending * 12;
+  const categorySpending = calculateCategorySpending(subscriptions);
+
+  // Monthly budget status
+  let monthlyBudgetStatus: 'over' | 'warning' | 'healthy' | 'not_set' = 'not_set';
+  if (monthlyBudget && monthlyBudget > 0) {
+    const monthlyPercentage = (monthlySpending / monthlyBudget) * 100;
+    if (monthlyPercentage > 100) monthlyBudgetStatus = 'over';
+    else if (monthlyPercentage > 75) monthlyBudgetStatus = 'warning';
+    else monthlyBudgetStatus = 'healthy';
+  }
+
+  // Yearly budget status
+  let yearlyBudgetStatus: 'over' | 'warning' | 'healthy' | 'not_set' = 'not_set';
+  if (yearlyBudget && yearlyBudget > 0) {
+    const yearlyPercentage = (yearlySpending / yearlyBudget) * 100;
+    if (yearlyPercentage > 100) yearlyBudgetStatus = 'over';
+    else if (yearlyPercentage > 75) yearlyBudgetStatus = 'warning';
+    else yearlyBudgetStatus = 'healthy';
+  }
+
+  // Category budget issues
+  const categoryBudgetIssues: Array<{
+    category: string;
+    status: 'over' | 'warning';
+    percentageUsed: number;
+    overage: number;
+  }> = [];
+
+  if (categoryBudgets) {
+    Object.entries(categoryBudgets).forEach(([category, budget]) => {
+      const spending = categorySpending[category] || 0;
+      const percentageUsed = budget > 0 ? (spending / budget) * 100 : 0;
+
+      if (percentageUsed > 100) {
+        categoryBudgetIssues.push({
+          category,
+          status: 'over',
+          percentageUsed,
+          overage: spending - budget
+        });
+      } else if (percentageUsed > 75) {
+        categoryBudgetIssues.push({
+          category,
+          status: 'warning',
+          percentageUsed,
+          overage: 0
+        });
+      }
+    });
+  }
+
+  // Calculate overall health score (0-100)
+  let healthScore = 100;
+  if (monthlyBudgetStatus === 'over') healthScore -= 30;
+  else if (monthlyBudgetStatus === 'warning') healthScore -= 15;
+
+  if (yearlyBudgetStatus === 'over') healthScore -= 20;
+  else if (yearlyBudgetStatus === 'warning') healthScore -= 10;
+
+  categoryBudgetIssues.forEach(issue => {
+    if (issue.status === 'over') healthScore -= 10;
+    else if (issue.status === 'warning') healthScore -= 5;
+  });
+
+  healthScore = Math.max(0, healthScore);
+
+  // Calculate total variance
+  let totalVariance = 0;
+  if (monthlyBudget) totalVariance += monthlySpending - monthlyBudget;
+  if (yearlyBudget) totalVariance += (yearlySpending - yearlyBudget) / 12; // Normalize to monthly
+
+  // Generate recommendations
+  const recommendations: string[] = [];
+  if (monthlyBudgetStatus === 'over') {
+    recommendations.push('Reduce monthly subscription spending or increase budget');
+  }
+  if (yearlyBudgetStatus === 'over') {
+    recommendations.push('Review annual subscriptions for potential savings');
+  }
+  if (categoryBudgetIssues.length > 0) {
+    recommendations.push(`Review spending in ${categoryBudgetIssues.length} over-budget categories`);
+  }
+  if (healthScore < 70) {
+    recommendations.push('Consider a comprehensive budget review');
+  }
+
+  return {
+    monthlyBudgetStatus,
+    yearlyBudgetStatus,
+    categoryBudgetIssues,
+    overallHealthScore: healthScore,
+    totalVariance,
+    recommendations
   };
 };

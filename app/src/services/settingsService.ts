@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { Database } from '../types/supabase';
+import { BudgetData, CategoryBudget, BudgetValidationResult, BudgetFormData } from '../types/budget';
+import { BUDGET_LIMITS, BUDGET_VALIDATION_MESSAGES } from '../constants/budget';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
@@ -131,11 +133,15 @@ export class SettingsService {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user?.id) throw new Error('User not authenticated');
 
-      // Initialize profile with defaults
+      // Initialize profile with defaults including budget settings
       const profile = await this.updateProfile({
         timezone: 'UTC',
         currency: 'USD',
-        date_format: 'MM/DD/YYYY'
+        date_format: 'MM/DD/YYYY',
+        monthly_budget: null,
+        yearly_budget: null,
+        category_budgets: {},
+        budget_alerts_enabled: true
       });
 
       // Initialize preferences with defaults
@@ -196,22 +202,208 @@ export class SettingsService {
     return this.updateProfile(settings);
   }
 
+  // Budget Management Operations
+  static async getBudgetData(): Promise<BudgetData | null> {
+    try {
+      const profile = await this.getProfile();
+      if (!profile) return null;
+
+      return {
+        monthlyBudget: profile.monthly_budget,
+        yearlyBudget: profile.yearly_budget,
+        categoryBudgets: (profile.category_budgets as CategoryBudget) || {},
+        budgetAlertsEnabled: profile.budget_alerts_enabled ?? true
+      };
+    } catch (error) {
+      console.error('Error fetching budget data:', error);
+      return null;
+    }
+  }
+
+  static async updateBudgetData(budgetData: Partial<BudgetData>): Promise<Profile> {
+    try {
+      const updateData: any = {};
+
+      if (budgetData.monthlyBudget !== undefined) {
+        updateData.monthly_budget = budgetData.monthlyBudget;
+      }
+      if (budgetData.yearlyBudget !== undefined) {
+        updateData.yearly_budget = budgetData.yearlyBudget;
+      }
+      if (budgetData.categoryBudgets !== undefined) {
+        updateData.category_budgets = budgetData.categoryBudgets;
+      }
+      if (budgetData.budgetAlertsEnabled !== undefined) {
+        updateData.budget_alerts_enabled = budgetData.budgetAlertsEnabled;
+      }
+
+      return this.updateProfile(updateData);
+    } catch (error) {
+      console.error('Error updating budget data:', error);
+      throw error;
+    }
+  }
+
+  static async updateMonthlyBudget(amount: number | null): Promise<Profile> {
+    return this.updateBudgetData({ monthlyBudget: amount });
+  }
+
+  static async updateYearlyBudget(amount: number | null): Promise<Profile> {
+    return this.updateBudgetData({ yearlyBudget: amount });
+  }
+
+  static async updateCategoryBudgets(categoryBudgets: CategoryBudget): Promise<Profile> {
+    return this.updateBudgetData({ categoryBudgets });
+  }
+
+  static async updateCategoryBudget(category: string, amount: number | null): Promise<Profile> {
+    try {
+      const currentBudgetData = await this.getBudgetData();
+      const currentCategoryBudgets = currentBudgetData?.categoryBudgets || {};
+
+      if (amount === null || amount === 0) {
+        // Remove category budget
+        const { [category]: removed, ...remainingBudgets } = currentCategoryBudgets;
+        return this.updateCategoryBudgets(remainingBudgets);
+      } else {
+        // Update category budget
+        const updatedCategoryBudgets = {
+          ...currentCategoryBudgets,
+          [category]: amount
+        };
+        return this.updateCategoryBudgets(updatedCategoryBudgets);
+      }
+    } catch (error) {
+      console.error('Error updating category budget:', error);
+      throw error;
+    }
+  }
+
+  static async updateBudgetAlertsEnabled(enabled: boolean): Promise<Profile> {
+    return this.updateBudgetData({ budgetAlertsEnabled: enabled });
+  }
+
+  static async resetBudgetData(): Promise<Profile> {
+    return this.updateBudgetData({
+      monthlyBudget: null,
+      yearlyBudget: null,
+      categoryBudgets: {},
+      budgetAlertsEnabled: true
+    });
+  }
+
+  // Budget validation
+  static validateBudgetData(formData: BudgetFormData): BudgetValidationResult {
+    const errors: Array<{ field: string; message: string; code: 'REQUIRED' | 'INVALID_AMOUNT' | 'NEGATIVE_VALUE' | 'EXCEEDS_LIMIT' }> = [];
+
+    // Validate monthly budget
+    if (formData.monthlyBudget) {
+      const monthlyAmount = parseFloat(formData.monthlyBudget);
+      if (isNaN(monthlyAmount)) {
+        errors.push({
+          field: 'monthlyBudget',
+          message: BUDGET_VALIDATION_MESSAGES.INVALID_AMOUNT,
+          code: 'INVALID_AMOUNT'
+        });
+      } else if (monthlyAmount < 0) {
+        errors.push({
+          field: 'monthlyBudget',
+          message: BUDGET_VALIDATION_MESSAGES.NEGATIVE_VALUE,
+          code: 'NEGATIVE_VALUE'
+        });
+      } else if (monthlyAmount > BUDGET_LIMITS.MAX_BUDGET) {
+        errors.push({
+          field: 'monthlyBudget',
+          message: BUDGET_VALIDATION_MESSAGES.EXCEEDS_LIMIT,
+          code: 'EXCEEDS_LIMIT'
+        });
+      }
+    }
+
+    // Validate yearly budget
+    if (formData.yearlyBudget) {
+      const yearlyAmount = parseFloat(formData.yearlyBudget);
+      if (isNaN(yearlyAmount)) {
+        errors.push({
+          field: 'yearlyBudget',
+          message: BUDGET_VALIDATION_MESSAGES.INVALID_AMOUNT,
+          code: 'INVALID_AMOUNT'
+        });
+      } else if (yearlyAmount < 0) {
+        errors.push({
+          field: 'yearlyBudget',
+          message: BUDGET_VALIDATION_MESSAGES.NEGATIVE_VALUE,
+          code: 'NEGATIVE_VALUE'
+        });
+      } else if (yearlyAmount > BUDGET_LIMITS.MAX_BUDGET) {
+        errors.push({
+          field: 'yearlyBudget',
+          message: BUDGET_VALIDATION_MESSAGES.EXCEEDS_LIMIT,
+          code: 'EXCEEDS_LIMIT'
+        });
+      }
+    }
+
+    // Validate category budgets
+    Object.entries(formData.categoryBudgets).forEach(([category, amountStr]) => {
+      if (amountStr) {
+        const amount = parseFloat(amountStr);
+        if (isNaN(amount)) {
+          errors.push({
+            field: `categoryBudgets.${category}`,
+            message: BUDGET_VALIDATION_MESSAGES.INVALID_AMOUNT,
+            code: 'INVALID_AMOUNT'
+          });
+        } else if (amount < 0) {
+          errors.push({
+            field: `categoryBudgets.${category}`,
+            message: BUDGET_VALIDATION_MESSAGES.NEGATIVE_VALUE,
+            code: 'NEGATIVE_VALUE'
+          });
+        } else if (amount > BUDGET_LIMITS.MAX_BUDGET) {
+          errors.push({
+            field: `categoryBudgets.${category}`,
+            message: BUDGET_VALIDATION_MESSAGES.EXCEEDS_LIMIT,
+            code: 'EXCEEDS_LIMIT'
+          });
+        }
+      }
+    });
+
+    // Check category budget limits
+    const categoryCount = Object.keys(formData.categoryBudgets).length;
+    if (categoryCount > BUDGET_LIMITS.MAX_CATEGORY_BUDGETS) {
+      errors.push({
+        field: 'categoryBudgets',
+        message: `Maximum ${BUDGET_LIMITS.MAX_CATEGORY_BUDGETS} category budgets allowed`,
+        code: 'EXCEEDS_LIMIT'
+      });
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
   // Export user data
   static async exportUserData(): Promise<any> {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user?.id) throw new Error('User not authenticated');
 
-      const [profile, preferences, subscriptions] = await Promise.all([
+      const [profile, preferences, subscriptions, budgetData] = await Promise.all([
         this.getProfile(),
         this.getPreferences(),
-        supabase.from('subscriptions').select('*').eq('user_id', user.user.id)
+        supabase.from('subscriptions').select('*').eq('user_id', user.user.id),
+        this.getBudgetData()
       ]);
 
       return {
         profile,
         preferences,
         subscriptions: subscriptions.data || [],
+        budget: budgetData,
         exported_at: new Date().toISOString()
       };
     } catch (error) {
