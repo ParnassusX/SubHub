@@ -104,6 +104,16 @@ function App() {
                                 }
                               />
                               <Route
+                                path="/dashboard"
+                                element={
+                                  <PageErrorBoundary>
+                                    <Suspense fallback={<ComponentLoader message="Loading Dashboard..." />}>
+                                      <Dashboard />
+                                    </Suspense>
+                                  </PageErrorBoundary>
+                                }
+                              />
+                              <Route
                                 path="/admin"
                                 element={
                                   <AdminRoute>
@@ -182,15 +192,15 @@ function App() {
                       </div>
                     </div>
                   </div>
+                {/* Onboarding Overlay - Must be inside ProtectedRoute for authenticated users only */}
+                <OnboardingOverlay />
+
+                {/* Development Test Panel */}
+                <OnboardingTestPanel />
                 </ProtectedRoute>
               } />
             </Routes>
           </Router>
-        {/* Onboarding Overlay - Must be inside both AuthProvider and SubscriptionProvider */}
-        <OnboardingOverlay />
-
-        {/* Development Test Panel */}
-        <OnboardingTestPanel />
         </SubscriptionProvider>
       </AuthProvider>
 

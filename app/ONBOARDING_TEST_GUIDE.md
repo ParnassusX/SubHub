@@ -2,15 +2,24 @@
 
 ## 🧪 Manual Testing Checklist
 
-### **1. Landing Page Accessibility Test**
+### **1. Landing Page Accessibility Test (FIXED)**
 - [ ] Navigate to `http://localhost:5173/` (should show landing page)
 - [ ] Navigate to `http://localhost:5173/landing` (should show landing page)
 - [ ] Verify landing page loads without authentication
-- [ ] Check that login/register buttons work
+- [ ] **CRITICAL**: Verify NO onboarding overlay appears on landing page
+- [ ] Check that login/register buttons work correctly
 
-### **2. New User Onboarding Flow Test**
+### **2. Authentication Flow Test (FIXED)**
+- [ ] Click "Sign In" on landing page → should go to `/login`
+- [ ] Login with valid credentials → should redirect to `/dashboard`
+- [ ] Click "Get Started" on landing page → should go to `/register`
+- [ ] Register new account → should redirect to `/dashboard`
+- [ ] **CRITICAL**: No redirect loops between landing/login/dashboard
+
+### **3. New User Onboarding Flow Test**
 - [ ] Register a new user account
-- [ ] Verify onboarding overlay appears automatically
+- [ ] Verify redirect to `/dashboard` after registration
+- [ ] Verify onboarding overlay appears automatically (only for authenticated users)
 - [ ] Check that only ONE primary action button is visible per step
 - [ ] Verify button is clearly visible within the modal (not cut off)
 
@@ -51,9 +60,11 @@
 - [ ] Review premium features
 - [ ] Complete onboarding
 
-### **3. Existing User Test**
+### **4. Existing User Test (FIXED)**
+
 - [ ] Login with existing user (test@subhub.com / test123456)
-- [ ] Verify onboarding does NOT appear
+- [ ] Verify redirect to `/dashboard` after login
+- [ ] Verify onboarding does NOT appear for existing users
 - [ ] Check normal dashboard functionality
 
 ### **4. Button Visibility Test**
@@ -95,16 +106,33 @@ window.SubHubDebug.enableOnboarding()
 3. Look for onboarding-related logs
 4. Use Test Panel "Test Flow" button for detailed state
 
+## 🔧 CRITICAL FIXES APPLIED
+
+### **Authentication Flow Fixes:**
+- ✅ **Onboarding Overlay**: Moved inside ProtectedRoute (only for authenticated users)
+- ✅ **Login Redirect**: Fixed to redirect to `/dashboard` instead of `/`
+- ✅ **Register Redirect**: Fixed to redirect to `/dashboard` instead of `/`
+- ✅ **ProtectedRoute**: Updated to redirect to `/login` for unauthenticated users
+- ✅ **Route Separation**: Clear separation between public and protected routes
+
+### **Navigation Fixes:**
+- ✅ **Landing Page**: No onboarding interference for non-authenticated users
+- ✅ **Login Flow**: Proper redirect chain: Landing → Login → Dashboard
+- ✅ **Register Flow**: Proper redirect chain: Landing → Register → Dashboard
+- ✅ **No Redirect Loops**: Eliminated circular redirects between routes
+
 ## ✅ Success Criteria
 
 **All tests pass if:**
-- ✅ Landing page accessible without authentication
-- ✅ New users see onboarding automatically
+- ✅ Landing page accessible without authentication (NO onboarding overlay)
+- ✅ Login/Register redirect to `/dashboard` (not `/`)
+- ✅ New users see onboarding automatically (only after authentication)
 - ✅ Only ONE clear primary action button per step
 - ✅ Buttons are fully visible within modal
 - ✅ All steps complete without errors
 - ✅ Existing users skip onboarding
 - ✅ No context provider errors
+- ✅ No redirect loops in authentication flow
 - ✅ Data persists correctly after onboarding
 
 ## 🚨 Common Issues to Check
