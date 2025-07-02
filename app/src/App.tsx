@@ -15,6 +15,7 @@ import PWAUpdatePrompt from './components/PWAUpdatePrompt'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
 import OnboardingOverlay from './components/onboarding/OnboardingOverlay'
 import OnboardingTestPanel from './components/onboarding/OnboardingTestPanel'
+import RootRoute from './components/RootRoute'
 import { OnboardingService } from './services/onboardingService'
 import { usePerformanceOptimization } from './hooks/usePerformanceOptimization'
 import { useErrorHandler } from './hooks/useErrorHandler'
@@ -55,15 +56,10 @@ function App() {
         <SubscriptionProvider>
           <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
+              {/* Smart root route - directs based on authentication */}
+              <Route path="/" element={<RootRoute />} />
+
               {/* Public routes */}
-              <Route
-                path="/"
-                element={
-                  <Suspense fallback={<ComponentLoader message="Loading Landing Page..." />}>
-                    <LandingPage />
-                  </Suspense>
-                }
-              />
               <Route
                 path="/landing"
                 element={
@@ -93,16 +89,6 @@ function App() {
                         <PageErrorBoundary>
                           <Suspense fallback={<PageLoader />}>
                             <Routes>
-                              <Route
-                                path="/"
-                                element={
-                                  <PageErrorBoundary>
-                                    <Suspense fallback={<ComponentLoader message="Loading Dashboard..." />}>
-                                      <Dashboard />
-                                    </Suspense>
-                                  </PageErrorBoundary>
-                                }
-                              />
                               <Route
                                 path="/dashboard"
                                 element={
