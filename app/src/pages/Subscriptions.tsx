@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import AddSubscriptionForm from '../components/AddSubscriptionForm';
 import SubscriptionList from '../components/SubscriptionList';
 import SearchAndFilter from '../components/SearchAndFilter';
+import OfflineIndicator from '../components/OfflineIndicator';
 import { Subscription } from '../contexts/SubscriptionContext';
 
 const Subscriptions: React.FC = () => {
@@ -14,6 +15,11 @@ const Subscriptions: React.FC = () => {
         {/* Header */}
         <div className="flex flex-wrap justify-between gap-3 p-4 sm:p-6 w-full max-w-full">
           <h1 className="text-white tracking-light text-2xl sm:text-[32px] font-bold leading-tight min-w-0">Subscriptions</h1>
+        </div>
+
+        {/* Offline Indicator */}
+        <div className="w-full max-w-full min-w-0 px-4 sm:px-6">
+          <OfflineIndicator className="mb-4" />
         </div>
 
         {/* Search and Filter Section - Full Width at Top */}

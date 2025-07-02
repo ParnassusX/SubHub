@@ -5,6 +5,8 @@ import { Database } from '../types/supabase';
 import ImportExport from '../components/ImportExport';
 import { getUserLanguage, setUserLanguage, SupportedLanguage } from '../utils/localization';
 import { useTranslation } from '../hooks/useTranslation';
+import BudgetSettings from '../components/budget/BudgetSettings';
+import NotificationPreferences from '../components/notifications/NotificationPreferences';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserPreferences = Database['public']['Tables']['user_preferences']['Row'];
@@ -31,7 +33,7 @@ const LANGUAGE_OPTIONS = [
 const Settings: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'privacy'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'budget' | 'privacy'>('profile');
   const [settings, setSettings] = useState<SettingsState>({
     profile: null,
     preferences: null
@@ -236,6 +238,7 @@ const Settings: React.FC = () => {
                 { id: 'profile', label: t('profile'), icon: '👤' },
                 { id: 'notifications', label: t('notifications'), icon: '🔔' },
                 { id: 'appearance', label: t('appearance'), icon: '🎨' },
+                { id: 'budget', label: t('budget'), icon: '💰' },
                 { id: 'privacy', label: t('privacy'), icon: '🔒' },
               ].map((tab) => (
                 <button
@@ -328,96 +331,7 @@ const Settings: React.FC = () => {
           )}
           
           {activeTab === 'notifications' && (
-            <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Notification Preferences</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-white font-medium">Email Notifications</h4>
-                    <p className="text-gray-400 text-sm">Receive email alerts for renewals</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={settings.preferences?.email_notifications || false}
-                      onChange={(e) => updatePreferenceSetting('email_notifications', e.target.checked)}
-                    />
-                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-white font-medium">Push Notifications</h4>
-                    <p className="text-gray-400 text-sm">Browser notifications for important updates</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={settings.preferences?.push_notifications || false}
-                      onChange={(e) => updatePreferenceSetting('push_notifications', e.target.checked)}
-                    />
-                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-white font-medium">Renewal Alerts</h4>
-                    <p className="text-gray-400 text-sm">Get notified before subscriptions renew</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={settings.preferences?.renewal_alerts || false}
-                      onChange={(e) => updatePreferenceSetting('renewal_alerts', e.target.checked)}
-                    />
-                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-white font-medium">Spending Alerts</h4>
-                    <p className="text-gray-400 text-sm">Alerts when spending exceeds thresholds</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={settings.preferences?.spending_alerts || false}
-                      onChange={(e) => updatePreferenceSetting('spending_alerts', e.target.checked)}
-                    />
-                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Reminder Frequency</label>
-                  <select
-                    value={settings.preferences?.reminder_frequency || '3_days'}
-                    onChange={(e) => updatePreferenceSetting('reminder_frequency', e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="1_day">1 day before</option>
-                    <option value="3_days">3 days before</option>
-                    <option value="1_week">1 week before</option>
-                    <option value="2_weeks">2 weeks before</option>
-                  </select>
-                </div>
-
-                <button
-                  onClick={saveSettings}
-                  disabled={isSaving}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 px-4 py-2 rounded-lg text-white font-medium transition-colors"
-                >
-                  {isSaving ? 'Saving...' : 'Save Notifications'}
-                </button>
-              </div>
-            </div>
+            <NotificationPreferences />
           )}
           
           {activeTab === 'appearance' && (
@@ -459,6 +373,10 @@ const Settings: React.FC = () => {
                 </button>
               </div>
             </div>
+          )}
+
+          {activeTab === 'budget' && (
+            <BudgetSettings />
           )}
 
           {activeTab === 'privacy' && (

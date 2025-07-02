@@ -11,6 +11,8 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import ErrorBoundary, { PageErrorBoundary } from './components/ErrorBoundary'
 import PerformanceMonitor from './components/PerformanceMonitor'
+import PWAUpdatePrompt from './components/PWAUpdatePrompt'
+import PWAInstallPrompt from './components/PWAInstallPrompt'
 import { usePerformanceOptimization } from './hooks/usePerformanceOptimization'
 import { useErrorHandler } from './hooks/useErrorHandler'
 import './App.css'
@@ -42,7 +44,7 @@ function App() {
       <PerformanceMonitor />
       <AuthProvider>
         <SubscriptionProvider>
-          <Router>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
@@ -161,6 +163,10 @@ function App() {
           </Router>
         </SubscriptionProvider>
       </AuthProvider>
+
+      {/* PWA Prompts */}
+      <PWAUpdatePrompt />
+      <PWAInstallPrompt />
     </ErrorBoundary>
   )
 }

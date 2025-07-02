@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { db } from '../lib/supabase';
 import { SubscriptionInsert, SubscriptionUpdate } from '../types/supabase';
 import { useAuth } from './AuthContext';
+import { OfflineStorageService } from '../services/offlineStorageService';
+import { useOffline } from '../hooks/useOffline';
 
 export interface Subscription {
   id: string;
@@ -26,6 +28,8 @@ interface SubscriptionContextType {
   isLoading: boolean;
   error: string | null;
   refreshSubscriptions: () => Promise<void>;
+  isOfflineMode: boolean;
+  hasOfflineData: boolean;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -47,6 +51,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { isOffline } = useOffline();
 
   // Load subscriptions when user changes
   useEffect(() => {
@@ -59,17 +64,37 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
   const refreshSubscriptions = async () => {
     if (!user) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
+    // If offline, try to load cached data
+    if (isOffline) {
+      try {
+        const cachedSubscriptions = OfflineStorageService.getCachedSubscriptions();
+        if (cachedSubscriptions.length > 0) {
+          setSubscriptions(cachedSubscriptions);
+          console.log('Loaded subscriptions from offline cache');
+        } else {
+          setError('No cached data available offline');
+        }
+      } catch (err) {
+        console.error('Error loading cached subscriptions:', err);
+        setError('Failed to load offline data');
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // Online: fetch from Supabase and cache the result
     try {
       const { data, error: fetchError } = await db.subscriptions.getAll();
-      
+
       if (fetchError) {
         throw fetchError;
       }
-      
+
       // Convert Supabase format to our format
       const formattedSubscriptions: Subscription[] = (data || []).map(sub => ({
         id: sub.id,
@@ -84,11 +109,23 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
         created_at: sub.created_at || undefined,
         updated_at: sub.updated_at || undefined,
       }));
-      
+
       setSubscriptions(formattedSubscriptions);
+
+      // Cache the data for offline access
+      OfflineStorageService.cacheSubscriptionData(formattedSubscriptions);
+
     } catch (err) {
       console.error('Error fetching subscriptions:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch subscriptions');
+
+      // If online fetch fails, try to load cached data as fallback
+      const cachedSubscriptions = OfflineStorageService.getCachedSubscriptions();
+      if (cachedSubscriptions.length > 0) {
+        setSubscriptions(cachedSubscriptions);
+        setError('Using cached data - connection failed');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to fetch subscriptions');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -228,6 +265,8 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     isLoading,
     error,
     refreshSubscriptions,
+    isOfflineMode: isOffline,
+    hasOfflineData: OfflineStorageService.hasCachedData(),
   };
 
   return (

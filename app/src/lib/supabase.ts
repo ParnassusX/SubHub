@@ -56,6 +56,45 @@ export const db = {
     delete: (id: string) => supabase.from('subscriptions').delete().eq('id', id),
   },
 
+  // Notification Preferences
+  notificationPreferences: {
+    get: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user?.id) throw new Error('User not authenticated');
+      return supabase.from('notification_preferences').select('*').eq('user_id', user.user.id).single();
+    },
+    create: async (data: Database['public']['Tables']['notification_preferences']['Insert']) =>
+      supabase.from('notification_preferences').insert(data).select().single(),
+    update: async (data: Database['public']['Tables']['notification_preferences']['Update']) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user?.id) throw new Error('User not authenticated');
+      return supabase.from('notification_preferences').update(data).eq('user_id', user.user.id).select().single();
+    },
+    upsert: async (data: Database['public']['Tables']['notification_preferences']['Insert']) =>
+      supabase.from('notification_preferences').upsert(data).select().single(),
+  },
+
+  // Notifications
+  notifications: {
+    getAll: () => {
+      return supabase.from('notifications').select('*').order('created_at', { ascending: false });
+    },
+    getUnread: () => {
+      return supabase.from('notifications').select('*').eq('is_read', false).order('created_at', { ascending: false });
+    },
+    create: async (data: Database['public']['Tables']['notifications']['Insert']) =>
+      supabase.from('notifications').insert(data).select().single(),
+    markAsRead: async (id: string) =>
+      supabase.from('notifications').update({ is_read: true }).eq('id', id),
+    markAllAsRead: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user?.id) throw new Error('User not authenticated');
+      return supabase.from('notifications').update({ is_read: true }).eq('user_id', user.user.id).eq('is_read', false);
+    },
+    delete: async (id: string) =>
+      supabase.from('notifications').delete().eq('id', id),
+  },
+
   // Categories
   categories: {
     getAll: () => supabase.from('categories').select('*').order('name'),
@@ -64,20 +103,6 @@ export const db = {
     update: (id: string, data: Database['public']['Tables']['categories']['Update']) =>
       supabase.from('categories').update(data).eq('id', id).select().single(),
     delete: (id: string) => supabase.from('categories').delete().eq('id', id),
-  },
-
-
-
-  // Notifications
-  notifications: {
-    getAll: () => supabase.from('notifications').select('*').order('created_at', { ascending: false }),
-    getUnread: () => supabase.from('notifications').select('*').eq('is_read', false).order('created_at', { ascending: false }),
-    create: (data: Database['public']['Tables']['notifications']['Insert']) =>
-      supabase.from('notifications').insert(data).select().single(),
-    markAsRead: (id: string) =>
-      supabase.from('notifications').update({ is_read: true }).eq('id', id),
-    markAllAsRead: () =>
-      supabase.from('notifications').update({ is_read: true }).eq('is_read', false),
   },
 
   // Dashboard functions
