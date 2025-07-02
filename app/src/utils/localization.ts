@@ -286,6 +286,20 @@ export const translations = {
     adjustBudgets: 'Adjust Budgets',
     viewDetailsButton: 'View Details',
 
+    // Dashboard UX Optimization
+    monthlyBudgetStatus: 'Monthly Budget Status',
+    monthlyLabel: 'Monthly',
+    yearlyLabel: 'Yearly',
+    subscriptionsLabel: 'Subscriptions',
+    renewalsDueSoon: 'Due Soon',
+    criticalAlertsTitle: 'Critical Alerts',
+    allGoodStatus: 'All Good!',
+    noActiveAlertsMessage: 'No active alerts at this time',
+    viewAllButton: 'View All',
+    andNMoreAlertsText: 'and {n} more alerts',
+    viewMoreButton: 'View More',
+    showLessButton: 'Show Less',
+
     // Additional UI
     profile: 'Profile',
     notifications: 'Notifications',
@@ -576,6 +590,20 @@ export const translations = {
     warningStatus: 'Attenzione',
     adjustBudgets: 'Regola Budget',
     viewDetailsButton: 'Vedi Dettagli',
+
+    // Dashboard UX Optimization
+    monthlyBudgetStatus: 'Stato Budget Mensile',
+    monthlyLabel: 'Mensile',
+    yearlyLabel: 'Annuale',
+    subscriptionsLabel: 'Abbonamenti',
+    renewalsDueSoon: 'In Scadenza',
+    criticalAlertsTitle: 'Avvisi Critici',
+    allGoodStatus: 'Tutto Bene!',
+    noActiveAlertsMessage: 'Nessun avviso attivo al momento',
+    viewAllButton: 'Vedi Tutti',
+    andNMoreAlertsText: 'e altri {n} avvisi',
+    viewMoreButton: 'Vedi Altro',
+    showLessButton: 'Mostra Meno',
 
     // Additional UI
     profile: 'Profilo',

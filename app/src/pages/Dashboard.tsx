@@ -4,18 +4,18 @@ import { db } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
   calculateSpendingInsights,
-  generateCategoryInsights,
-  SpendingInsight,
-  CategoryInsight
+  SpendingInsight
 } from '../utils/insightCalculations';
 import { getCategoryHex } from '../utils/categoryColors';
 import { useCurrency } from '../hooks/useCurrency';
-import BudgetOverview from '../components/budget/BudgetOverview';
-import CategoryBudgetStatus from '../components/budget/CategoryBudgetStatus';
-import BudgetInsights from '../components/budget/BudgetInsights';
+
 import OfflineIndicator from '../components/OfflineIndicator';
 import UpcomingRenewals from '../components/notifications/UpcomingRenewals';
 import SpendingAlerts from '../components/notifications/SpendingAlerts';
+import HeroMetrics from '../components/dashboard/HeroMetrics';
+import CriticalAlerts from '../components/dashboard/CriticalAlerts';
+import ExpandableSection from '../components/dashboard/ExpandableSection';
+import ResponsiveCard from '../components/dashboard/ResponsiveCard';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -45,7 +45,6 @@ const Dashboard: React.FC = () => {
 
   // New insight states
   const [spendingInsight, setSpendingInsight] = useState<SpendingInsight | null>(null);
-  const [categoryInsight, setCategoryInsight] = useState<CategoryInsight | null>(null);
 
   // Load dashboard stats and insights
   useEffect(() => {
@@ -56,10 +55,7 @@ const Dashboard: React.FC = () => {
       try {
         // Calculate insights from subscriptions
         const spendingInsightData = calculateSpendingInsights(subscriptions);
-        const categoryInsightData = generateCategoryInsights(subscriptions);
-
         setSpendingInsight(spendingInsightData);
-        setCategoryInsight(categoryInsightData);
 
         // Try to get stats from Supabase function, fallback to calculation
         try {
@@ -225,215 +221,79 @@ const Dashboard: React.FC = () => {
           {/* Offline Indicator */}
           <OfflineIndicator className="mb-4" />
 
-          <div className="grid grid-cols-1 gap-4 sm:gap-6 w-full max-w-full">
+          <div className="space-y-6 sm:space-y-8 w-full max-w-full">
 
-            {/* Interactive Quick Stats - Full Width */}
-            <div>
-              <h2 className="text-white text-lg font-bold mb-4">Quick Overview</h2>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <button
-                  onClick={() => navigate('/reports')}
-                  className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-4 hover:bg-[#243447] hover:border-[#3e5e7b] transition-all duration-200 cursor-pointer group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center group-hover:bg-blue-600/30 transition-colors">
-                      <span className="text-blue-400 text-lg">💰</span>
-                    </div>
-                    <div className="text-left">
-                      <p className="text-white text-lg font-bold">{formatPrice(stats.monthlySpending)}</p>
-                      <p className="text-gray-400 text-xs">Monthly</p>
-                    </div>
-                  </div>
-                </button>
+            {/* Hero Section - Above the Fold */}
+            <HeroMetrics
+              stats={{
+                totalSubscriptions: stats.totalSubscriptions,
+                monthlySpending: stats.monthlySpending,
+                yearlySpending: stats.yearlySpending,
+                upcomingRenewals: stats.upcomingRenewals
+              }}
+              budgetStatus={{
+                monthlyBudget: 500,
+                monthlySpent: stats.monthlySpending,
+                budgetUtilization: (stats.monthlySpending / 500) * 100,
+                status: (stats.monthlySpending / 500) >= 1 ? 'critical' :
+                       (stats.monthlySpending / 500) >= 0.8 ? 'warning' : 'safe'
+              }}
+            />
 
-                <button
-                  onClick={() => navigate('/reports')}
-                  className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-4 hover:bg-[#243447] hover:border-[#3e5e7b] transition-all duration-200 cursor-pointer group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-600/20 rounded-lg flex items-center justify-center group-hover:bg-green-600/30 transition-colors">
-                      <span className="text-green-400 text-lg">📅</span>
-                    </div>
-                    <div className="text-left">
-                      <p className="text-white text-lg font-bold">{formatPrice(stats.yearlySpending)}</p>
-                      <p className="text-gray-400 text-xs">Yearly</p>
-                    </div>
-                  </div>
-                </button>
+            {/* Critical Alerts Section */}
+            <CriticalAlerts
+              alerts={[
+                // Mock alerts for now - will be replaced with real data
+                ...(spendingInsight?.budgetUtilization >= 80 ? [{
+                  id: 'budget-warning',
+                  type: 'budget_warning' as const,
+                  title: 'Budget Warning',
+                  message: `You've used ${spendingInsight.budgetUtilization.toFixed(0)}% of your monthly budget`,
+                  severity: spendingInsight.budgetUtilization >= 100 ? 'critical' as const : 'warning' as const,
+                  actionLabel: 'Adjust Budget',
+                  actionPath: '/settings'
+                }] : [])
+              ]}
+              maxVisible={3}
+            />
 
-                <button
-                  onClick={() => navigate('/subscriptions')}
-                  className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-4 hover:bg-[#243447] hover:border-[#3e5e7b] transition-all duration-200 cursor-pointer group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-600/20 rounded-lg flex items-center justify-center group-hover:bg-purple-600/30 transition-colors">
-                      <span className="text-purple-400 text-lg">📱</span>
-                    </div>
-                    <div className="text-left">
-                      <p className="text-white text-lg font-bold">{stats.totalSubscriptions}</p>
-                      <p className="text-gray-400 text-xs">Active</p>
-                    </div>
-                  </div>
-                </button>
+            {/* Progressive Disclosure - Below the Fold */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
 
-                <button
-                  onClick={() => navigate('/renewals')}
-                  className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-4 hover:bg-[#243447] hover:border-[#3e5e7b] transition-all duration-200 cursor-pointer group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-600/20 rounded-lg flex items-center justify-center group-hover:bg-orange-600/30 transition-colors">
-                      <span className="text-orange-400 text-lg">🔔</span>
-                    </div>
-                    <div className="text-left">
-                      <p className="text-white text-lg font-bold">{stats.upcomingRenewals}</p>
-                      <p className="text-gray-400 text-xs">Due Soon</p>
-                    </div>
-                  </div>
-                </button>
-              </div>
+              {/* Detailed Renewals Section */}
+              <ExpandableSection
+                title="Upcoming Renewals"
+                subtitle="Subscription renewals and expirations"
+                showItemCount={stats.upcomingRenewals}
+                previewContent={
+                  <UpcomingRenewals maxItems={2} showProcessButton={false} />
+                }
+              >
+                <UpcomingRenewals maxItems={10} showProcessButton={true} />
+              </ExpandableSection>
+
+              {/* Detailed Spending Analysis */}
+              <ExpandableSection
+                title="Spending Analysis"
+                subtitle="Budget tracking and spending insights"
+                previewContent={
+                  <SpendingAlerts maxItems={2} showProcessButton={false} />
+                }
+              >
+                <SpendingAlerts maxItems={10} showProcessButton={true} />
+              </ExpandableSection>
             </div>
 
-            {/* Budget Overview Row */}
-            <div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                {/* Budget Overview */}
-                <BudgetOverview
-                  showDetails={false}
-                  onEditBudget={() => navigate('/settings')}
-                />
-
-                {/* Category Budget Status */}
-                <CategoryBudgetStatus
-                  maxCategories={3}
-                  showAllCategories={false}
-                  onEditCategory={() => navigate('/settings')}
-                />
-
-                {/* Budget Insights */}
-                <BudgetInsights
-                  maxInsights={2}
-                  showRecommendations={true}
-                />
-              </div>
-            </div>
-
-            {/* Insights and Renewals Row */}
-            <div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-
-                {/* Spending Insight */}
-                {spendingInsight && (
-                  <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-white text-lg font-bold">Spending Trend</h3>
-                      <button
-                        onClick={() => navigate('/reports')}
-                        className="text-blue-400 hover:text-blue-300 text-sm font-medium"
-                      >
-                        View Details →
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center">
-                        <span className="text-blue-400 text-xl">📈</span>
-                      </div>
-                      <div>
-                        <p className="text-white text-sm">
-                          {spendingInsight.message}
-                        </p>
-                        <p className="text-gray-400 text-xs">
-                          {formatPrice(spendingInsight.amount)} {spendingInsight.type.includes('increase') ? 'increase' : 'change'} {spendingInsight.primaryCategory ? `- mostly on ${spendingInsight.primaryCategory}` : ''}
-                        </p>
-                      </div>
-                    </div>
-                    {spendingInsight.recommendation && (
-                      <div className="bg-blue-600/10 rounded-lg p-3">
-                        <p className="text-blue-300 text-sm flex items-center gap-2">
-                          💡 <span className="font-medium">RECOMMENDATION</span>
-                        </p>
-                        <p className="text-blue-200 text-sm mt-1">
-                          {spendingInsight.recommendation}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Category Insight */}
-                {categoryInsight && (
-                  <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-white text-lg font-bold">Category Breakdown</h3>
-                      <button
-                        onClick={() => navigate('/reports')}
-                        className="text-blue-400 hover:text-blue-300 text-sm font-medium"
-                      >
-                        View All →
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 bg-purple-600/20 rounded-lg flex items-center justify-center">
-                        <span className="text-purple-400 text-xl">📊</span>
-                      </div>
-                      <div>
-                        <p className="text-white text-sm">
-                          {categoryInsight.topCategory} is your biggest expense
-                        </p>
-                        <p className="text-gray-400 text-xs">
-                          {categoryInsight.topCategoryPercentage.toFixed(1)}% of your subscriptions
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      {categoryInsight.breakdown.slice(0, 3).map((cat, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                            <span className="text-gray-300 text-sm">{cat.category}</span>
-                          </div>
-                          <span className="text-white text-sm font-medium">{cat.percentage.toFixed(0)}%</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Upcoming Renewals */}
-                <UpcomingRenewals
-                  maxItems={4}
-                  showProcessButton={true}
-                />
-
-                {/* Spending Alerts */}
-                <SpendingAlerts
-                  maxItems={4}
-                  showProcessButton={true}
-                />
-              </div>
-            </div>
-
-            {/* Recent Subscriptions */}
-            <div>
-              <h2 className="text-white text-lg font-bold mb-4">Recent Subscriptions</h2>
-              <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
-                {subscriptions.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-gray-400 text-2xl">📱</span>
-                    </div>
-                    <p className="text-gray-400 text-lg mb-2">No subscriptions yet</p>
-                    <p className="text-gray-500 mb-6">Add your first subscription to get started!</p>
-                    <button
-                      onClick={() => navigate('/subscriptions?action=add')}
-                      className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors"
-                    >
-                      ➕ Add Your First Subscription
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {subscriptions.slice(0, 4).map((subscription) => (
-                      <div key={subscription.id} className="flex items-center justify-between p-3 bg-[#0f1a24] rounded-lg border border-[#2e4e6b] hover:border-[#3e5e7b] transition-colors">
+            {/* Recent Activity Section */}
+            <ExpandableSection
+              title="Recent Activity"
+              subtitle="Latest subscription changes and updates"
+              showItemCount={subscriptions.slice(0, 5).length}
+              previewContent={
+                <div className="space-y-3">
+                  {subscriptions.slice(0, 3).map((subscription) => (
+                    <ResponsiveCard key={subscription.id} variant="compact" padding="sm" hover>
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div
                             className="w-8 h-8 rounded-lg flex items-center justify-center"
@@ -453,19 +313,43 @@ const Dashboard: React.FC = () => {
                           <p className="text-gray-400 text-xs">{subscription.frequency}</p>
                         </div>
                       </div>
-                    ))}
-                    <div className="text-center pt-3 border-t border-[#2e4e6b]">
-                      <button
-                        onClick={() => navigate('/subscriptions')}
-                        className="text-blue-400 hover:text-blue-300 text-sm font-medium"
-                      >
-                        View All Subscriptions →
-                      </button>
+                    </ResponsiveCard>
+                  ))}
+                </div>
+              }
+            >
+              <div className="space-y-3">
+                {subscriptions.slice(0, 10).map((subscription) => (
+                  <ResponsiveCard key={subscription.id} variant="compact" padding="sm" hover onClick={() => navigate('/subscriptions')}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center"
+                          style={{ backgroundColor: getCategoryHex(subscription.category) }}
+                        >
+                          <span className="text-white text-xs font-bold">
+                            {subscription.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-white font-medium text-sm">{subscription.name}</p>
+                          <p className="text-gray-400 text-xs">{subscription.category}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white font-bold text-sm">{formatPrice(subscription.cost)}</p>
+                        <p className="text-gray-400 text-xs">{subscription.frequency}</p>
+                      </div>
                     </div>
+                  </ResponsiveCard>
+                ))}
+                <ResponsiveCard variant="compact" padding="sm" hover onClick={() => navigate('/subscriptions')}>
+                  <div className="text-center">
+                    <p className="text-blue-400 text-sm font-medium">View All Subscriptions →</p>
                   </div>
-                )}
+                </ResponsiveCard>
               </div>
-            </div>
+            </ExpandableSection>
 
             {/* Mobile Quick Action */}
             <div className="lg:hidden fixed bottom-6 right-6 z-50">
