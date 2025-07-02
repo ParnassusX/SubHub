@@ -37,6 +37,28 @@ const OnboardingTestPanel: React.FC = () => {
     window.location.reload();
   };
 
+  const handleTestFlow = () => {
+    console.log('🧪 Testing Onboarding Flow:');
+    console.log('1. User authenticated:', !!user?.id);
+    console.log('2. Onboarding active:', isOnboardingActive);
+    console.log('3. Current step:', currentStep?.id);
+    console.log('4. Progress:', progress?.progressPercentage + '%');
+    console.log('5. Loading state:', isLoading);
+    console.log('6. Error state:', error);
+    console.log('7. Onboarding disabled:', OnboardingService.isOnboardingDisabled());
+
+    // Test button handlers
+    const handlers = [
+      '__profileSetupStepHandler',
+      '__firstSubscriptionStepHandler',
+      '__notificationSetupStepHandler'
+    ];
+
+    handlers.forEach(handler => {
+      console.log(`8. Handler ${handler}:`, typeof (window as any)[handler]);
+    });
+  };
+
   const isDisabled = OnboardingService.isOnboardingDisabled();
 
   return (
@@ -84,6 +106,13 @@ const OnboardingTestPanel: React.FC = () => {
             Exit Current Onboarding
           </button>
         )}
+
+        <button
+          onClick={handleTestFlow}
+          className="w-full px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-xs"
+        >
+          🧪 Test Flow (Check Console)
+        </button>
       </div>
 
       <div className="mt-3 text-xs text-gray-400">

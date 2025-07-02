@@ -57,6 +57,14 @@ function App() {
             <Routes>
               {/* Public routes */}
               <Route
+                path="/"
+                element={
+                  <Suspense fallback={<ComponentLoader message="Loading Landing Page..." />}>
+                    <LandingPage />
+                  </Suspense>
+                }
+              />
+              <Route
                 path="/landing"
                 element={
                   <Suspense fallback={<ComponentLoader message="Loading Landing Page..." />}>

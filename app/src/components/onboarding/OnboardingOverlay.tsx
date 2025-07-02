@@ -119,7 +119,7 @@ const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ className = '' })
   return (
     <div className={`fixed inset-0 z-50 bg-black/80 backdrop-blur-sm ${className}`}>
       <div className="flex items-center justify-center min-h-screen p-4">
-        <div className="bg-[#20364b] rounded-xl border border-[#2e4e6b] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+        <div className="bg-[#20364b] rounded-xl border border-[#2e4e6b] shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-[#2e4e6b]">
             <div className="flex items-center space-x-4">
@@ -170,7 +170,7 @@ const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ className = '' })
           </div>
 
           {/* Step Content */}
-          <div className="p-6 overflow-y-auto max-h-[60vh]">
+          <div className="p-6 overflow-y-auto flex-1">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -180,8 +180,8 @@ const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ className = '' })
             )}
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between p-6 border-t border-[#2e4e6b] bg-[#1a2f3f]">
+          {/* Footer - Always visible at bottom */}
+          <div className="flex items-center justify-between p-6 border-t border-[#2e4e6b] bg-[#1a2f3f] flex-shrink-0">
             <div className="flex items-center space-x-2">
               {canGoBack && (
                 <button
@@ -224,7 +224,7 @@ const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ className = '' })
                   }
                 }}
                 disabled={isLoading || (currentStep.id === 'profile_setup' && !(window as any).__profileSetupValid)}
-                className="flex items-center space-x-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center space-x-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-base shadow-lg"
               >
                 <span>
                   {currentStep.id === 'first_subscription' ? 'Add Subscription' : (isLastStep ? 'Finish' : 'Continue')}
