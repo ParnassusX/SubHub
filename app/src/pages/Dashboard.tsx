@@ -10,6 +10,7 @@ import OfflineIndicator from '../components/OfflineIndicator';
 import UpcomingRenewals from '../components/notifications/UpcomingRenewals';
 import SpendingAlerts from '../components/notifications/SpendingAlerts';
 import UnusedSubscriptions from '../components/notifications/UnusedSubscriptions';
+import SmartScheduling from '../components/notifications/SmartScheduling';
 import HeroMetrics from '../components/dashboard/HeroMetrics';
 import CriticalAlerts from '../components/dashboard/CriticalAlerts';
 import ExpandableSection from '../components/dashboard/ExpandableSection';
@@ -287,6 +288,17 @@ const Dashboard: React.FC = () => {
                 }
               >
                 <UnusedSubscriptions maxItems={10} showProcessButton={true} variant="full" />
+              </ExpandableSection>
+
+              {/* Smart Scheduling System */}
+              <ExpandableSection
+                title="Smart Scheduling"
+                subtitle="Intelligent notification timing and batching"
+                previewContent={
+                  <SmartScheduling variant="compact" showProcessButton={false} />
+                }
+              >
+                <SmartScheduling variant="full" showProcessButton={true} />
               </ExpandableSection>
             </div>
 
