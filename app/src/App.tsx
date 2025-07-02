@@ -178,13 +178,12 @@ function App() {
               } />
             </Routes>
           </Router>
-        </SubscriptionProvider>
-
-        {/* Onboarding Overlay - Must be inside AuthProvider */}
+        {/* Onboarding Overlay - Must be inside both AuthProvider and SubscriptionProvider */}
         <OnboardingOverlay />
 
         {/* Development Test Panel */}
         <OnboardingTestPanel />
+        </SubscriptionProvider>
       </AuthProvider>
 
       {/* PWA Prompts */}

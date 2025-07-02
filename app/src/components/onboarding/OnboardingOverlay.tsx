@@ -208,11 +208,27 @@ const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ className = '' })
               )}
 
               <button
-                onClick={() => completeStep()}
-                disabled={isLoading}
+                onClick={() => {
+                  // Check if current step has custom handler
+                  const stepHandlers: Record<string, string> = {
+                    'profile_setup': '__profileSetupStepHandler',
+                    'first_subscription': '__firstSubscriptionStepHandler',
+                    'notification_setup': '__notificationSetupStepHandler'
+                  };
+
+                  const handlerKey = stepHandlers[currentStep.id];
+                  if (handlerKey && (window as any)[handlerKey]) {
+                    (window as any)[handlerKey]();
+                  } else {
+                    completeStep();
+                  }
+                }}
+                disabled={isLoading || (currentStep.id === 'profile_setup' && !(window as any).__profileSetupValid)}
                 className="flex items-center space-x-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span>{isLastStep ? 'Finish' : 'Continue'}</span>
+                <span>
+                  {currentStep.id === 'first_subscription' ? 'Add Subscription' : (isLastStep ? 'Finish' : 'Continue')}
+                </span>
                 {!isLastStep && <ArrowRight className="w-4 h-4" />}
               </button>
             </div>

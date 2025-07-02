@@ -24,7 +24,7 @@ const FirstSubscriptionStep: React.FC<OnboardingStepProps> = ({
     website: ''
   });
   
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Used in handleAddSubscription
   const [error, setError] = useState('');
 
   // Popular subscription suggestions
@@ -61,7 +61,7 @@ const FirstSubscriptionStep: React.FC<OnboardingStepProps> = ({
       if (!formData.name.trim()) {
         throw new Error('Subscription name is required');
       }
-      
+
       const cost = parseFloat(formData.cost);
       if (isNaN(cost) || cost <= 0) {
         throw new Error('Please enter a valid cost');
@@ -89,9 +89,25 @@ const FirstSubscriptionStep: React.FC<OnboardingStepProps> = ({
     }
   };
 
-  const handleSkipForNow = () => {
-    onNext();
-  };
+  // Handle the continue action from the overlay
+  const handleContinue = React.useCallback(() => {
+    if (formData.name.trim() && formData.cost) {
+      handleAddSubscription();
+    } else {
+      // Skip if no data entered
+      onNext();
+    }
+  }, [formData.name, formData.cost, handleAddSubscription, onNext]);
+
+  // Expose the custom handler to the parent
+  React.useEffect(() => {
+    // Store the custom handler for the overlay to use
+    (window as any).__firstSubscriptionStepHandler = handleContinue;
+
+    return () => {
+      delete (window as any).__firstSubscriptionStepHandler;
+    };
+  }, [handleContinue]);
 
   return (
     <div className="space-y-6">
@@ -231,23 +247,23 @@ const FirstSubscriptionStep: React.FC<OnboardingStepProps> = ({
         </p>
       </div>
 
-      {/* Action Buttons */}
-      <div className="space-y-3">
-        <button
-          onClick={handleAddSubscription}
-          disabled={isLoading || !formData.name.trim() || !formData.cost}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-colors"
-        >
-          {isLoading ? 'Adding...' : 'Add Subscription'}
-        </button>
-        
-        <button
-          onClick={handleSkipForNow}
-          className="w-full text-gray-400 hover:text-white py-2 transition-colors"
-        >
-          I'll add subscriptions later
-        </button>
-      </div>
+      {/* Status Message */}
+      {formData.name.trim() && formData.cost && (
+        <div className="bg-green-600/10 border border-green-600/20 rounded-lg p-3">
+          <p className="text-green-400 text-sm">
+            ✅ Ready to add "{formData.name}" - Click Continue to proceed
+            {isLoading && ' (Processing...)'}
+          </p>
+        </div>
+      )}
+
+      {!formData.name.trim() && (
+        <div className="bg-yellow-600/10 border border-yellow-600/20 rounded-lg p-3">
+          <p className="text-yellow-400 text-sm">
+            ℹ️ You can skip this step and add subscriptions later, or fill out the form above
+          </p>
+        </div>
+      )}
     </div>
   );
 };

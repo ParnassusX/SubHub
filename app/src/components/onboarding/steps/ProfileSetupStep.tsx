@@ -20,7 +20,7 @@ const ProfileSetupStep: React.FC<OnboardingStepProps> = ({
     language: 'en'
   });
   
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Used in handleSaveAndContinue
   const [error, setError] = useState('');
 
   // Currency options
@@ -87,6 +87,17 @@ const ProfileSetupStep: React.FC<OnboardingStepProps> = ({
       setIsLoading(false);
     }
   };
+
+  // Expose the handler and validation state to the overlay
+  React.useEffect(() => {
+    (window as any).__profileSetupStepHandler = handleSaveAndContinue;
+    (window as any).__profileSetupValid = formData.name.trim().length > 0;
+
+    return () => {
+      delete (window as any).__profileSetupStepHandler;
+      delete (window as any).__profileSetupValid;
+    };
+  }, [handleSaveAndContinue, formData.name]);
 
   return (
     <div className="space-y-6">
@@ -198,14 +209,23 @@ const ProfileSetupStep: React.FC<OnboardingStepProps> = ({
         </p>
       </div>
 
-      {/* Action Button */}
-      <button
-        onClick={handleSaveAndContinue}
-        disabled={isLoading || !formData.name.trim()}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-colors"
-      >
-        {isLoading ? 'Saving...' : 'Save & Continue'}
-      </button>
+      {/* Status Message */}
+      {!formData.name.trim() && (
+        <div className="bg-yellow-600/10 border border-yellow-600/20 rounded-lg p-3">
+          <p className="text-yellow-400 text-sm">
+            ⚠️ Please enter your name to continue
+          </p>
+        </div>
+      )}
+
+      {formData.name.trim() && (
+        <div className="bg-green-600/10 border border-green-600/20 rounded-lg p-3">
+          <p className="text-green-400 text-sm">
+            ✅ Profile ready - Click Continue to save and proceed
+            {isLoading && ' (Saving...)'}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

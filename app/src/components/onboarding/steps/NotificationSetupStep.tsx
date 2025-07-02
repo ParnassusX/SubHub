@@ -17,7 +17,7 @@ const NotificationSetupStep: React.FC<OnboardingStepProps> = ({
     reminder_frequency: '3_days'
   });
   
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Used in handleSaveAndContinue
   const [error, setError] = useState('');
 
   const handleToggle = (key: string) => {
@@ -41,6 +41,15 @@ const NotificationSetupStep: React.FC<OnboardingStepProps> = ({
       setIsLoading(false);
     }
   };
+
+  // Expose the handler to the overlay
+  React.useEffect(() => {
+    (window as any).__notificationSetupStepHandler = handleSaveAndContinue;
+
+    return () => {
+      delete (window as any).__notificationSetupStepHandler;
+    };
+  }, [handleSaveAndContinue]);
 
   return (
     <div className="space-y-6">
@@ -183,14 +192,13 @@ const NotificationSetupStep: React.FC<OnboardingStepProps> = ({
         </p>
       </div>
 
-      {/* Action Button */}
-      <button
-        onClick={handleSaveAndContinue}
-        disabled={isLoading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-colors"
-      >
-        {isLoading ? 'Saving...' : 'Save & Continue'}
-      </button>
+      {/* Status Message */}
+      <div className="bg-blue-600/10 border border-blue-600/20 rounded-lg p-3">
+        <p className="text-blue-400 text-sm">
+          ✅ Notification preferences configured - Click Continue to save
+          {isLoading && ' (Saving...)'}
+        </p>
+      </div>
     </div>
   );
 };
