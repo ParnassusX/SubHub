@@ -53,8 +53,10 @@ export function useOnboarding() {
 
       // Check if onboarding is already completed
       const isCompleted = await OnboardingService.isOnboardingCompleted(user.id);
+      console.log('Onboarding completed check:', isCompleted);
 
       if (isCompleted) {
+        console.log('User has already completed onboarding, skipping');
         setState(prev => ({
           ...prev,
           isActive: false,

@@ -227,25 +227,37 @@ export class OnboardingService {
    */
   static async completeStep(userId: string, stepId: string): Promise<OnboardingProgress> {
     try {
+      console.log(`Completing onboarding step: ${stepId} for user: ${userId}`);
+
       const progress = await this.getOnboardingProgress(userId);
-      if (!progress) throw new Error('Onboarding not initialized');
+      if (!progress) {
+        console.log('No existing progress found, initializing...');
+        await this.initializeOnboarding(userId);
+        return this.completeStep(userId, stepId); // Retry with initialized progress
+      }
+
+      console.log('Current progress before completion:', progress);
 
       // Add to completed steps if not already there
       if (!progress.completedSteps.includes(stepId)) {
         progress.completedSteps.push(stepId);
         progress.completedCount = progress.completedSteps.length;
         progress.progressPercentage = this.calculateProgressPercentage(progress.completedSteps);
+        console.log(`Added step ${stepId} to completed steps:`, progress.completedSteps);
       }
 
       // Move to next step
       const nextStep = this.getNextStep(stepId);
       if (nextStep) {
         progress.currentStep = nextStep.id;
+        console.log(`Moving to next step: ${nextStep.id}`);
       } else {
         // All steps completed
         progress.completedAt = new Date().toISOString();
+        console.log('All onboarding steps completed!');
       }
 
+      console.log('Final progress before saving:', progress);
       await this.saveOnboardingProgress(progress);
       return progress;
     } catch (error) {

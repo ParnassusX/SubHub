@@ -4,9 +4,7 @@ import { Zap, Shield, TrendingUp, Users } from 'lucide-react';
 
 import type { OnboardingStepProps } from '../../../types/onboarding';
 
-const WelcomeStep: React.FC<OnboardingStepProps> = ({
-  onNext
-}) => {
+const WelcomeStep: React.FC<OnboardingStepProps> = () => {
 
   const features = [
     {
@@ -106,15 +104,15 @@ const WelcomeStep: React.FC<OnboardingStepProps> = ({
 
       {/* Call to Action */}
       <div className="pt-4">
-        <p className="text-gray-400 text-sm mb-4">
-          Ready to take control of your subscriptions?
-        </p>
-        <button
-          onClick={onNext}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-        >
-          Let's Get Started! 🚀
-        </button>
+        <div className="bg-green-600/10 border border-green-600/20 rounded-lg p-4">
+          <div className="flex items-center justify-center space-x-2 mb-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+            <span className="text-green-400 font-medium">Ready to Start</span>
+          </div>
+          <p className="text-gray-300 text-sm text-center">
+            Click "Continue" below to begin your personalized setup journey
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -32,11 +32,24 @@ const NotificationSetupStep: React.FC<OnboardingStepProps> = ({
     setError('');
 
     try {
-      await SettingsService.updateNotificationSettings(preferences);
+      console.log('Saving notification preferences:', preferences);
+
+      // Save notification settings using the preferences structure
+      const result = await SettingsService.updateNotificationSettings({
+        email_notifications: preferences.email_notifications,
+        push_notifications: preferences.push_notifications,
+        renewal_alerts: preferences.renewal_alerts,
+        spending_alerts: preferences.spending_alerts,
+        weekly_summary: true, // Default value since not in current preferences
+        monthly_report: true, // Default value since not in current preferences
+        reminder_frequency: preferences.reminder_frequency
+      });
+
+      console.log('Notification settings saved:', result);
       onNext();
     } catch (err) {
       console.error('Error saving notification settings:', err);
-      setError('Failed to save notification settings. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to save notification settings. Please try again.');
     } finally {
       setIsLoading(false);
     }

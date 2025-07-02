@@ -3,6 +3,7 @@ import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOnboarding } from '../../hooks/useOnboarding';
 import { OnboardingService } from '../../services/onboardingService';
+import { SettingsService } from '../../services/settingsService';
 
 const OnboardingTestPanel: React.FC = () => {
   const { user } = useAuth();
@@ -23,7 +24,14 @@ const OnboardingTestPanel: React.FC = () => {
 
   const handleResetOnboarding = async () => {
     if (user?.id) {
-      await restartOnboarding();
+      console.log('Resetting onboarding for user:', user.id);
+      try {
+        await OnboardingService.resetOnboarding(user.id);
+        await restartOnboarding();
+        console.log('Onboarding reset successfully');
+      } catch (error) {
+        console.error('Error resetting onboarding:', error);
+      }
     }
   };
 
@@ -37,7 +45,7 @@ const OnboardingTestPanel: React.FC = () => {
     window.location.reload();
   };
 
-  const handleTestFlow = () => {
+  const handleTestFlow = async () => {
     console.log('🧪 Testing Onboarding Flow:');
     console.log('1. User authenticated:', !!user?.id);
     console.log('2. Onboarding active:', isOnboardingActive);
@@ -57,6 +65,28 @@ const OnboardingTestPanel: React.FC = () => {
     handlers.forEach(handler => {
       console.log(`8. Handler ${handler}:`, typeof (window as any)[handler]);
     });
+
+    // Test data persistence
+    if (user?.id) {
+      try {
+        console.log('🔍 Testing Data Persistence:');
+
+        // Check profile data
+        const profile = await SettingsService.getProfile();
+        console.log('Profile data:', profile);
+
+        // Check preferences
+        const preferences = await SettingsService.getPreferences();
+        console.log('Preferences data:', preferences);
+
+        // Check onboarding progress
+        const onboardingProgress = await OnboardingService.getOnboardingProgress(user.id);
+        console.log('Onboarding progress:', onboardingProgress);
+
+      } catch (error) {
+        console.error('Error testing data persistence:', error);
+      }
+    }
   };
 
   const isDisabled = OnboardingService.isOnboardingDisabled();

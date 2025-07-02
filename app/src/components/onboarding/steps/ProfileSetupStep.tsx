@@ -65,24 +65,33 @@ const ProfileSetupStep: React.FC<OnboardingStepProps> = ({
     setError('');
 
     try {
+      console.log('Saving profile data:', formData);
+
+      // Validate required fields
+      if (!formData.name.trim()) {
+        throw new Error('Name is required');
+      }
+
       // Update profile settings
-      await SettingsService.updateProfile({
-        name: formData.name,
+      const profileResult = await SettingsService.updateProfile({
+        name: formData.name.trim(),
         currency: formData.currency,
         timezone: formData.timezone
       });
+      console.log('Profile updated:', profileResult);
 
       // Update user preferences
-      await SettingsService.updatePreferences({
+      const preferencesResult = await SettingsService.updatePreferences({
         language: formData.language
       });
+      console.log('Preferences updated:', preferencesResult);
 
       // Continue to next step
       onNext();
 
     } catch (err) {
       console.error('Error saving profile:', err);
-      setError('Failed to save profile settings. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to save profile settings. Please try again.');
     } finally {
       setIsLoading(false);
     }

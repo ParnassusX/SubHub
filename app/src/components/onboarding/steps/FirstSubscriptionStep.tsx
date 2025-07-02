@@ -57,6 +57,8 @@ const FirstSubscriptionStep: React.FC<OnboardingStepProps> = ({
     setError('');
 
     try {
+      console.log('Adding subscription:', formData);
+
       // Validate form
       if (!formData.name.trim()) {
         throw new Error('Subscription name is required');
@@ -67,8 +69,8 @@ const FirstSubscriptionStep: React.FC<OnboardingStepProps> = ({
         throw new Error('Please enter a valid cost');
       }
 
-      // Add subscription
-      await addSubscription({
+      // Add subscription with proper data structure
+      const subscriptionData = {
         name: formData.name.trim(),
         cost,
         frequency: formData.frequency,
@@ -76,7 +78,11 @@ const FirstSubscriptionStep: React.FC<OnboardingStepProps> = ({
         startDate: formData.startDate,
         description: formData.description.trim() || undefined,
         website: formData.website.trim() || undefined
-      });
+      };
+
+      console.log('Subscription data to save:', subscriptionData);
+      const result = await addSubscription(subscriptionData);
+      console.log('Subscription added successfully:', result);
 
       // Continue to next step
       onNext();
