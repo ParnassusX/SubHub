@@ -34,8 +34,8 @@ const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ className = '' })
     estimatedTimeRemaining
   } = useOnboarding();
 
-  // Don't render if onboarding is not active
-  if (!isOnboardingActive || !currentStep) {
+  // Don't render if onboarding is not active or still loading
+  if (!isOnboardingActive || !currentStep || isLoading) {
     return null;
   }
 

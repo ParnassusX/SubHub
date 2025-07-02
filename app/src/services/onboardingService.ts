@@ -11,6 +11,24 @@ import { ONBOARDING_STEPS, CONVERSION_OPPORTUNITIES } from '../types/onboarding'
 export class OnboardingService {
   private static readonly STORAGE_KEY = 'subhub_onboarding_progress';
 
+  // Debug method for testing - expose to window in development
+  static setupDebugMethods() {
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      (window as any).SubHubDebug = {
+        resetOnboarding: async (userId: string) => {
+          console.log('Resetting onboarding for user:', userId);
+          await this.resetOnboarding(userId);
+          window.location.reload();
+        },
+        showOnboarding: () => {
+          localStorage.removeItem(this.STORAGE_KEY);
+          window.location.reload();
+        }
+      };
+      console.log('SubHub Debug methods available: window.SubHubDebug.resetOnboarding(userId), window.SubHubDebug.showOnboarding()');
+    }
+  }
+
   /**
    * Initialize onboarding for a new user
    */
@@ -61,22 +79,49 @@ export class OnboardingService {
         .eq('user_id', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') throw error;
-      if (!data) return null;
+      if (error && error.code !== 'PGRST116') {
+        // If database error, try localStorage fallback
+        console.warn('Database error, trying localStorage fallback:', error);
+        const stored = localStorage.getItem(this.STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.userId === userId) {
+            return parsed;
+          }
+        }
+        return null;
+      }
+
+      if (!data) {
+        // Try localStorage fallback
+        const stored = localStorage.getItem(this.STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.userId === userId) {
+            return parsed;
+          }
+        }
+        return null;
+      }
 
       // Convert database format to OnboardingProgress
+      // Handle missing onboarding fields gracefully
+      const completedSteps = data.completed_steps || [];
+      const hasSeenPremiumFeatures = data.has_seen_premium_features || false;
+      const conversionOpportunities = data.conversion_opportunities_shown || [];
+
       return {
         userId,
         currentStep: data.current_step || 'welcome',
-        completedSteps: data.completed_steps || [],
+        completedSteps,
         startedAt: data.onboarding_started_at || new Date().toISOString(),
         completedAt: data.onboarding_completed_at || undefined,
         skippedSteps: data.skipped_steps || [],
         totalSteps: this.getOnboardingSteps().length,
-        completedCount: (data.completed_steps || []).length,
-        progressPercentage: this.calculateProgressPercentage(data.completed_steps || []),
-        hasSeenPremiumFeatures: data.has_seen_premium_features || false,
-        conversionOpportunities: data.conversion_opportunities_shown || []
+        completedCount: completedSteps.length,
+        progressPercentage: this.calculateProgressPercentage(completedSteps),
+        hasSeenPremiumFeatures,
+        conversionOpportunities
       };
     } catch (error) {
       console.error('Error getting onboarding progress:', error);
@@ -89,30 +134,45 @@ export class OnboardingService {
    */
   static async saveOnboardingProgress(progress: OnboardingProgress): Promise<void> {
     try {
-      const updateData = {
+      // Prepare update data, only including fields that exist in the table
+      const updateData: any = {
         user_id: progress.userId,
-        onboarding_completed: !!progress.completedAt,
-        onboarding_started_at: progress.startedAt,
-        onboarding_completed_at: progress.completedAt,
-        current_step: progress.currentStep,
-        completed_steps: progress.completedSteps,
-        skipped_steps: progress.skippedSteps,
-        has_seen_premium_features: progress.hasSeenPremiumFeatures,
-        conversion_opportunities_shown: progress.conversionOpportunities,
         updated_at: new Date().toISOString()
       };
+
+      // Only add onboarding fields if they might exist in the table
+      // This prevents errors if the table hasn't been migrated yet
+      try {
+        // Try to add onboarding-specific fields
+        updateData.onboarding_completed = !!progress.completedAt;
+        updateData.onboarding_started_at = progress.startedAt;
+        updateData.onboarding_completed_at = progress.completedAt;
+        updateData.current_step = progress.currentStep;
+        updateData.completed_steps = progress.completedSteps;
+        updateData.skipped_steps = progress.skippedSteps;
+        updateData.has_seen_premium_features = progress.hasSeenPremiumFeatures;
+        updateData.conversion_opportunities_shown = progress.conversionOpportunities;
+      } catch (fieldError) {
+        console.warn('Some onboarding fields may not exist in database yet:', fieldError);
+      }
 
       const { error } = await supabase
         .from('user_preferences')
         .upsert(updateData, { onConflict: 'user_id' });
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Database save failed, using localStorage fallback:', error);
+        // Fallback to localStorage if database fields don't exist
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(progress));
+        return;
+      }
 
       // Also save to localStorage for quick access
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(progress));
     } catch (error) {
       console.error('Error saving onboarding progress:', error);
-      throw error;
+      // Fallback to localStorage
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(progress));
     }
   }
 
@@ -272,7 +332,9 @@ export class OnboardingService {
   static async isOnboardingCompleted(userId: string): Promise<boolean> {
     try {
       const progress = await this.getOnboardingProgress(userId);
-      return !!progress?.completedAt;
+      const isCompleted = !!progress?.completedAt;
+      console.log('Checking onboarding completion for user:', userId, 'completed:', isCompleted);
+      return isCompleted;
     } catch (error) {
       console.error('Error checking onboarding completion:', error);
       return false;

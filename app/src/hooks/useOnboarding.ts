@@ -25,7 +25,7 @@ export function useOnboarding() {
    */
   useEffect(() => {
     if (!user?.id) {
-      setState(prev => ({ ...prev, isLoading: false }));
+      setState(prev => ({ ...prev, isLoading: false, isActive: false }));
       return;
     }
 
@@ -40,33 +40,42 @@ export function useOnboarding() {
 
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
+      console.log('Initializing onboarding for user:', user.id);
 
       // Check if onboarding is already completed
       const isCompleted = await OnboardingService.isOnboardingCompleted(user.id);
-      
+      console.log('Onboarding completed?', isCompleted);
+
       if (isCompleted) {
-        setState(prev => ({ 
-          ...prev, 
-          isActive: false, 
-          isLoading: false 
+        console.log('Onboarding already completed, not showing overlay');
+        setState(prev => ({
+          ...prev,
+          isActive: false,
+          isLoading: false
         }));
         return;
       }
 
       // Get or create onboarding progress
       let progress = await OnboardingService.getOnboardingProgress(user.id);
+      console.log('Existing progress:', progress);
+
       if (!progress) {
+        console.log('No existing progress, initializing new onboarding');
         progress = await OnboardingService.initializeOnboarding(user.id);
+        console.log('New progress created:', progress);
       }
 
       // Get all steps with completion status
       const allSteps = OnboardingService.getOnboardingSteps(progress.completedSteps);
       const currentStep = allSteps.find(step => step.id === progress.currentStep) || allSteps[0];
+      console.log('Current step:', currentStep);
 
       // Get conversion opportunities
       const opportunities = await OnboardingService.getConversionOpportunities(user.id);
       setConversionOpportunities(opportunities);
 
+      console.log('Setting onboarding as active');
       setState({
         isActive: true,
         isLoading: false,

@@ -14,6 +14,7 @@ import PerformanceMonitor from './components/PerformanceMonitor'
 import PWAUpdatePrompt from './components/PWAUpdatePrompt'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
 import OnboardingOverlay from './components/onboarding/OnboardingOverlay'
+import { OnboardingService } from './services/onboardingService'
 import { usePerformanceOptimization } from './hooks/usePerformanceOptimization'
 import { useErrorHandler } from './hooks/useErrorHandler'
 import './App.css'
@@ -40,6 +41,11 @@ function App() {
   // Initialize performance optimizations and error handling
   usePerformanceOptimization()
   useErrorHandler()
+
+  // Setup debug methods in development
+  React.useEffect(() => {
+    OnboardingService.setupDebugMethods();
+  }, []);
 
   return (
     <ErrorBoundary>
@@ -172,14 +178,14 @@ function App() {
             </Routes>
           </Router>
         </SubscriptionProvider>
+
+        {/* Onboarding Overlay - Must be inside AuthProvider */}
+        <OnboardingOverlay />
       </AuthProvider>
 
       {/* PWA Prompts */}
       <PWAUpdatePrompt />
       <PWAInstallPrompt />
-
-      {/* Onboarding Overlay */}
-      <OnboardingOverlay />
     </ErrorBoundary>
   )
 }
