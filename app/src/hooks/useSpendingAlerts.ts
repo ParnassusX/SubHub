@@ -1,13 +1,13 @@
 // Spending Alerts Hook for Phase 2.1: Intelligent Notification System
 import { useState, useEffect, useCallback } from 'react';
-import { useSubscription } from '../contexts/SubscriptionContext';
+import { useSubscriptions } from '../contexts/SubscriptionContext';
 import { useBudget } from '../hooks/useBudget';
 import { SpendingAlertService } from '../services/spendingAlertService';
 import { SpendingAlert, NotificationPreferences } from '../types/notifications';
 import { db } from '../lib/supabase';
 
 export const useSpendingAlerts = () => {
-  const { subscriptions } = useSubscription();
+  const { subscriptions } = useSubscriptions();
   const { monthlyBudget, yearlyBudget, categoryBudgets } = useBudget();
   const [spendingStatus, setSpendingStatus] = useState<{
     monthly: { spent: number; budget: number; percentage: number; status: 'safe' | 'warning' | 'critical' };

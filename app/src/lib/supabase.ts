@@ -105,20 +105,6 @@ export const db = {
     delete: (id: string) => supabase.from('categories').delete().eq('id', id),
   },
 
-
-
-  // Notifications
-  notifications: {
-    getAll: () => supabase.from('notifications').select('*').order('created_at', { ascending: false }),
-    getUnread: () => supabase.from('notifications').select('*').eq('is_read', false).order('created_at', { ascending: false }),
-    create: (data: Database['public']['Tables']['notifications']['Insert']) =>
-      supabase.from('notifications').insert(data).select().single(),
-    markAsRead: (id: string) =>
-      supabase.from('notifications').update({ is_read: true }).eq('id', id),
-    markAllAsRead: () =>
-      supabase.from('notifications').update({ is_read: true }).eq('is_read', false),
-  },
-
   // Dashboard functions
   dashboard: {
     getUserStats: () => supabase.rpc('get_user_dashboard_stats'),

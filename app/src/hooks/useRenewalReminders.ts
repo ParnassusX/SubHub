@@ -1,12 +1,12 @@
 // Renewal Reminders Hook for Phase 2.1: Intelligent Notification System
 import { useState, useEffect, useCallback } from 'react';
-import { useSubscription } from '../contexts/SubscriptionContext';
+import { useSubscriptions } from '../contexts/SubscriptionContext';
 import { RenewalReminderService } from '../services/renewalReminderService';
 import { RenewalReminder, NotificationPreferences } from '../types/notifications';
 import { db } from '../lib/supabase';
 
 export const useRenewalReminders = () => {
-  const { subscriptions } = useSubscription();
+  const { subscriptions } = useSubscriptions();
   const [upcomingRenewals, setUpcomingRenewals] = useState<RenewalReminder[]>([]);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [isLoading, setIsLoading] = useState(true);
