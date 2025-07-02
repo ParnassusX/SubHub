@@ -1,7 +1,8 @@
 // Onboarding Overlay Component - Main onboarding interface
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, ArrowLeft, ArrowRight, SkipForward } from 'lucide-react';
 import { useOnboarding } from '../../hooks/useOnboarding';
+import { useAuth } from '../../contexts/AuthContext';
 
 
 // Import step components
@@ -18,6 +19,7 @@ interface OnboardingOverlayProps {
 }
 
 const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ className = '' }) => {
+  const { user } = useAuth();
   const {
     isOnboardingActive,
     isLoading,
@@ -31,15 +33,33 @@ const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ className = '' })
     isLastStep,
     canGoBack,
     progressPercentage,
-    estimatedTimeRemaining
+    estimatedTimeRemaining,
+    error
   } = useOnboarding();
 
-  // Don't render if onboarding is not active or still loading
-  if (!isOnboardingActive || !currentStep || isLoading) {
+  // Handle escape key to exit onboarding
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOnboardingActive) {
+        exitOnboarding();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOnboardingActive, exitOnboarding]);
+
+  // Safety checks - don't render if:
+  // 1. User is not authenticated
+  // 2. Onboarding is not active
+  // 3. Still loading
+  // 4. No current step
+  // 5. There's an error
+  if (!user || !isOnboardingActive || !currentStep || isLoading || error) {
     return null;
   }
 
-  // Render the appropriate step component
+  // Render the appropriate step component with error handling
   const renderStepComponent = () => {
     const stepProps = {
       step: currentStep,
@@ -51,27 +71,48 @@ const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ className = '' })
       progress: progress!
     };
 
-    switch (currentStep.component) {
-      case 'WelcomeStep':
-        return <WelcomeStep {...stepProps} />;
-      case 'ProfileSetupStep':
-        return <ProfileSetupStep {...stepProps} />;
-      case 'FirstSubscriptionStep':
-        return <FirstSubscriptionStep {...stepProps} />;
-      case 'NotificationSetupStep':
-        return <NotificationSetupStep {...stepProps} />;
-      case 'BudgetSetupStep':
-        return <BudgetSetupStep {...stepProps} />;
-      case 'DashboardTourStep':
-        return <DashboardTourStep {...stepProps} />;
-      case 'PremiumFeaturesStep':
-        return <PremiumFeaturesStep {...stepProps} />;
-      default:
-        return (
-          <div className="text-center py-8">
-            <p className="text-gray-400">Unknown step: {currentStep.component}</p>
-          </div>
-        );
+    try {
+      switch (currentStep.component) {
+        case 'WelcomeStep':
+          return <WelcomeStep {...stepProps} />;
+        case 'ProfileSetupStep':
+          return <ProfileSetupStep {...stepProps} />;
+        case 'FirstSubscriptionStep':
+          return <FirstSubscriptionStep {...stepProps} />;
+        case 'NotificationSetupStep':
+          return <NotificationSetupStep {...stepProps} />;
+        case 'BudgetSetupStep':
+          return <BudgetSetupStep {...stepProps} />;
+        case 'DashboardTourStep':
+          return <DashboardTourStep {...stepProps} />;
+        case 'PremiumFeaturesStep':
+          return <PremiumFeaturesStep {...stepProps} />;
+        default:
+          return (
+            <div className="text-center py-8">
+              <p className="text-gray-400">Unknown step: {currentStep.component}</p>
+              <button
+                onClick={exitOnboarding}
+                className="mt-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              >
+                Skip Onboarding
+              </button>
+            </div>
+          );
+      }
+    } catch (error) {
+      console.error('Error rendering onboarding step:', error);
+      return (
+        <div className="text-center py-8">
+          <p className="text-red-400 mb-4">Something went wrong with this step.</p>
+          <button
+            onClick={exitOnboarding}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Exit Onboarding
+          </button>
+        </div>
+      );
     }
   };
 

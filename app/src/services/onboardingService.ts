@@ -10,10 +10,26 @@ import { ONBOARDING_STEPS, CONVERSION_OPPORTUNITIES } from '../types/onboarding'
 
 export class OnboardingService {
   private static readonly STORAGE_KEY = 'subhub_onboarding_progress';
+  private static readonly DISABLED_KEY = 'subhub_onboarding_disabled';
+
+  // Check if onboarding is globally disabled
+  static isOnboardingDisabled(): boolean {
+    return localStorage.getItem(this.DISABLED_KEY) === 'true';
+  }
+
+  // Disable onboarding globally
+  static disableOnboarding(): void {
+    localStorage.setItem(this.DISABLED_KEY, 'true');
+  }
+
+  // Enable onboarding globally
+  static enableOnboarding(): void {
+    localStorage.removeItem(this.DISABLED_KEY);
+  }
 
   // Debug method for testing - expose to window in development
   static setupDebugMethods() {
-    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
       (window as any).SubHubDebug = {
         resetOnboarding: async (userId: string) => {
           console.log('Resetting onboarding for user:', userId);
@@ -21,11 +37,20 @@ export class OnboardingService {
           window.location.reload();
         },
         showOnboarding: () => {
+          this.enableOnboarding();
           localStorage.removeItem(this.STORAGE_KEY);
+          window.location.reload();
+        },
+        disableOnboarding: () => {
+          this.disableOnboarding();
+          window.location.reload();
+        },
+        enableOnboarding: () => {
+          this.enableOnboarding();
           window.location.reload();
         }
       };
-      console.log('SubHub Debug methods available: window.SubHubDebug.resetOnboarding(userId), window.SubHubDebug.showOnboarding()');
+      console.log('SubHub Debug methods available:', Object.keys((window as any).SubHubDebug));
     }
   }
 
@@ -55,16 +80,33 @@ export class OnboardingService {
         conversionOpportunities: []
       };
 
-      // Save to database
+      // Save to database (with fallback)
       await this.saveOnboardingProgress(progress);
-      
-      // Initialize default settings
-      await SettingsService.initializeDefaultSettings();
+
+      // Initialize default settings (non-blocking)
+      try {
+        await SettingsService.initializeDefaultSettings();
+      } catch (settingsError) {
+        console.warn('Failed to initialize default settings, continuing with onboarding:', settingsError);
+      }
 
       return progress;
     } catch (error) {
       console.error('Error initializing onboarding:', error);
-      throw error;
+      // Return a basic progress object even if database fails
+      const steps = this.getOnboardingSteps();
+      return {
+        userId,
+        currentStep: steps[0]?.id || 'welcome',
+        completedSteps: [],
+        startedAt: new Date().toISOString(),
+        skippedSteps: [],
+        totalSteps: steps.length,
+        completedCount: 0,
+        progressPercentage: 0,
+        hasSeenPremiumFeatures: false,
+        conversionOpportunities: []
+      };
     }
   }
 
@@ -81,12 +123,16 @@ export class OnboardingService {
 
       if (error && error.code !== 'PGRST116') {
         // If database error, try localStorage fallback
-        console.warn('Database error, trying localStorage fallback:', error);
+        console.warn('Database error, using localStorage fallback');
         const stored = localStorage.getItem(this.STORAGE_KEY);
         if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed.userId === userId) {
-            return parsed;
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed.userId === userId) {
+              return parsed;
+            }
+          } catch (parseError) {
+            console.warn('Failed to parse stored onboarding data');
           }
         }
         return null;
@@ -332,9 +378,7 @@ export class OnboardingService {
   static async isOnboardingCompleted(userId: string): Promise<boolean> {
     try {
       const progress = await this.getOnboardingProgress(userId);
-      const isCompleted = !!progress?.completedAt;
-      console.log('Checking onboarding completion for user:', userId, 'completed:', isCompleted);
-      return isCompleted;
+      return !!progress?.completedAt;
     } catch (error) {
       console.error('Error checking onboarding completion:', error);
       return false;
