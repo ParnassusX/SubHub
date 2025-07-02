@@ -14,6 +14,7 @@ import PerformanceMonitor from './components/PerformanceMonitor'
 import PWAUpdatePrompt from './components/PWAUpdatePrompt'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
 import OnboardingOverlay from './components/onboarding/OnboardingOverlay'
+import OnboardingTestPanel from './components/onboarding/OnboardingTestPanel'
 import { OnboardingService } from './services/onboardingService'
 import { usePerformanceOptimization } from './hooks/usePerformanceOptimization'
 import { useErrorHandler } from './hooks/useErrorHandler'
@@ -181,6 +182,9 @@ function App() {
 
         {/* Onboarding Overlay - Must be inside AuthProvider */}
         <OnboardingOverlay />
+
+        {/* Development Test Panel */}
+        <OnboardingTestPanel />
       </AuthProvider>
 
       {/* PWA Prompts */}
