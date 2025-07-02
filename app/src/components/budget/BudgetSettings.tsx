@@ -21,7 +21,7 @@ import BudgetActionButtons from './BudgetActionButtons';
 
 const BudgetSettings: React.FC = () => {
   const { t } = useTranslation();
-  const { formatPrice, currency } = useCurrency();
+  const { formatPrice: _formatPrice, currency } = useCurrency();
   const {
     monthlyBudget,
     yearlyBudget,
@@ -35,12 +35,12 @@ const BudgetSettings: React.FC = () => {
   } = useBudget();
 
   const {
-    error,
+    error: _error,
     hasError,
     errorMessage,
     clearError,
     getFieldError,
-    hasFieldError,
+    hasFieldError: _hasFieldError,
     handleFormSubmit
   } = useBudgetFormErrorHandler();
 
@@ -225,7 +225,7 @@ const BudgetSettings: React.FC = () => {
           <MonthlyBudgetSection
             value={formData.monthlyBudget}
             onChange={(value) => handleFieldChange('monthlyBudget', value)}
-            error={getFieldError('monthlyBudget')}
+            error={getFieldError('monthlyBudget') || undefined}
             currency={currency}
             disabled={isSaving}
           />
@@ -234,7 +234,7 @@ const BudgetSettings: React.FC = () => {
           <YearlyBudgetSection
             value={formData.yearlyBudget}
             onChange={(value) => handleFieldChange('yearlyBudget', value)}
-            error={getFieldError('yearlyBudget')}
+            error={getFieldError('yearlyBudget') || undefined}
             currency={currency}
             disabled={isSaving}
           />

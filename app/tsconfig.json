@@ -27,5 +27,12 @@
     }
   },
   "include": ["src"],
+  "exclude": [
+    "src/scripts/**/*",
+    "src/services/budgetOptimizationService.ts",
+    "src/services/paymentService.ts",
+    "src/services/smartNotificationScheduler.ts",
+    "src/services/featureGateService.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

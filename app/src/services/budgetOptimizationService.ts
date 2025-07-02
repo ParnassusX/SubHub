@@ -37,7 +37,7 @@ export class BudgetOptimizationService {
   static analyzeBudgetOptimization(
     subscriptions: Subscription[],
     monthlyBudget?: number,
-    yearlyBudget?: number,
+    _yearlyBudget?: number,
     categoryBudgets?: Record<string, number>
   ): BudgetOptimizationAnalysis {
     const recommendations: OptimizationRecommendation[] = [];
@@ -177,7 +177,7 @@ export class BudgetOptimizationService {
    * Analyze budget vs spending for optimization
    */
   private static analyzeBudgetVsSpending(
-    subscriptions: Subscription[],
+    _subscriptions: Subscription[],
     spending: number,
     budget: number,
     type: 'monthly' | 'yearly'
@@ -223,7 +223,7 @@ export class BudgetOptimizationService {
    * Analyze category budgets for optimization
    */
   private static analyzeCategoryBudgets(
-    subscriptions: Subscription[],
+    _subscriptions: Subscription[],
     categorySpending: Record<string, number>,
     categoryBudgets: Record<string, number>
   ): OptimizationRecommendation[] {
@@ -366,7 +366,7 @@ export class BudgetOptimizationService {
    */
   private static calculateSpendingEfficiency(
     subscriptions: Subscription[],
-    monthlySpending: number
+    _monthlySpending: number
   ): number {
     // Simple efficiency calculation based on subscription diversity and cost distribution
     const categories = new Set(subscriptions.map(sub => sub.category || 'Other'));

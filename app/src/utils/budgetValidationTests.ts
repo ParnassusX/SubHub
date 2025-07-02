@@ -1,17 +1,14 @@
 // Budget Validation and Error Handling Tests
-import { 
-  validateAmount, 
-  validateCategoryName, 
-  validateCategoryBudgets, 
+import {
+  validateAmount,
+  validateCategoryName,
   validateBudgetForm,
   validateField,
   convertFormDataToApiFormat,
   convertApiDataToFormFormat
 } from './budgetValidation';
-import { 
-  BudgetError, 
-  BudgetErrorType, 
-  handleBudgetError, 
+import {
+  handleBudgetError,
   formatErrorForUser,
   isRetryableError
 } from './budgetErrorHandling';

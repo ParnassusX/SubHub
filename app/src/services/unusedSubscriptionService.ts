@@ -106,7 +106,7 @@ export class UnusedSubscriptionService {
    */
   private static async hasRecentUnusedNotification(
     subscriptionId: string,
-    currentInactiveDays: number
+    _currentInactiveDays: number
   ): Promise<boolean> {
     try {
       const sevenDaysAgo = new Date(Date.now() - (7 * 24 * 60 * 60 * 1000));

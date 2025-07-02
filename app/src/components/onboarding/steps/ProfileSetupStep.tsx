@@ -1,0 +1,213 @@
+// Profile Setup Step - Configure user preferences
+import React, { useState } from 'react';
+import { Globe, DollarSign, Clock, User } from 'lucide-react';
+
+import { useCurrency } from '../../../hooks/useCurrency';
+import { SettingsService } from '../../../services/settingsService';
+import { useAuth } from '../../../contexts/AuthContext';
+import type { OnboardingStepProps } from '../../../types/onboarding';
+
+const ProfileSetupStep: React.FC<OnboardingStepProps> = ({
+  onNext
+}) => {
+  const { currency } = useCurrency();
+  const { user } = useAuth();
+  
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    currency: currency || 'USD',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+    language: 'en'
+  });
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Currency options
+  const currencyOptions = [
+    { value: 'USD', label: 'US Dollar ($)', symbol: '$' },
+    { value: 'EUR', label: 'Euro (€)', symbol: '€' },
+    { value: 'GBP', label: 'British Pound (£)', symbol: '£' },
+    { value: 'CAD', label: 'Canadian Dollar (C$)', symbol: 'C$' },
+    { value: 'AUD', label: 'Australian Dollar (A$)', symbol: 'A$' },
+    { value: 'JPY', label: 'Japanese Yen (¥)', symbol: '¥' }
+  ];
+
+  // Language options
+  const languageOptions = [
+    { value: 'en', label: 'English' },
+    { value: 'it', label: 'Italiano' }
+  ];
+
+  // Common timezones
+  const timezoneOptions = [
+    { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+    { value: 'America/New_York', label: 'Eastern Time (US)' },
+    { value: 'America/Chicago', label: 'Central Time (US)' },
+    { value: 'America/Denver', label: 'Mountain Time (US)' },
+    { value: 'America/Los_Angeles', label: 'Pacific Time (US)' },
+    { value: 'Europe/London', label: 'London (GMT)' },
+    { value: 'Europe/Paris', label: 'Paris (CET)' },
+    { value: 'Europe/Rome', label: 'Rome (CET)' },
+    { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+    { value: 'Australia/Sydney', label: 'Sydney (AEST)' }
+  ];
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setError('');
+  };
+
+  const handleSaveAndContinue = async () => {
+    if (!user?.id) return;
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // Update profile settings
+      await SettingsService.updateProfile({
+        name: formData.name,
+        currency: formData.currency,
+        timezone: formData.timezone
+      });
+
+      // Update user preferences
+      await SettingsService.updatePreferences({
+        language: formData.language
+      });
+
+      // Continue to next step
+      onNext();
+
+    } catch (err) {
+      console.error('Error saving profile:', err);
+      setError('Failed to save profile settings. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto">
+          <User className="w-6 h-6 text-white" />
+        </div>
+        <h2 className="text-xl font-semibold text-white">
+          Set Up Your Profile
+        </h2>
+        <p className="text-gray-400">
+          Let's personalize your SubHub experience
+        </p>
+      </div>
+
+      {/* Form */}
+      <div className="space-y-4">
+        {/* Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            <User className="w-4 h-4 inline mr-2" />
+            Display Name
+          </label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            placeholder="Enter your name"
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        {/* Currency */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            <DollarSign className="w-4 h-4 inline mr-2" />
+            Preferred Currency
+          </label>
+          <select
+            value={formData.currency}
+            onChange={(e) => handleInputChange('currency', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            {currencyOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-400 mt-1">
+            This will be used to display subscription costs
+          </p>
+        </div>
+
+        {/* Language */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            <Globe className="w-4 h-4 inline mr-2" />
+            Language
+          </label>
+          <select
+            value={formData.language}
+            onChange={(e) => handleInputChange('language', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            {languageOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Timezone */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            <Clock className="w-4 h-4 inline mr-2" />
+            Timezone
+          </label>
+          <select
+            value={formData.timezone}
+            onChange={(e) => handleInputChange('timezone', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            {timezoneOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-400 mt-1">
+            Used for renewal reminders and notifications
+          </p>
+        </div>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-900/20 border border-red-800 rounded-lg p-3">
+          <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Info Box */}
+      <div className="bg-blue-600/10 border border-blue-600/20 rounded-lg p-4">
+        <p className="text-blue-400 text-sm">
+          💡 <strong>Tip:</strong> You can change these settings anytime in your profile settings.
+        </p>
+      </div>
+
+      {/* Action Button */}
+      <button
+        onClick={handleSaveAndContinue}
+        disabled={isLoading || !formData.name.trim()}
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-colors"
+      >
+        {isLoading ? 'Saving...' : 'Save & Continue'}
+      </button>
+    </div>
+  );
+};
+
+export default ProfileSetupStep;

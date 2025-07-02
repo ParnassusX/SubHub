@@ -18,12 +18,12 @@ const BudgetInsights: React.FC<BudgetInsightsProps> = ({
   showRecommendations = true
 }) => {
   const { t } = useTranslation();
-  const { formatPrice, currency } = useCurrency();
+  const { formatPrice, currency: _currency } = useCurrency();
   const { 
     monthlyBudget, 
     yearlyBudget, 
     monthlySpending, 
-    yearlySpending,
+    yearlySpending: _yearlySpending,
     insights, 
     alerts,
     budgetSummary,

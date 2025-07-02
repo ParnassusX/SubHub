@@ -16,9 +16,17 @@ export const useTranslation = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Translation function that uses current language
-  const translate = (key: string): string => {
-    return t(key, language);
+  // Translation function that uses current language with fallback and interpolation support
+  const translate = (key: string, fallbackOrParams?: string | Record<string, string | number>): string => {
+    // If second parameter is an object, it's interpolation params
+    if (typeof fallbackOrParams === 'object') {
+      return t(key, language, fallbackOrParams);
+    }
+
+    // Otherwise it's a fallback string
+    const translation = t(key, language);
+    // If translation is the same as key (not found), use fallback if provided
+    return translation === key && fallbackOrParams ? fallbackOrParams : translation;
   };
 
   return {

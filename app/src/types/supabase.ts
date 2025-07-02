@@ -251,6 +251,14 @@ export type Database = {
           language: string
           auto_categorize: boolean
           data_export_format: string
+          onboarding_completed: boolean
+          onboarding_started_at: string | null
+          onboarding_completed_at: string | null
+          current_step: string | null
+          completed_steps: string[]
+          skipped_steps: string[]
+          has_seen_premium_features: boolean
+          conversion_opportunities_shown: string[]
           created_at: string
           updated_at: string
         }
@@ -268,6 +276,14 @@ export type Database = {
           language?: string
           auto_categorize?: boolean
           data_export_format?: string
+          onboarding_completed?: boolean
+          onboarding_started_at?: string | null
+          onboarding_completed_at?: string | null
+          current_step?: string | null
+          completed_steps?: string[]
+          skipped_steps?: string[]
+          has_seen_premium_features?: boolean
+          conversion_opportunities_shown?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -285,6 +301,14 @@ export type Database = {
           language?: string
           auto_categorize?: boolean
           data_export_format?: string
+          onboarding_completed?: boolean
+          onboarding_started_at?: string | null
+          onboarding_completed_at?: string | null
+          current_step?: string | null
+          completed_steps?: string[]
+          skipped_steps?: string[]
+          has_seen_premium_features?: boolean
+          conversion_opportunities_shown?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -470,7 +494,7 @@ export interface BudgetAlert {
 export interface BudgetValidationError {
   field: string
   message: string
-  code: 'REQUIRED' | 'INVALID_AMOUNT' | 'NEGATIVE_VALUE' | 'EXCEEDS_LIMIT'
+  code: 'REQUIRED' | 'INVALID_AMOUNT' | 'NEGATIVE_VALUE' | 'EXCEEDS_LIMIT' | 'INVALID_CATEGORY' | 'TOO_MANY_CATEGORIES' | 'DUPLICATE_CATEGORY'
 }
 
 export interface BudgetValidationResult {

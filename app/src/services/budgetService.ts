@@ -9,7 +9,7 @@ import {
   CategoryBudget
 } from '../types/budget';
 import { Subscription } from '../contexts/SubscriptionContext';
-import { BUDGET_THRESHOLDS, BUDGET_STATUS, BUDGET_INSIGHT_TYPES, ALERT_SEVERITY } from '../constants/budget';
+import { BUDGET_THRESHOLDS } from '../constants/budget';
 
 export class BudgetService {
   // Utility function to normalize subscription costs to monthly
@@ -225,13 +225,25 @@ export class BudgetService {
     return alerts;
   }
 
+  // Convert database subscription format to context format
+  private static convertDbSubscriptions(dbSubs: any[]): Subscription[] {
+    return dbSubs.map(sub => ({
+      ...sub,
+      startDate: sub.start_date || sub.startDate,
+      frequency: sub.frequency as 'Monthly' | 'Yearly'
+    }));
+  }
+
   // Calculate complete budget summary
   static calculateBudgetSummary(input: BudgetCalculationInput): BudgetSummary {
     const { subscriptions, monthlyBudget, yearlyBudget, categoryBudgets } = input;
-    
+
+    // Convert subscriptions to expected format
+    const convertedSubs = this.convertDbSubscriptions(subscriptions as any[]);
+
     // Calculate spending
-    const spending = this.calculateSpending(subscriptions);
-    const categorySpending = this.calculateCategorySpending(subscriptions);
+    const spending = this.calculateSpending(convertedSubs);
+    const categorySpending = this.calculateCategorySpending(convertedSubs);
     
     // Calculate progress
     const monthlyProgress = monthlyBudget ? 

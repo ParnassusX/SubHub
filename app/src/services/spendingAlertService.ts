@@ -115,7 +115,7 @@ export class SpendingAlertService {
    */
   private static async hasRecentSpendingAlert(
     type: 'monthly' | 'yearly' | 'category',
-    currentAmount: number,
+    _currentAmount: number,
     category?: string
   ): Promise<boolean> {
     try {
@@ -201,7 +201,7 @@ export class SpendingAlertService {
    * Generate spending alert title
    */
   private static getSpendingAlertTitle(alert: SpendingAlert): string {
-    const { type, severity, percentage_used, category } = alert;
+    const { type, severity, percentage_used: _percentage_used, category } = alert;
     
     if (severity === 'critical') {
       if (type === 'category') {

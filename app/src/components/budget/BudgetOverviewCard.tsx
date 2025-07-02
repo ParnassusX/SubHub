@@ -17,7 +17,7 @@ const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({
   yearlyBudget,
   monthlySpending,
   yearlySpending,
-  currency
+  currency: _currency
 }) => {
   const { t } = useTranslation();
   const { formatPrice } = useCurrency();

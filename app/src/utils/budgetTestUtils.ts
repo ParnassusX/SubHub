@@ -78,7 +78,7 @@ export function testBudgetCalculations() {
   
   // Test budget summary
   const budgetSummary = BudgetService.calculateBudgetSummary({
-    subscriptions: sampleSubscriptions,
+    subscriptions: sampleSubscriptions as any, // Type assertion for test data
     monthlyBudget: monthlyBudget,
     yearlyBudget: 1200,
     categoryBudgets: sampleCategoryBudgets
@@ -158,10 +158,10 @@ export function testBudgetExistenceCheck() {
   console.log('🔍 Testing Budget Existence Check...');
   
   const testCases = [
-    { monthly: 100, yearly: null, categories: {}, expected: true },
-    { monthly: null, yearly: 1200, categories: {}, expected: true },
-    { monthly: null, yearly: null, categories: { 'Entertainment': 30 }, expected: true },
-    { monthly: null, yearly: null, categories: {}, expected: false }
+    { monthly: 100, yearly: null, categories: {} as CategoryBudget, expected: true },
+    { monthly: null, yearly: 1200, categories: {} as CategoryBudget, expected: true },
+    { monthly: null, yearly: null, categories: { 'Entertainment': 30 } as CategoryBudget, expected: true },
+    { monthly: null, yearly: null, categories: {} as CategoryBudget, expected: false }
   ];
   
   testCases.forEach(({ monthly, yearly, categories, expected }, index) => {

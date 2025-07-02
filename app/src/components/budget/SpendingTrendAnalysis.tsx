@@ -28,7 +28,7 @@ const SpendingTrendAnalysis: React.FC<SpendingTrendAnalysisProps> = ({
 }) => {
   const { t } = useTranslation();
   const { formatPrice } = useCurrency();
-  const { monthlyBudget, yearlyBudget, monthlySpending, yearlySpending } = useBudget();
+  const { monthlyBudget, yearlyBudget, monthlySpending: _monthlySpending, yearlySpending: _yearlySpending } = useBudget();
   const { subscriptions } = useSubscriptions();
 
   // Calculate trend data for the last 6 periods

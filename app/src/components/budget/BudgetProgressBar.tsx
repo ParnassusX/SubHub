@@ -21,7 +21,7 @@ const BudgetProgressBar: React.FC<BudgetProgressBarProps> = ({
   current,
   budget,
   label,
-  currency,
+  currency: _currency,
   showPercentage = true,
   size = 'md',
   color = 'auto',

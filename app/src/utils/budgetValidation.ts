@@ -202,7 +202,7 @@ export function validateBudgetForm(formData: BudgetFormData): BudgetValidationRe
 export function validateField(
   fieldName: keyof BudgetFormData,
   value: any,
-  formData?: Partial<BudgetFormData>
+  _formData?: Partial<BudgetFormData>
 ): BudgetValidationError[] {
   switch (fieldName) {
     case 'monthlyBudget':

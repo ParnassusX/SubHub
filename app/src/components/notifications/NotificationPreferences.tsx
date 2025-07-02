@@ -32,7 +32,28 @@ const NotificationPreferences: React.FC<NotificationPreferencesProps> = ({ class
         }
         
         if (data) {
-          setPreferences(data);
+          // Convert null values to proper defaults for the UI
+          const normalizedData: NotificationPrefsType = {
+            ...data,
+            renewal_reminder_enabled: data.renewal_reminder_enabled ?? true,
+            renewal_reminder_days: data.renewal_reminder_days ?? [1, 3, 7],
+            spending_threshold_enabled: data.spending_threshold_enabled ?? true,
+            spending_threshold_amount: data.spending_threshold_amount ?? undefined,
+            spending_threshold_percentage: data.spending_threshold_percentage ?? 80,
+            unused_subscription_enabled: data.unused_subscription_enabled ?? true,
+            unused_subscription_days: data.unused_subscription_days ?? 30,
+            price_change_enabled: data.price_change_enabled ?? true,
+            email_notifications_enabled: data.email_notifications_enabled ?? true,
+            push_notifications_enabled: data.push_notifications_enabled ?? true,
+            in_app_notifications_enabled: data.in_app_notifications_enabled ?? true,
+            quiet_hours_enabled: data.quiet_hours_enabled ?? false,
+            quiet_hours_start: data.quiet_hours_start ?? undefined,
+            quiet_hours_end: data.quiet_hours_end ?? undefined,
+            max_daily_notifications: data.max_daily_notifications ?? 5,
+            created_at: data.created_at ?? undefined,
+            updated_at: data.updated_at ?? undefined
+          };
+          setPreferences(normalizedData);
         } else {
           // Create default preferences for new user
           const defaultPrefs = {
@@ -53,7 +74,29 @@ const NotificationPreferences: React.FC<NotificationPreferencesProps> = ({ class
           
           const { data: newPrefs, error: createError } = await db.notificationPreferences.create(defaultPrefs);
           if (createError) throw createError;
-          setPreferences(newPrefs);
+
+          // Normalize the created preferences as well
+          const normalizedNewPrefs: NotificationPrefsType = {
+            ...newPrefs,
+            renewal_reminder_enabled: newPrefs.renewal_reminder_enabled ?? true,
+            renewal_reminder_days: newPrefs.renewal_reminder_days ?? [1, 3, 7],
+            spending_threshold_enabled: newPrefs.spending_threshold_enabled ?? true,
+            spending_threshold_amount: newPrefs.spending_threshold_amount ?? undefined,
+            spending_threshold_percentage: newPrefs.spending_threshold_percentage ?? 80,
+            unused_subscription_enabled: newPrefs.unused_subscription_enabled ?? true,
+            unused_subscription_days: newPrefs.unused_subscription_days ?? 30,
+            price_change_enabled: newPrefs.price_change_enabled ?? true,
+            email_notifications_enabled: newPrefs.email_notifications_enabled ?? true,
+            push_notifications_enabled: newPrefs.push_notifications_enabled ?? true,
+            in_app_notifications_enabled: newPrefs.in_app_notifications_enabled ?? true,
+            quiet_hours_enabled: newPrefs.quiet_hours_enabled ?? false,
+            quiet_hours_start: newPrefs.quiet_hours_start ?? undefined,
+            quiet_hours_end: newPrefs.quiet_hours_end ?? undefined,
+            max_daily_notifications: newPrefs.max_daily_notifications ?? 5,
+            created_at: newPrefs.created_at ?? undefined,
+            updated_at: newPrefs.updated_at ?? undefined
+          };
+          setPreferences(normalizedNewPrefs);
         }
       } catch (err) {
         console.error('Error loading notification preferences:', err);
@@ -76,8 +119,29 @@ const NotificationPreferences: React.FC<NotificationPreferencesProps> = ({ class
       
       const { data, error } = await db.notificationPreferences.update(updates);
       if (error) throw error;
-      
-      setPreferences(data);
+
+      // Normalize the updated preferences
+      const normalizedData: NotificationPrefsType = {
+        ...data,
+        renewal_reminder_enabled: data.renewal_reminder_enabled ?? true,
+        renewal_reminder_days: data.renewal_reminder_days ?? [1, 3, 7],
+        spending_threshold_enabled: data.spending_threshold_enabled ?? true,
+        spending_threshold_amount: data.spending_threshold_amount ?? undefined,
+        spending_threshold_percentage: data.spending_threshold_percentage ?? 80,
+        unused_subscription_enabled: data.unused_subscription_enabled ?? true,
+        unused_subscription_days: data.unused_subscription_days ?? 30,
+        price_change_enabled: data.price_change_enabled ?? true,
+        email_notifications_enabled: data.email_notifications_enabled ?? true,
+        push_notifications_enabled: data.push_notifications_enabled ?? true,
+        in_app_notifications_enabled: data.in_app_notifications_enabled ?? true,
+        quiet_hours_enabled: data.quiet_hours_enabled ?? false,
+        quiet_hours_start: data.quiet_hours_start ?? undefined,
+        quiet_hours_end: data.quiet_hours_end ?? undefined,
+        max_daily_notifications: data.max_daily_notifications ?? 5,
+        created_at: data.created_at ?? undefined,
+        updated_at: data.updated_at ?? undefined
+      };
+      setPreferences(normalizedData);
       setSuccessMessage('Preferences updated successfully');
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {

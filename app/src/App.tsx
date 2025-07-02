@@ -13,6 +13,7 @@ import ErrorBoundary, { PageErrorBoundary } from './components/ErrorBoundary'
 import PerformanceMonitor from './components/PerformanceMonitor'
 import PWAUpdatePrompt from './components/PWAUpdatePrompt'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
+import OnboardingOverlay from './components/onboarding/OnboardingOverlay'
 import { usePerformanceOptimization } from './hooks/usePerformanceOptimization'
 import { useErrorHandler } from './hooks/useErrorHandler'
 import './App.css'
@@ -176,6 +177,9 @@ function App() {
       {/* PWA Prompts */}
       <PWAUpdatePrompt />
       <PWAInstallPrompt />
+
+      {/* Onboarding Overlay */}
+      <OnboardingOverlay />
     </ErrorBoundary>
   )
 }

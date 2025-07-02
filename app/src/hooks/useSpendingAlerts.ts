@@ -25,7 +25,28 @@ export const useSpendingAlerts = () => {
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
         throw error;
       }
-      setPreferences(data);
+      // Normalize the data to handle null values
+      const normalizedData = data ? {
+        ...data,
+        renewal_reminder_enabled: data.renewal_reminder_enabled ?? true,
+        renewal_reminder_days: data.renewal_reminder_days ?? [1, 3, 7],
+        spending_threshold_enabled: data.spending_threshold_enabled ?? true,
+        spending_threshold_amount: data.spending_threshold_amount ?? undefined,
+        spending_threshold_percentage: data.spending_threshold_percentage ?? 80,
+        unused_subscription_enabled: data.unused_subscription_enabled ?? true,
+        unused_subscription_days: data.unused_subscription_days ?? 30,
+        price_change_enabled: data.price_change_enabled ?? true,
+        email_notifications_enabled: data.email_notifications_enabled ?? true,
+        push_notifications_enabled: data.push_notifications_enabled ?? true,
+        in_app_notifications_enabled: data.in_app_notifications_enabled ?? true,
+        quiet_hours_enabled: data.quiet_hours_enabled ?? false,
+        quiet_hours_start: data.quiet_hours_start ?? undefined,
+        quiet_hours_end: data.quiet_hours_end ?? undefined,
+        max_daily_notifications: data.max_daily_notifications ?? 5,
+        created_at: data.created_at ?? undefined,
+        updated_at: data.updated_at ?? undefined
+      } : null;
+      setPreferences(normalizedData);
     } catch (err) {
       console.error('Error loading notification preferences:', err);
       setError(err instanceof Error ? err.message : 'Failed to load preferences');

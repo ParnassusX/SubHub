@@ -25,7 +25,7 @@ const SmartScheduling: React.FC<SmartSchedulingProps> = ({
     processSmartScheduling,
     getSchedulingStatus,
     getEfficiencyMetrics,
-    getNextProcessingTime,
+    getNextProcessingTime: _getNextProcessingTime,
     isEnabled,
     quietHoursActive,
     nextOptimalTime,

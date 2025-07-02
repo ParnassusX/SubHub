@@ -22,7 +22,7 @@ interface CriticalAlertsProps {
 }
 
 const CriticalAlerts: React.FC<CriticalAlertsProps> = ({ alerts, maxVisible = 3 }) => {
-  const { formatPrice } = useCurrency();
+  const { formatPrice: _formatPrice } = useCurrency();
   const { t } = useTranslation();
   const navigate = useNavigate();
 

@@ -23,7 +23,7 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({
     monthlyBudget,
     yearlyBudget,
     monthlySpending,
-    yearlySpending,
+    yearlySpending: _yearlySpending,
     monthlyProgress,
     yearlyProgress,
     categoryProgress,

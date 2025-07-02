@@ -15,7 +15,7 @@ interface BudgetAlertsProps {
 const BudgetAlerts: React.FC<BudgetAlertsProps> = ({
   className = '',
   maxAlerts = 5,
-  showSettings = false,
+  showSettings: _showSettings = false,
   compact = false
 }) => {
   const { t } = useTranslation();

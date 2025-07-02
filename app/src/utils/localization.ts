@@ -757,16 +757,25 @@ export const translations = {
   }
 };
 
-// Simple translation function
-export const t = (key: string, language: SupportedLanguage = 'en'): string => {
+// Simple translation function with basic interpolation support
+export const t = (key: string, language: SupportedLanguage = 'en', params?: Record<string, string | number>): string => {
   const keys = key.split('.');
   let value: any = translations[language];
-  
+
   for (const k of keys) {
     value = value?.[k];
   }
-  
-  return value || key; // Fallback to key if translation not found
+
+  let result = value || key; // Fallback to key if translation not found
+
+  // Simple interpolation for {param} placeholders
+  if (params && typeof result === 'string') {
+    Object.entries(params).forEach(([paramKey, paramValue]) => {
+      result = result.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue));
+    });
+  }
+
+  return result;
 };
 
 // Simple currency formatting - following existing utility pattern

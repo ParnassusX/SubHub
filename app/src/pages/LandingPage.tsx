@@ -1,28 +1,23 @@
 // Landing Page for SubHub - Conversion Optimized Marketing Page
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { 
-  ArrowRight, 
-  CheckCircle, 
-  DollarSign, 
-  Bell, 
-  BarChart3, 
-  Shield, 
-  Users, 
+import { useNavigate } from 'react-router-dom';
+import {
+  ArrowRight,
+  CheckCircle,
+  Bell,
+  BarChart3,
   Zap,
-  Star,
   TrendingUp,
   Calendar,
   PieChart,
-  Smartphone,
-  Globe
+  Smartphone
 } from 'lucide-react';
 import { useTranslation } from '../hooks/useTranslation';
 import { useCurrency } from '../hooks/useCurrency';
 
 const LandingPage: React.FC = () => {
   const { t } = useTranslation();
-  const { formatPrice } = useCurrency();
+  const { formatPrice: _formatPrice } = useCurrency();
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
 

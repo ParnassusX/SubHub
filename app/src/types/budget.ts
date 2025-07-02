@@ -1,8 +1,20 @@
 // Budget Management Types for SubHub
 // Comprehensive type definitions for budget functionality
 
-import { CategoryBudget, BudgetProgress, BudgetInsight, BudgetAlert } from './supabase'
-import { Subscription } from '../contexts/SubscriptionContext'
+import {
+  CategoryBudget,
+  BudgetProgress,
+  BudgetInsight,
+  BudgetAlert,
+  BudgetData,
+  BudgetSummary,
+  CategoryBudgetProgress,
+  BudgetCalculationInput,
+  BudgetThresholdConfig,
+  BudgetFormData,
+  BudgetValidationResult
+} from './supabase'
+// import { Subscription } from '../contexts/SubscriptionContext' // Unused import
 
 // Budget status enums
 export type BudgetStatus = 'under_budget' | 'approaching_limit' | 'over_budget'

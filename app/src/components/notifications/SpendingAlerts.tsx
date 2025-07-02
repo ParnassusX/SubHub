@@ -155,7 +155,7 @@ const SpendingAlerts: React.FC<SpendingAlertsProps> = ({
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-gray-400">{t('overallBudget')}</span>
-            <span className={`text-sm font-medium ${getStatusColor(budgetUtilization.overallStatus).split(' ')[0]}`}>
+            <span className={`text-sm font-medium ${getStatusColor(budgetUtilization.overallStatus as 'safe' | 'warning' | 'critical').split(' ')[0]}`}>
               {formatPrice(budgetUtilization.totalSpent)} / {formatPrice(budgetUtilization.totalBudget)}
             </span>
           </div>
@@ -187,13 +187,13 @@ const SpendingAlerts: React.FC<SpendingAlertsProps> = ({
           {displayAlerts.map((alert, index) => (
             <div
               key={index}
-              className={`flex items-center space-x-3 p-3 rounded-lg border ${getStatusColor(alert.status)}`}
+              className={`flex items-center space-x-3 p-3 rounded-lg border ${getStatusColor(alert.status as 'safe' | 'warning' | 'critical')}`}
             >
-              {getStatusIcon(alert.status)}
+              {getStatusIcon(alert.status as 'safe' | 'warning' | 'critical')}
               
               <div className="flex-1 min-w-0">
                 <h4 className="text-white font-medium truncate">
-                  {formatBudgetType(alert.type, 'category' in alert ? alert.category : undefined)} {t('budgetLabel')}
+                  {formatBudgetType(alert.type, 'category' in alert ? (alert.category as string) : undefined)} {t('budgetLabel')}
                 </h4>
                 <p className="text-gray-400 text-sm">
                   {alert.percentage.toFixed(1)}% {t('usedLabel')} • {formatPrice(alert.spent)} / {formatPrice(alert.budget)}
@@ -201,7 +201,7 @@ const SpendingAlerts: React.FC<SpendingAlertsProps> = ({
               </div>
 
               <div className="text-right">
-                <p className={`text-sm font-medium ${getStatusColor(alert.status).split(' ')[0]}`}>
+                <p className={`text-sm font-medium ${getStatusColor(alert.status as 'safe' | 'warning' | 'critical').split(' ')[0]}`}>
                   {alert.status === 'critical' ? t('exceededStatus') : t('warningStatus')}
                 </p>
               </div>
