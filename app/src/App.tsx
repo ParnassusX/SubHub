@@ -33,6 +33,7 @@ const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'))
 const Categories = React.lazy(() => import('./pages/Categories'))
 const Help = React.lazy(() => import('./pages/Help'))
 const Renewals = React.lazy(() => import('./pages/Renewals'))
+const LandingPage = React.lazy(() => import('./pages/LandingPage'))
 
 function App() {
   // Initialize performance optimizations and error handling
@@ -47,6 +48,14 @@ function App() {
           <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
               {/* Public routes */}
+              <Route
+                path="/landing"
+                element={
+                  <Suspense fallback={<ComponentLoader message="Loading Landing Page..." />}>
+                    <LandingPage />
+                  </Suspense>
+                }
+              />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
 
