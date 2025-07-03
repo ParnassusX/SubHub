@@ -180,44 +180,39 @@ export class OnboardingService {
    */
   static async saveOnboardingProgress(progress: OnboardingProgress): Promise<void> {
     try {
-      // Prepare update data, only including fields that exist in the table
-      const updateData: any = {
+      console.log('Saving onboarding progress to database:', progress);
+
+      // Prepare update data with all onboarding fields
+      const updateData = {
         user_id: progress.userId,
+        onboarding_completed: !!progress.completedAt,
+        onboarding_started_at: progress.startedAt,
+        onboarding_completed_at: progress.completedAt,
+        current_step: progress.currentStep,
+        completed_steps: progress.completedSteps,
+        skipped_steps: progress.skippedSteps,
+        has_seen_premium_features: progress.hasSeenPremiumFeatures,
+        conversion_opportunities_shown: progress.conversionOpportunities,
         updated_at: new Date().toISOString()
       };
 
-      // Only add onboarding fields if they might exist in the table
-      // This prevents errors if the table hasn't been migrated yet
-      try {
-        // Try to add onboarding-specific fields
-        updateData.onboarding_completed = !!progress.completedAt;
-        updateData.onboarding_started_at = progress.startedAt;
-        updateData.onboarding_completed_at = progress.completedAt;
-        updateData.current_step = progress.currentStep;
-        updateData.completed_steps = progress.completedSteps;
-        updateData.skipped_steps = progress.skippedSteps;
-        updateData.has_seen_premium_features = progress.hasSeenPremiumFeatures;
-        updateData.conversion_opportunities_shown = progress.conversionOpportunities;
-      } catch (fieldError) {
-        console.warn('Some onboarding fields may not exist in database yet:', fieldError);
-      }
-
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('user_preferences')
-        .upsert(updateData, { onConflict: 'user_id' });
+        .upsert(updateData, { onConflict: 'user_id' })
+        .select();
 
       if (error) {
-        console.warn('Database save failed, using localStorage fallback:', error);
-        // Fallback to localStorage if database fields don't exist
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(progress));
-        return;
+        console.error('Database save failed:', error);
+        throw error;
       }
+
+      console.log('Onboarding progress saved to database successfully:', data);
 
       // Also save to localStorage for quick access
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(progress));
     } catch (error) {
       console.error('Error saving onboarding progress:', error);
-      // Fallback to localStorage
+      // Fallback to localStorage only if database fails
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(progress));
     }
   }
@@ -252,9 +247,10 @@ export class OnboardingService {
         progress.currentStep = nextStep.id;
         console.log(`Moving to next step: ${nextStep.id}`);
       } else {
-        // All steps completed
+        // All steps completed - mark onboarding as finished
         progress.completedAt = new Date().toISOString();
-        console.log('All onboarding steps completed!');
+        progress.currentStep = 'completed';
+        console.log('All onboarding steps completed! Marking as finished.');
       }
 
       console.log('Final progress before saving:', progress);
@@ -389,8 +385,27 @@ export class OnboardingService {
    */
   static async isOnboardingCompleted(userId: string): Promise<boolean> {
     try {
-      const progress = await this.getOnboardingProgress(userId);
-      return !!progress?.completedAt;
+      console.log('Checking onboarding completion for user:', userId);
+
+      // First check database directly for faster response
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('onboarding_completed, onboarding_completed_at')
+        .eq('user_id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.warn('Database error checking onboarding completion:', error);
+      }
+
+      const isCompleted = !!(data?.onboarding_completed && data?.onboarding_completed_at);
+      console.log('Onboarding completion status:', {
+        userId,
+        isCompleted,
+        completedAt: data?.onboarding_completed_at
+      });
+
+      return isCompleted;
     } catch (error) {
       console.error('Error checking onboarding completion:', error);
       return false;
