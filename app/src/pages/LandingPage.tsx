@@ -58,6 +58,12 @@ const LandingPage: React.FC = () => {
               <a href="#benefits" className="text-gray-300 hover:text-white transition-colors">
                 Benefits
               </a>
+              <button
+                onClick={() => navigate('/subscriptions')}
+                className="text-gray-300 hover:text-white transition-colors"
+              >
+                Pricing
+              </button>
               <a href="#testimonials" className="text-gray-300 hover:text-white transition-colors">
                 {t('testimonials', 'Testimonials')}
               </a>
@@ -542,6 +548,132 @@ const LandingPage: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 bg-background-secondary">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              Start free and upgrade when you need advanced features
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Free Plan */}
+            <div className="bg-background-primary rounded-2xl p-8 border border-gray-700 relative">
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-white mb-2">Free</h3>
+                <div className="text-4xl font-bold text-white mb-1">$0</div>
+                <div className="text-gray-400 mb-6">Forever</div>
+
+                <ul className="space-y-3 mb-8 text-left">
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-300">Track up to 10 subscriptions</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-300">Basic spending analytics</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-300">Renewal notifications</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-300">Mobile app access</span>
+                  </li>
+                </ul>
+
+                <button
+                  onClick={handleGetStarted}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                >
+                  Get Started Free
+                </button>
+              </div>
+            </div>
+
+            {/* Pro Plan */}
+            <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-2xl p-8 border border-blue-500 relative">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <div className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium">
+                  Most Popular
+                </div>
+              </div>
+
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
+                <div className="text-4xl font-bold text-white mb-1">$9.99</div>
+                <div className="text-gray-400 mb-6">per month</div>
+
+                <ul className="space-y-3 mb-8 text-left">
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-300">Unlimited subscriptions</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-300">Advanced analytics & insights</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-300">Budget tracking & alerts</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-300">Family sharing (up to 5 members)</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-300">Priority support</span>
+                  </li>
+                </ul>
+
+                <button
+                  onClick={() => navigate('/subscriptions')}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                >
+                  Start Pro Trial
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <p className="text-gray-400 mb-4">
+              All plans include 30-day money-back guarantee
+            </p>
+            <button
+              onClick={() => navigate('/subscriptions')}
+              className="text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              View detailed pricing and features →
+            </button>
           </div>
         </div>
       </section>

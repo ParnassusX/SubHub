@@ -1,5 +1,5 @@
 // Profile Setup Step - Configure user preferences
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Globe, DollarSign, Clock, User } from 'lucide-react';
 
 import { useCurrency } from '../../../hooks/useCurrency';
@@ -19,9 +19,47 @@ const ProfileSetupStep: React.FC<OnboardingStepProps> = ({
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
     language: 'en'
   });
-  
+
   const [isLoading, setIsLoading] = useState(false); // Used in handleSaveAndContinue
   const [error, setError] = useState('');
+
+  // Pre-populate form with existing user data
+  useEffect(() => {
+    const loadExistingData = async () => {
+      if (!user?.id) return;
+
+      try {
+        console.log('🔄 Loading existing user data for profile setup');
+
+        // Get existing preferences to pre-populate language
+        const preferences = await SettingsService.getPreferences();
+
+        if (preferences?.language) {
+          console.log('📝 Pre-populating language from preferences:', preferences.language);
+          setFormData(prev => ({
+            ...prev,
+            language: preferences.language
+          }));
+        }
+
+        // Update name if user data is available
+        if (user.name) {
+          console.log('📝 Pre-populating name from user data:', user.name);
+          setFormData(prev => ({
+            ...prev,
+            name: user.name || ''
+          }));
+        }
+
+        console.log('✅ Existing user data loaded successfully');
+      } catch (error) {
+        console.warn('⚠️ Could not load existing user data:', error);
+        // Continue with defaults - this is not a critical error
+      }
+    };
+
+    loadExistingData();
+  }, [user?.id, user?.name]); // Re-run if user data changes
 
   // Currency options
   const currencyOptions = [
@@ -276,15 +314,6 @@ const ProfileSetupStep: React.FC<OnboardingStepProps> = ({
           <div>Form Valid: {formData.name.trim().length > 0 ? 'Yes' : 'No'}</div>
           <div>Handler Exposed: {typeof (window as any).__profileSetupStepHandler === 'function' ? 'Yes' : 'No'}</div>
           <div>Valid Flag: {(window as any).__profileSetupValid ? 'Yes' : 'No'}</div>
-          <button
-            onClick={() => {
-              console.log('🧪 Debug: Manual profile save test');
-              handleSaveAndContinue();
-            }}
-            className="mt-2 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-          >
-            Test Save
-          </button>
         </div>
       )}
     </div>
