@@ -50,6 +50,7 @@ export class CategoriesService {
           id: category.id,
           name: category.name,
           color: category.color,
+          icon: category.icon,
           user_id: category.user_id,
           created_at: category.created_at,
           updated_at: category.updated_at,

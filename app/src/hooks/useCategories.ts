@@ -50,6 +50,7 @@ export const useCategories = () => {
         id: `fallback-${index}`,
         name: cat.name,
         color: cat.color,
+        icon: null,
         user_id: user?.id || '',
         created_at: new Date().toISOString(),
         updated_at: null,
@@ -88,7 +89,7 @@ export const useCategories = () => {
     }
   };
 
-  const createCategory = async (categoryData: { name: string; color: string }) => {
+  const createCategory = async (categoryData: { name: string; color: string; icon?: string }) => {
     if (!user?.id) {
       throw new Error('User not authenticated');
     }
@@ -97,6 +98,7 @@ export const useCategories = () => {
       const { data, error } = await db.categories.create({
         name: categoryData.name,
         color: categoryData.color,
+        icon: categoryData.icon || null,
         user_id: user.id
       });
 
@@ -113,7 +115,7 @@ export const useCategories = () => {
     }
   };
 
-  const updateCategory = async (id: string, updates: Partial<Pick<Category, 'name' | 'color'>>) => {
+  const updateCategory = async (id: string, updates: Partial<Pick<Category, 'name' | 'color' | 'icon'>>) => {
     try {
       const { data, error } = await db.categories.update(id, updates);
       

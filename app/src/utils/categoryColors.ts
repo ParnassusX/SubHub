@@ -112,7 +112,7 @@ export const defaultCategories = [
 let dynamicCategoryMap: Record<string, CategoryColor> = { ...categoryColorMap };
 
 // Function to update dynamic categories from database
-export const updateDynamicCategories = (categories: Array<{ name: string; color: string }>) => {
+export const updateDynamicCategories = (categories: Array<{ name: string; color: string; icon?: string | null }>) => {
   const newMap = { ...categoryColorMap };
 
   categories.forEach(cat => {

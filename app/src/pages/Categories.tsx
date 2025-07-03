@@ -4,6 +4,7 @@ import { useSubscriptions } from '../contexts/SubscriptionContext'
 import { getCategoryDotProps } from '../utils/categoryColors'
 import { useCategories } from '../hooks/useCategories'
 import { ComponentLoader } from '../components/UnifiedLoading'
+import { IconPicker, renderIcon } from '../components/IconPicker'
 
 export default function Categories() {
   const { subscriptions } = useSubscriptions()
@@ -22,7 +23,8 @@ export default function Categories() {
   const [deletingCategory, setDeletingCategory] = useState<string | null>(null)
   const [newCategory, setNewCategory] = useState({
     name: '',
-    color: '#3b82f6'
+    color: '#3b82f6',
+    icon: null as string | null
   })
 
   // Update category counts when subscriptions change
@@ -40,16 +42,17 @@ export default function Categories() {
     try {
       await createCategory({
         name: newCategory.name,
-        color: newCategory.color
+        color: newCategory.color,
+        icon: newCategory.icon || undefined
       })
-      setNewCategory({ name: '', color: '#3b82f6' })
+      setNewCategory({ name: '', color: '#3b82f6', icon: null })
       setShowAddForm(false)
     } catch (error) {
       console.error('Error adding category:', error)
     }
   }
 
-  const handleUpdateCategory = async (id: string, updates: { name?: string; color?: string }) => {
+  const handleUpdateCategory = async (id: string, updates: { name?: string; color?: string; icon?: string | null }) => {
     try {
       await updateCategory(id, updates)
       setEditingCategory(null)
@@ -149,6 +152,13 @@ export default function Categories() {
                     </div>
                   </div>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Icon</label>
+                  <IconPicker
+                    selectedIcon={newCategory.icon}
+                    onIconSelect={(icon) => setNewCategory(prev => ({ ...prev, icon }))}
+                  />
+                </div>
               </div>
               <div className="flex gap-2 mt-4">
                 <button
@@ -161,7 +171,7 @@ export default function Categories() {
                 <button
                   onClick={() => {
                     setShowAddForm(false)
-                    setNewCategory({ name: '', color: '#3b82f6' })
+                    setNewCategory({ name: '', color: '#3b82f6', icon: null })
                   }}
                   className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors"
                 >
@@ -182,7 +192,10 @@ export default function Categories() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3 flex-1">
-                    <div {...getCategoryDotProps(category.name)} />
+                    <div className="flex items-center gap-2">
+                      <div {...getCategoryDotProps(category.name)} />
+                      {category.icon && renderIcon(category.icon, 'w-4 h-4 text-gray-300')}
+                    </div>
                     {editingCategory === category.id ? (
                       <input
                         type="text"

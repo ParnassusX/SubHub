@@ -3,6 +3,8 @@ import { Subscription, useSubscriptions } from '../contexts/SubscriptionContext'
 import { getCategoryBadgeProps } from '../utils/categoryColors';
 import { useCurrency } from '../hooks/useCurrency';
 import { AlertCircle } from 'lucide-react';
+import { renderIcon } from './IconPicker';
+import { useCategories } from '../hooks/useCategories';
 
 interface SubscriptionListItemProps {
   subscription: Subscription;
@@ -11,6 +13,7 @@ interface SubscriptionListItemProps {
 const SubscriptionListItem: React.FC<SubscriptionListItemProps> = ({ subscription }) => {
   const { deleteSubscription } = useSubscriptions();
   const { formatPrice } = useCurrency();
+  const { categories } = useCategories();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +55,11 @@ const SubscriptionListItem: React.FC<SubscriptionListItemProps> = ({ subscriptio
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h3 className="text-lg font-medium text-white">{subscription.name}</h3>
-            <span {...getCategoryBadgeProps(subscription.category)}>
+            <span {...getCategoryBadgeProps(subscription.category)} className="flex items-center gap-1">
+              {(() => {
+                const category = categories.find(cat => cat.name === subscription.category);
+                return category?.icon ? renderIcon(category.icon, 'w-3 h-3') : null;
+              })()}
               {subscription.category}
             </span>
           </div>
