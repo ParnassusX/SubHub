@@ -33,13 +33,38 @@ export function useOnboarding() {
   }, [user?.id]);
 
   /**
+   * Safety mechanism: Reset loading state if it gets stuck
+   */
+  useEffect(() => {
+    if (!state.isLoading) return;
+
+    const timeout = setTimeout(() => {
+      console.warn('Onboarding loading state timeout - forcing reset');
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: 'Loading timeout - please try again'
+      }));
+    }, 15000); // 15 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [state.isLoading]);
+
+  /**
    * Initialize onboarding for the current user
    */
   const initializeOnboarding = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log('No user ID available for onboarding initialization');
+      setState(prev => ({ ...prev, isLoading: false, isActive: false }));
+      return;
+    }
+
+    console.log('Initializing onboarding for user:', user.id);
 
     // Check if onboarding is globally disabled
     if (OnboardingService.isOnboardingDisabled()) {
+      console.log('Onboarding is globally disabled');
       setState(prev => ({
         ...prev,
         isActive: false,
@@ -51,9 +76,14 @@ export function useOnboarding() {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      // Check if onboarding is already completed
-      const isCompleted = await OnboardingService.isOnboardingCompleted(user.id);
-      console.log('Onboarding completed check:', isCompleted);
+      // Check if onboarding is already completed with timeout
+      const completionPromise = OnboardingService.isOnboardingCompleted(user.id);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Onboarding completion check timeout')), 5000)
+      );
+
+      const isCompleted = await Promise.race([completionPromise, timeoutPromise]) as boolean;
+      console.log('Onboarding completed check result:', isCompleted);
 
       if (isCompleted) {
         console.log('User has already completed onboarding, skipping');
@@ -65,20 +95,41 @@ export function useOnboarding() {
         return;
       }
 
-      // Get or create onboarding progress
-      let progress = await OnboardingService.getOnboardingProgress(user.id);
+      // Get or create onboarding progress with timeout
+      const progressPromise = OnboardingService.getOnboardingProgress(user.id);
+      const progressTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Progress fetch timeout')), 5000)
+      );
+
+      let progress = await Promise.race([progressPromise, progressTimeoutPromise]) as any;
 
       if (!progress) {
-        progress = await OnboardingService.initializeOnboarding(user.id);
+        console.log('No existing progress found, initializing new onboarding');
+        const initPromise = OnboardingService.initializeOnboarding(user.id);
+        const initTimeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Initialization timeout')), 5000)
+        );
+        progress = await Promise.race([initPromise, initTimeoutPromise]);
       }
+
+      console.log('Onboarding progress loaded:', progress);
 
       // Get all steps with completion status
       const allSteps = OnboardingService.getOnboardingSteps(progress.completedSteps);
       const currentStep = allSteps.find(step => step.id === progress.currentStep) || allSteps[0];
 
-      // Get conversion opportunities
-      const opportunities = await OnboardingService.getConversionOpportunities(user.id);
-      setConversionOpportunities(opportunities);
+      console.log('Current onboarding step:', currentStep?.id);
+
+      // Get conversion opportunities (non-blocking)
+      OnboardingService.getConversionOpportunities(user.id)
+        .then(opportunities => {
+          console.log('Conversion opportunities loaded:', opportunities.length);
+          setConversionOpportunities(opportunities);
+        })
+        .catch(error => {
+          console.warn('Failed to load conversion opportunities:', error);
+          setConversionOpportunities([]);
+        });
 
       setState({
         isActive: true,
@@ -88,6 +139,8 @@ export function useOnboarding() {
         progress,
         error: null
       });
+
+      console.log('Onboarding initialization completed successfully');
 
     } catch (error) {
       console.error('Error initializing onboarding:', error);
@@ -104,17 +157,31 @@ export function useOnboarding() {
    * Complete the current step and move to next
    */
   const completeStep = useCallback(async (stepId?: string) => {
-    if (!user?.id || !state.currentStep) return;
+    if (!user?.id || !state.currentStep) {
+      console.warn('Cannot complete step: missing user ID or current step');
+      return;
+    }
+
+    const targetStepId = stepId || state.currentStep.id;
+    console.log(`Completing onboarding step: ${targetStepId} for user: ${user.id}`);
 
     try {
-      setState(prev => ({ ...prev, isLoading: true }));
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      const targetStepId = stepId || state.currentStep.id;
-      const updatedProgress = await OnboardingService.completeStep(user.id, targetStepId);
+      // Complete step with timeout
+      const completePromise = OnboardingService.completeStep(user.id, targetStepId);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Step completion timeout')), 10000)
+      );
+
+      const updatedProgress = await Promise.race([completePromise, timeoutPromise]) as any;
+      console.log('Step completion result:', updatedProgress);
 
       // Update state with new progress
       const allSteps = OnboardingService.getOnboardingSteps(updatedProgress.completedSteps);
       const currentStep = allSteps.find(step => step.id === updatedProgress.currentStep);
+
+      console.log('Moving to next step:', currentStep?.id || 'completed');
 
       setState(prev => ({
         ...prev,
@@ -125,10 +192,17 @@ export function useOnboarding() {
         isLoading: false
       }));
 
-      // If onboarding is completed, refresh conversion opportunities
+      // If onboarding is completed, refresh conversion opportunities (non-blocking)
       if (updatedProgress.completedAt) {
-        const opportunities = await OnboardingService.getConversionOpportunities(user.id);
-        setConversionOpportunities(opportunities);
+        console.log('Onboarding completed! Loading conversion opportunities...');
+        OnboardingService.getConversionOpportunities(user.id)
+          .then(opportunities => {
+            console.log('Conversion opportunities loaded after completion:', opportunities.length);
+            setConversionOpportunities(opportunities);
+          })
+          .catch(error => {
+            console.warn('Failed to load conversion opportunities after completion:', error);
+          });
       }
 
     } catch (error) {

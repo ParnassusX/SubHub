@@ -59,41 +59,65 @@ const ProfileSetupStep: React.FC<OnboardingStepProps> = ({
   };
 
   const handleSaveAndContinue = async () => {
-    if (!user?.id) return;
+    console.log('🔄 Starting profile save and continue process');
+
+    if (!user?.id) {
+      console.error('❌ No user ID available for profile save');
+      setError('User not authenticated. Please refresh and try again.');
+      return;
+    }
 
     setIsLoading(true);
     setError('');
 
     try {
-      console.log('Saving profile data:', formData);
+      console.log('📝 Saving profile data:', formData);
+      console.log('👤 User authenticated:', user.id);
 
       // Validate required fields
       if (!formData.name.trim()) {
         throw new Error('Name is required');
       }
 
-      // Update profile settings
-      const profileResult = await SettingsService.updateProfile({
+      // Update profile settings with timeout
+      console.log('💾 Updating profile...');
+      const profilePromise = SettingsService.updateProfile({
         name: formData.name.trim(),
         currency: formData.currency,
         timezone: formData.timezone
       });
-      console.log('Profile updated:', profileResult);
 
-      // Update user preferences
-      const preferencesResult = await SettingsService.updatePreferences({
+      const profileTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Profile update timeout')), 8000)
+      );
+
+      const profileResult = await Promise.race([profilePromise, profileTimeoutPromise]);
+      console.log('✅ Profile updated successfully:', profileResult);
+
+      // Update user preferences with timeout
+      console.log('⚙️ Updating preferences...');
+      const preferencesPromise = SettingsService.updatePreferences({
         language: formData.language
       });
-      console.log('Preferences updated:', preferencesResult);
+
+      const preferencesTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Preferences update timeout')), 8000)
+      );
+
+      const preferencesResult = await Promise.race([preferencesPromise, preferencesTimeoutPromise]);
+      console.log('✅ Preferences updated successfully:', preferencesResult);
+
+      console.log('🎉 Profile setup completed, proceeding to next step');
 
       // Continue to next step
       onNext();
 
     } catch (err) {
-      console.error('Error saving profile:', err);
+      console.error('❌ Error saving profile:', err);
       setError(err instanceof Error ? err.message : 'Failed to save profile settings. Please try again.');
     } finally {
       setIsLoading(false);
+      console.log('🔄 Profile save process completed');
     }
   };
 
@@ -233,6 +257,34 @@ const ProfileSetupStep: React.FC<OnboardingStepProps> = ({
             ✅ Profile ready - Click Continue to save and proceed
             {isLoading && ' (Saving...)'}
           </p>
+        </div>
+      )}
+
+      {/* Error Display */}
+      {error && (
+        <div className="p-3 bg-red-900/50 border border-red-500 rounded-lg text-red-200 text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* Debug Info (Development Only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-4 p-3 bg-gray-800 border border-gray-600 rounded-lg text-xs text-gray-400">
+          <div className="font-semibold mb-2">Debug Info:</div>
+          <div>User ID: {user?.id || 'Not available'}</div>
+          <div>Loading: {isLoading ? 'Yes' : 'No'}</div>
+          <div>Form Valid: {formData.name.trim().length > 0 ? 'Yes' : 'No'}</div>
+          <div>Handler Exposed: {typeof (window as any).__profileSetupStepHandler === 'function' ? 'Yes' : 'No'}</div>
+          <div>Valid Flag: {(window as any).__profileSetupValid ? 'Yes' : 'No'}</div>
+          <button
+            onClick={() => {
+              console.log('🧪 Debug: Manual profile save test');
+              handleSaveAndContinue();
+            }}
+            className="mt-2 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+          >
+            Test Save
+          </button>
         </div>
       )}
     </div>
