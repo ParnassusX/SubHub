@@ -4,6 +4,7 @@ import { lazy } from 'react';
 export const Dashboard = lazy(() => import('../pages/Dashboard'));
 export const Subscriptions = lazy(() => import('../pages/Subscriptions'));
 export const Reports = lazy(() => import('../pages/Reports'));
+export const AdvancedAnalytics = lazy(() => import('../pages/AdvancedAnalytics'));
 export const Settings = lazy(() => import('../pages/Settings'));
 
 // Lazy load heavy components
@@ -52,4 +53,5 @@ export const SkeletonInsightCard = () => (
 export const DashboardLoader = () => <ComponentLoader message="Loading Dashboard..." />;
 export const SubscriptionsLoader = () => <ComponentLoader message="Loading Subscriptions..." />;
 export const ReportsLoader = () => <ComponentLoader message="Loading Reports..." />;
+export const AdvancedAnalyticsLoader = () => <ComponentLoader message="Loading Advanced Analytics..." />;
 export const SettingsLoader = () => <ComponentLoader message="Loading Settings..." />;

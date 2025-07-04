@@ -27,37 +27,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Session refresh interval
-  useEffect(() => {
-    const refreshSession = async () => {
-      try {
-        const { error } = await supabase.auth.refreshSession();
-        if (error) {
-          console.warn('Session refresh failed:', error);
-        }
-      } catch (error) {
-        console.warn('Session refresh error:', error);
-      }
-    };
-
-    // Refresh session every 30 minutes
-    const interval = setInterval(refreshSession, 30 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+  // Note: Supabase handles automatic token refresh via autoRefreshToken: true in client config
+  // No manual session refresh needed - this was causing performance overhead
 
   useEffect(() => {
     let mounted = true;
 
     const initializeAuth = async () => {
       try {
-        // Get initial session with timeout
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Session timeout')), 10000)
-        );
-
-        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        // Get initial session - simplified without timeout for better performance
+        const { data: { session } } = await supabase.auth.getSession();
 
         if (!mounted) return;
 
@@ -77,10 +56,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
-
-      console.log('Auth state change:', event, !!session?.user);
 
       if (session?.user) {
         await handleUserSession(session.user);
@@ -112,19 +89,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(basicUserData);
       setIsLoading(false);
 
-      // Try to get profile data with timeout
-      const profilePromise = supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', supabaseUser.id)
-        .single();
-
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
-      );
-
+      // Fetch profile data - simplified without timeout for better performance
       try {
-        const { data: profileData, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', supabaseUser.id)
+          .single();
 
         if (!error && profileData) {
           const enhancedUserData: User = {
@@ -143,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (profileError) {
-        console.warn('Profile fetch timeout or error, continuing with basic user data:', profileError);
+        console.warn('Profile fetch error, continuing with basic user data:', profileError);
       }
     } catch (error) {
       console.error('Critical error in handleUserSession:', error);

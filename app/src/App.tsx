@@ -9,12 +9,10 @@ import Sidebar from './components/Sidebar'
 import MobileNav from './components/MobileNav'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import ErrorBoundary, { PageErrorBoundary } from './components/ErrorBoundary'
-import PerformanceMonitor from './components/PerformanceMonitor'
+import ErrorBoundary from './components/ErrorBoundary'
 import PWAUpdatePrompt from './components/PWAUpdatePrompt'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
 import OnboardingOverlay from './components/onboarding/OnboardingOverlay'
-import OnboardingTestPanel from './components/onboarding/OnboardingTestPanel'
 import RootRoute from './components/RootRoute'
 import { OnboardingService } from './services/onboardingService'
 import { usePerformanceOptimization } from './hooks/usePerformanceOptimization'
@@ -26,6 +24,7 @@ import {
   Dashboard,
   Subscriptions,
   Reports,
+  AdvancedAnalytics,
   Settings,
 } from './components/LazyComponents'
 
@@ -51,7 +50,6 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <PerformanceMonitor />
       <AuthProvider>
         <SubscriptionProvider>
           <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -84,105 +82,33 @@ function App() {
                         <Sidebar />
                       </div>
 
-                      {/* Main content with Suspense for lazy loading */}
+                      {/* Main content - simplified for better performance */}
                       <div className="flex-1 flex flex-col overflow-hidden">
-                        <PageErrorBoundary>
-                          <Suspense fallback={<PageLoader />}>
-                            <Routes>
-                              <Route
-                                path="/dashboard"
-                                element={
-                                  <PageErrorBoundary>
-                                    <Suspense fallback={<ComponentLoader message="Loading Dashboard..." />}>
-                                      <Dashboard />
-                                    </Suspense>
-                                  </PageErrorBoundary>
+                        <Suspense fallback={<PageLoader />}>
+                          <Routes>
+                            <Route path="/dashboard" element={<Dashboard />} />
+                            <Route
+                              path="/admin"
+                              element={
+                                <AdminRoute>
+                                  <AdminDashboard />
+                                </AdminRoute>
                                 }
-                              />
-                              <Route
-                                path="/admin"
-                                element={
-                                  <AdminRoute>
-                                    <PageErrorBoundary>
-                                      <Suspense fallback={<ComponentLoader message="Loading Admin Dashboard..." />}>
-                                        <AdminDashboard />
-                                      </Suspense>
-                                    </PageErrorBoundary>
-                                  </AdminRoute>
-                                }
-                              />
-                              <Route
-                                path="/subscriptions"
-                                element={
-                                  <PageErrorBoundary>
-                                    <Suspense fallback={<ComponentLoader message="Loading Subscriptions..." />}>
-                                      <Subscriptions />
-                                    </Suspense>
-                                  </PageErrorBoundary>
-                                }
-                              />
-                              <Route
-                                path="/reports"
-                                element={
-                                  <PageErrorBoundary>
-                                    <Suspense fallback={<ComponentLoader message="Loading Reports..." />}>
-                                      <Reports />
-                                    </Suspense>
-                                  </PageErrorBoundary>
-                                }
-                              />
-                              <Route
-                                path="/categories"
-                                element={
-                                  <PageErrorBoundary>
-                                    <Suspense fallback={<ComponentLoader message="Loading Categories..." />}>
-                                      <Categories />
-                                    </Suspense>
-                                  </PageErrorBoundary>
-                                }
-                              />
-                              <Route
-                                path="/settings"
-                                element={
-                                  <PageErrorBoundary>
-                                    <Suspense fallback={<ComponentLoader message="Loading Settings..." />}>
-                                      <Settings />
-                                    </Suspense>
-                                  </PageErrorBoundary>
-                                }
-                              />
-                              <Route
-                                path="/help"
-                                element={
-                                  <PageErrorBoundary>
-                                    <Suspense fallback={<ComponentLoader message="Loading Help..." />}>
-                                      <Help />
-                                    </Suspense>
-                                  </PageErrorBoundary>
-                                }
-                              />
-
-                              <Route
-                                path="/renewals"
-                                element={
-                                  <PageErrorBoundary>
-                                    <Suspense fallback={<ComponentLoader message="Loading Renewals..." />}>
-                                      <Renewals />
-                                    </Suspense>
-                                  </PageErrorBoundary>
-                                }
-                              />
-                            </Routes>
-                          </Suspense>
-                        </PageErrorBoundary>
+                            />
+                            <Route path="/subscriptions" element={<Subscriptions />} />
+                            <Route path="/reports" element={<Reports />} />
+                            <Route path="/analytics" element={<AdvancedAnalytics />} />
+                            <Route path="/categories" element={<Categories />} />
+                            <Route path="/settings" element={<Settings />} />
+                            <Route path="/help" element={<Help />} />
+                            <Route path="/renewals" element={<Renewals />} />
+                          </Routes>
+                        </Suspense>
                       </div>
                     </div>
                   </div>
                 {/* Onboarding Overlay - Must be inside ProtectedRoute for authenticated users only */}
                 <OnboardingOverlay />
-
-                {/* Development Test Panel */}
-                <OnboardingTestPanel />
                 </ProtectedRoute>
               } />
             </Routes>

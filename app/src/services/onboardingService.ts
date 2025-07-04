@@ -9,22 +9,22 @@ import type {
 import { ONBOARDING_STEPS, CONVERSION_OPPORTUNITIES } from '../types/onboarding';
 
 export class OnboardingService {
-  private static readonly STORAGE_KEY = 'subhub_onboarding_progress';
-  private static readonly DISABLED_KEY = 'subhub_onboarding_disabled';
+  // Removed localStorage constants - using Supabase as single source of truth
 
-  // Check if onboarding is globally disabled
+  // Check if onboarding is globally disabled (simplified - use database only)
   static isOnboardingDisabled(): boolean {
-    return localStorage.getItem(this.DISABLED_KEY) === 'true';
+    // For now, onboarding is always enabled - can be controlled via user preferences
+    return false;
   }
 
-  // Disable onboarding globally
+  // Disable onboarding globally (simplified - use database only)
   static disableOnboarding(): void {
-    localStorage.setItem(this.DISABLED_KEY, 'true');
+    console.log('Onboarding disabled - use user preferences for per-user control');
   }
 
-  // Enable onboarding globally
+  // Enable onboarding globally (simplified - use database only)
   static enableOnboarding(): void {
-    localStorage.removeItem(this.DISABLED_KEY);
+    console.log('Onboarding enabled - use user preferences for per-user control');
   }
 
   // Debug method for testing - expose to window in development
@@ -38,7 +38,7 @@ export class OnboardingService {
         },
         showOnboarding: () => {
           this.enableOnboarding();
-          localStorage.removeItem(this.STORAGE_KEY);
+          console.log('Onboarding enabled - refresh page to see changes');
           window.location.reload();
         },
         disableOnboarding: () => {
@@ -122,31 +122,12 @@ export class OnboardingService {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        // If database error, try localStorage fallback
-        console.warn('Database error, using localStorage fallback');
-        const stored = localStorage.getItem(this.STORAGE_KEY);
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            if (parsed.userId === userId) {
-              return parsed;
-            }
-          } catch (parseError) {
-            console.warn('Failed to parse stored onboarding data');
-          }
-        }
+        console.warn('Database error getting onboarding progress:', error);
         return null;
       }
 
       if (!data) {
-        // Try localStorage fallback
-        const stored = localStorage.getItem(this.STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed.userId === userId) {
-            return parsed;
-          }
-        }
+        // No onboarding data found in database
         return null;
       }
 
@@ -207,13 +188,9 @@ export class OnboardingService {
       }
 
       console.log('Onboarding progress saved to database successfully:', data);
-
-      // Also save to localStorage for quick access
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(progress));
     } catch (error) {
       console.error('Error saving onboarding progress:', error);
-      // Fallback to localStorage only if database fails
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(progress));
+      throw error;
     }
   }
 
@@ -432,9 +409,6 @@ export class OnboardingService {
         .eq('user_id', userId);
 
       if (error) throw error;
-
-      // Clear localStorage
-      localStorage.removeItem(this.STORAGE_KEY);
     } catch (error) {
       console.error('Error resetting onboarding:', error);
       throw error;

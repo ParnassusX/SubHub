@@ -76,13 +76,8 @@ export function useOnboarding() {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      // Check if onboarding is already completed with timeout
-      const completionPromise = OnboardingService.isOnboardingCompleted(user.id);
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Onboarding completion check timeout')), 5000)
-      );
-
-      const isCompleted = await Promise.race([completionPromise, timeoutPromise]) as boolean;
+      // Check if onboarding is already completed - simplified without timeout
+      const isCompleted = await OnboardingService.isOnboardingCompleted(user.id);
       console.log('Onboarding completed check result:', isCompleted);
 
       if (isCompleted) {
@@ -95,21 +90,12 @@ export function useOnboarding() {
         return;
       }
 
-      // Get or create onboarding progress with timeout
-      const progressPromise = OnboardingService.getOnboardingProgress(user.id);
-      const progressTimeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Progress fetch timeout')), 5000)
-      );
-
-      let progress = await Promise.race([progressPromise, progressTimeoutPromise]) as any;
+      // Get or create onboarding progress - simplified without timeout
+      let progress = await OnboardingService.getOnboardingProgress(user.id);
 
       if (!progress) {
         console.log('No existing progress found, initializing new onboarding');
-        const initPromise = OnboardingService.initializeOnboarding(user.id);
-        const initTimeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Initialization timeout')), 5000)
-        );
-        progress = await Promise.race([initPromise, initTimeoutPromise]);
+        progress = await OnboardingService.initializeOnboarding(user.id);
       }
 
       console.log('Onboarding progress loaded:', progress);
@@ -168,13 +154,8 @@ export function useOnboarding() {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      // Complete step with timeout
-      const completePromise = OnboardingService.completeStep(user.id, targetStepId);
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Step completion timeout')), 10000)
-      );
-
-      const updatedProgress = await Promise.race([completePromise, timeoutPromise]) as any;
+      // Complete step - simplified without timeout
+      const updatedProgress = await OnboardingService.completeStep(user.id, targetStepId);
       console.log('Step completion result:', updatedProgress);
 
       // Update state with new progress

@@ -15,6 +15,11 @@ import HeroMetrics from '../components/dashboard/HeroMetrics';
 import CriticalAlerts from '../components/dashboard/CriticalAlerts';
 import ExpandableSection from '../components/dashboard/ExpandableSection';
 import ResponsiveCard from '../components/dashboard/ResponsiveCard';
+import TourOverlay from '../components/tour/TourOverlay';
+import TourTrigger from '../components/tour/TourTrigger';
+import FeatureHighlight from '../components/tour/FeatureHighlight';
+import HelpTooltip from '../components/help/HelpTooltip';
+import { HelpContentManager } from '../data/helpContent';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -194,22 +199,34 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto overflow-x-hidden">
+    <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto overflow-x-hidden dashboard-overview">
       {/* Page Container with proper constraints */}
       <div className="w-full max-w-full min-w-0">
         {/* Header */}
         <div className="flex flex-wrap justify-between gap-3 p-4 sm:p-6 w-full max-w-full">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <h1 className="text-white tracking-light text-2xl sm:text-[32px] font-bold leading-tight">
-              Welcome back{user?.email ? `, ${user.email.split('@')[0]}` : ''}!
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-white tracking-light text-2xl sm:text-[32px] font-bold leading-tight">
+                Welcome back{user?.email ? `, ${user.email.split('@')[0]}` : ''}!
+              </h1>
+              <HelpTooltip
+                content={HelpContentManager.getContent('dashboard_overview')?.content || ''}
+                title="Dashboard Overview"
+                position="bottom"
+                variant="info"
+                className="hidden sm:block"
+              />
+            </div>
           </div>
-          <button
-            onClick={() => navigate('/subscriptions?action=add')}
-            className="bg-blue-600 hover:bg-blue-700 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white text-sm font-medium transition-colors hidden sm:flex items-center gap-2"
-          >
-            ➕ Add Subscription
-          </button>
+          <div className="flex items-center gap-3">
+            <TourTrigger variant="icon" size="md" className="hidden sm:flex" />
+            <button
+              onClick={() => navigate('/subscriptions?action=add')}
+              className="bg-blue-600 hover:bg-blue-700 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white text-sm font-medium transition-colors hidden sm:flex items-center gap-2 quick-actions"
+            >
+              ➕ Add Subscription
+            </button>
+          </div>
         </div>
 
         {/* Main Content Grid */}
@@ -220,21 +237,23 @@ const Dashboard: React.FC = () => {
           <div className="space-y-6 sm:space-y-8 w-full max-w-full">
 
             {/* Hero Section - Above the Fold */}
-            <HeroMetrics
-              stats={{
-                totalSubscriptions: stats.totalSubscriptions,
-                monthlySpending: stats.monthlySpending,
-                yearlySpending: stats.yearlySpending,
-                upcomingRenewals: stats.upcomingRenewals
-              }}
-              budgetStatus={{
-                monthlyBudget: 500,
-                monthlySpent: stats.monthlySpending,
-                budgetUtilization: (stats.monthlySpending / 500) * 100,
-                status: (stats.monthlySpending / 500) >= 1 ? 'critical' :
-                       (stats.monthlySpending / 500) >= 0.8 ? 'warning' : 'safe'
-              }}
-            />
+            <div className="subscription-overview">
+              <HeroMetrics
+                stats={{
+                  totalSubscriptions: stats.totalSubscriptions,
+                  monthlySpending: stats.monthlySpending,
+                  yearlySpending: stats.yearlySpending,
+                  upcomingRenewals: stats.upcomingRenewals
+                }}
+                budgetStatus={{
+                  monthlyBudget: 500,
+                  monthlySpent: stats.monthlySpending,
+                  budgetUtilization: (stats.monthlySpending / 500) * 100,
+                  status: (stats.monthlySpending / 500) >= 1 ? 'critical' :
+                         (stats.monthlySpending / 500) >= 0.8 ? 'warning' : 'safe'
+                }}
+              />
+            </div>
 
             {/* Critical Alerts Section */}
             <CriticalAlerts
@@ -257,27 +276,31 @@ const Dashboard: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
 
               {/* Detailed Renewals Section */}
-              <ExpandableSection
-                title="Upcoming Renewals"
-                subtitle="Subscription renewals and expirations"
-                showItemCount={stats.upcomingRenewals}
-                previewContent={
-                  <UpcomingRenewals maxItems={2} showProcessButton={false} />
-                }
-              >
-                <UpcomingRenewals maxItems={10} showProcessButton={true} />
-              </ExpandableSection>
+              <div className="upcoming-renewals">
+                <ExpandableSection
+                  title="Upcoming Renewals"
+                  subtitle="Subscription renewals and expirations"
+                  showItemCount={stats.upcomingRenewals}
+                  previewContent={
+                    <UpcomingRenewals maxItems={2} showProcessButton={false} />
+                  }
+                >
+                  <UpcomingRenewals maxItems={10} showProcessButton={true} />
+                </ExpandableSection>
+              </div>
 
               {/* Detailed Spending Analysis */}
-              <ExpandableSection
-                title="Spending Analysis"
-                subtitle="Budget tracking and spending insights"
-                previewContent={
-                  <SpendingAlerts maxItems={2} showProcessButton={false} />
-                }
-              >
-                <SpendingAlerts maxItems={10} showProcessButton={true} />
-              </ExpandableSection>
+              <div className="spending-analytics">
+                <ExpandableSection
+                  title="Spending Analysis"
+                  subtitle="Budget tracking and spending insights"
+                  previewContent={
+                    <SpendingAlerts maxItems={2} showProcessButton={false} />
+                  }
+                >
+                  <SpendingAlerts maxItems={10} showProcessButton={true} />
+                </ExpandableSection>
+              </div>
 
               {/* Unused Subscriptions Analysis */}
               <ExpandableSection
@@ -370,7 +393,7 @@ const Dashboard: React.FC = () => {
             </ExpandableSection>
 
             {/* Mobile Quick Action */}
-            <div className="lg:hidden fixed bottom-6 right-6 z-50">
+            <div className="lg:hidden fixed bottom-6 right-6 z-50 quick-actions">
               <button
                 onClick={() => navigate('/subscriptions?action=add')}
                 className="bg-blue-600 hover:bg-blue-700 w-14 h-14 rounded-full text-white text-xl font-bold shadow-lg transition-colors"
@@ -381,6 +404,16 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Tour Overlay */}
+      <TourOverlay />
+
+      {/* Feature Discovery */}
+      <FeatureHighlight
+        subscriptionCount={stats.totalSubscriptions}
+        userLevel="beginner"
+        currentPage="dashboard"
+      />
     </div>
   );
 };

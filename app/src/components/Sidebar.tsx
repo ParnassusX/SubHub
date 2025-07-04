@@ -8,6 +8,7 @@ import {
   Shield,
   CreditCard,
   BarChart3,
+  TrendingUp,
   FolderOpen,
   Settings,
   HelpCircle,
@@ -42,6 +43,11 @@ const Sidebar: React.FC = () => {
       path: '/reports',
       name: t('reports'),
       icon: BarChart3
+    },
+    {
+      path: '/analytics',
+      name: 'Advanced Analytics',
+      icon: TrendingUp
     },
     {
       path: '/categories',

@@ -117,32 +117,20 @@ const ProfileSetupStep: React.FC<OnboardingStepProps> = ({
         throw new Error('Name is required');
       }
 
-      // Update profile settings with timeout
+      // Update profile settings - simplified without timeout
       console.log('💾 Updating profile...');
-      const profilePromise = SettingsService.updateProfile({
+      const profileResult = await SettingsService.updateProfile({
         name: formData.name.trim(),
         currency: formData.currency,
         timezone: formData.timezone
       });
-
-      const profileTimeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Profile update timeout')), 8000)
-      );
-
-      const profileResult = await Promise.race([profilePromise, profileTimeoutPromise]);
       console.log('✅ Profile updated successfully:', profileResult);
 
-      // Update user preferences with timeout
+      // Update user preferences - simplified without timeout
       console.log('⚙️ Updating preferences...');
-      const preferencesPromise = SettingsService.updatePreferences({
+      const preferencesResult = await SettingsService.updatePreferences({
         language: formData.language
       });
-
-      const preferencesTimeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Preferences update timeout')), 8000)
-      );
-
-      const preferencesResult = await Promise.race([preferencesPromise, preferencesTimeoutPromise]);
       console.log('✅ Preferences updated successfully:', preferencesResult);
 
       console.log('🎉 Profile setup completed, proceeding to next step');
