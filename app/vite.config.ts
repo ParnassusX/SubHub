@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'icon-192x192.png'],
       manifest: {
         name: 'SubHub - Subscription Manager',
         short_name: 'SubHub',
@@ -17,16 +17,24 @@ export default defineConfig({
         theme_color: '#1e40af',
         background_color: '#0f172a',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'portrait-primary',
         scope: '/',
-        start_url: '/',
+        start_url: '/?pwa=true',
         categories: ['finance', 'productivity', 'utilities'],
         lang: 'en',
         dir: 'ltr',
+        prefer_related_applications: false,
+        display_override: ['standalone', 'minimal-ui'],
         icons: [
           {
+            src: 'icon-192x192.svg',
+            sizes: '192x192',
+            type: 'image/svg+xml',
+            purpose: 'any'
+          },
+          {
             src: 'icon.svg',
-            sizes: '48x48 72x72 96x96 128x128 192x192 256x256 384x384 512x512',
+            sizes: '48x48 72x72 96x96 128x128 256x256 384x384 512x512',
             type: 'image/svg+xml',
             purpose: 'any'
           },
@@ -37,9 +45,10 @@ export default defineConfig({
             purpose: 'maskable'
           },
           {
-            src: 'apple-touch-icon.png',
+            src: 'apple-touch-icon.svg',
             sizes: '180x180',
-            type: 'image/png'
+            type: 'image/svg+xml',
+            purpose: 'any'
           }
         ]
       },

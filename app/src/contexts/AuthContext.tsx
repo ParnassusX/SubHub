@@ -37,8 +37,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = async () => {
       try {
-        // Get initial session - simplified without timeout for better performance
-        const { data: { session } } = await supabase.auth.getSession();
+        // Add timeout for PWA scenarios to prevent endless loading
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Auth initialization timeout')), 10000)
+        );
+
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
 
         if (!mounted) return;
 
@@ -50,7 +55,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error('Auth initialization error:', error);
         if (mounted) {
+          // In PWA mode, if auth fails, still allow app to load
           setIsLoading(false);
+          // Don't redirect in PWA mode to prevent navigation issues
+          if (!window.matchMedia('(display-mode: standalone)').matches) {
+            console.log('Auth failed, but allowing app to load');
+          }
         }
       }
     };

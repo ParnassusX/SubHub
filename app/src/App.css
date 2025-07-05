@@ -5,3 +5,50 @@
   margin: 0;
   padding: 0;
 }
+
+/* PWA-specific styles */
+.pwa-mode {
+  /* Prevent overscroll bounce on iOS */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pwa-mode #root {
+  /* Full height in PWA mode with dynamic viewport height */
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
+}
+
+/* PWA safe area handling for iOS */
+@supports (padding: max(0px)) {
+  .pwa-mode {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-top: max(0px, env(safe-area-inset-top));
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}
+
+/* PWA loading improvements */
+.pwa-mode .loading-spinner {
+  /* Ensure loading spinner is visible in PWA mode */
+  z-index: 9999;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* PWA-specific mobile optimizations */
+@media (display-mode: standalone) {
+  body {
+    /* Prevent pull-to-refresh on PWA */
+    overscroll-behavior-y: none;
+  }
+
+  /* Hide scrollbars in PWA mode for cleaner look */
+  ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+}

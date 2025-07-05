@@ -18,6 +18,7 @@ import RootRoute from './components/RootRoute'
 import { OnboardingService } from './services/onboardingService'
 import { usePerformanceOptimization } from './hooks/usePerformanceOptimization'
 import { useErrorHandler } from './hooks/useErrorHandler'
+import { initializePWAEventListeners, runPWADiagnostics, isPWAMode } from './utils/pwaUtils'
 import './App.css'
 
 // Lazy load heavy components for better performance
@@ -47,12 +48,22 @@ function App() {
   usePerformanceOptimization()
   useErrorHandler()
 
-  // Setup debug methods in development
+  // Setup debug methods in development and PWA initialization
   React.useEffect(() => {
     OnboardingService.setupDebugMethods();
 
     // Log feature flag status in development
     logFeatureFlagStatus();
+
+    // Initialize PWA utilities and diagnostics
+    initializePWAEventListeners();
+    runPWADiagnostics();
+
+    // PWA-specific initialization
+    if (isPWAMode()) {
+      console.log('🚀 SubHub PWA Mode Active - Enhanced mobile experience enabled');
+      document.body.classList.add('pwa-mode');
+    }
   }, []);
 
   return (
