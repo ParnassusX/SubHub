@@ -1,6 +1,7 @@
 // PWA Install Prompt Component
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
+import { isMobile } from '../utils/pwaUtils';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -16,6 +17,11 @@ const PWAInstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+
+  // Don't render PWA install prompt on desktop devices
+  if (!isMobile()) {
+    return null;
+  }
 
   useEffect(() => {
     // Check if app is already installed
@@ -34,10 +40,16 @@ const PWAInstallPrompt: React.FC = () => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      
+
+      // Only show install prompt on mobile devices
+      if (!isMobile()) {
+        console.log('PWA install prompt suppressed on desktop device');
+        return;
+      }
+
       // Show install prompt after a longer delay (less aggressive)
       setTimeout(() => {
-        if (!isInstalled) {
+        if (!isInstalled && isMobile()) {
           setShowInstallPrompt(true);
         }
       }, 120000); // Show after 2 minutes (was 30 seconds)

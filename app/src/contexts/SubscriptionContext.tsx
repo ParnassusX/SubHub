@@ -100,11 +100,18 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
     // Online: fetch first page from Supabase with pagination
     try {
-      const result = await timeOperation(
+      // Add timeout to prevent endless loading
+      const fetchPromise = timeOperation(
         'fetch_subscriptions_paginated',
         () => db.subscriptions.getPaginated(0, 23),
         { page: 0, limit: 23 }
       );
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Database query timeout')), 15000)
+      );
+
+      const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
       const { data, error: fetchError, count } = result;
 
       if (fetchError) {
@@ -157,11 +164,19 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
     try {
       const nextPage = currentPage + 1;
-      const result = await timeOperation(
+
+      // Add timeout to prevent endless loading
+      const fetchPromise = timeOperation(
         'load_more_subscriptions',
         () => db.subscriptions.getPaginated(nextPage, 23),
         { page: nextPage, limit: 23 }
       );
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Database query timeout')), 15000)
+      );
+
+      const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
       const { data, error: fetchError, count } = result;
 
       if (fetchError) {
