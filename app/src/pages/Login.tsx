@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
@@ -8,7 +8,6 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,11 +16,10 @@ const Login: React.FC = () => {
 
     try {
       const success = await login(email, password);
-      if (success) {
-        navigate('/dashboard');
-      } else {
+      if (!success) {
         setError('Invalid email or password');
       }
+      // Navigation is handled by AuthContext on successful login
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

@@ -51,9 +51,9 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <SubscriptionProvider>
-          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <AuthProvider>
+          <SubscriptionProvider>
             <Routes>
               {/* Smart root route - directs based on authentication */}
               <Route path="/" element={<RootRoute />} />
@@ -113,9 +113,9 @@ function App() {
                 </ProtectedRoute>
               } />
             </Routes>
-          </Router>
-        </SubscriptionProvider>
-      </AuthProvider>
+          </SubscriptionProvider>
+        </AuthProvider>
+      </Router>
 
       {/* PWA Prompts */}
       <PWAUpdatePrompt />

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase, authHelpers } from '../lib/supabase'
 import { Profile } from '../types/supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -23,6 +24,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -53,17 +55,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Listen for auth changes
+    // Listen for auth changes with better error handling
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
-      if (session?.user) {
-        await handleUserSession(session.user);
-      } else {
-        setUser(null);
-        setProfile(null);
+      console.log('Auth state change:', event, session?.user?.id || 'no user');
+
+      try {
+        if (session?.user) {
+          await handleUserSession(session.user);
+        } else {
+          // User logged out or session expired
+          setUser(null);
+          setProfile(null);
+          setIsLoading(false);
+
+          // Only navigate to login if we're not already there and this is a sign out
+          if (event === 'SIGNED_OUT' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+            console.log('User signed out, redirecting to login');
+            navigate('/login', { replace: true });
+          }
+        }
+      } catch (error) {
+        console.error('Error handling auth state change:', error);
         setIsLoading(false);
       }
     });
@@ -149,6 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true)
 
     try {
+      console.log('Attempting login for:', email)
       const { data, error } = await authHelpers.signIn(email, password)
 
       if (error) {
@@ -159,6 +176,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (data.user) {
         await handleUserSession(data.user)
+
+        // Navigate to dashboard on successful login
+        console.log('Login successful, navigating to dashboard')
+        navigate('/dashboard', { replace: true })
         return true
       }
 
@@ -194,9 +215,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = async () => {
-    await authHelpers.signOut()
-    setUser(null)
-    setProfile(null)
+    try {
+      console.log('Logging out user...')
+
+      // Clear auth state immediately for better UX
+      setUser(null)
+      setProfile(null)
+
+      // Sign out from Supabase
+      const { error } = await authHelpers.signOut()
+
+      if (error) {
+        console.error('Logout error:', error)
+        // Still navigate even if logout fails to prevent stuck state
+      }
+
+      // Navigate to login page
+      navigate('/login', { replace: true })
+      console.log('User logged out successfully')
+
+    } catch (error) {
+      console.error('Critical logout error:', error)
+      // Force navigation even on error to prevent stuck state
+      navigate('/login', { replace: true })
+    }
   }
 
   const isAdmin = user?.role === 'admin'
