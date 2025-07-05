@@ -21,6 +21,9 @@ import FeatureHighlight from '../components/tour/FeatureHighlight';
 import HelpTooltip from '../components/help/HelpTooltip';
 import { HelpContentManager } from '../data/helpContent';
 
+// Feature flags for UX elements
+import { isFeatureEnabled } from '../config/featureFlags';
+
 import { useNavigate } from 'react-router-dom';
 
 interface DashboardStats {
@@ -219,7 +222,10 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <TourTrigger variant="icon" size="md" className="hidden sm:flex" />
+            {/* Tour Trigger - Temporarily disabled to prevent UX conflicts */}
+            {isFeatureEnabled('TOUR_TRIGGER_ENABLED') && (
+              <TourTrigger variant="icon" size="md" className="hidden sm:flex" />
+            )}
             <button
               onClick={() => navigate('/subscriptions?action=add')}
               className="bg-blue-600 hover:bg-blue-700 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white text-sm font-medium transition-colors hidden sm:flex items-center gap-2 quick-actions"
@@ -405,15 +411,17 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Tour Overlay */}
-      <TourOverlay />
+      {/* Tour Overlay - Temporarily disabled to prevent UX conflicts */}
+      {isFeatureEnabled('DASHBOARD_TOUR_ENABLED') && <TourOverlay />}
 
-      {/* Feature Discovery */}
-      <FeatureHighlight
-        subscriptionCount={stats.totalSubscriptions}
-        userLevel="beginner"
-        currentPage="dashboard"
-      />
+      {/* Feature Discovery - Temporarily disabled to prevent UX conflicts */}
+      {isFeatureEnabled('FEATURE_HIGHLIGHT_ENABLED') && (
+        <FeatureHighlight
+          subscriptionCount={stats.totalSubscriptions}
+          userLevel="beginner"
+          currentPage="dashboard"
+        />
+      )}
     </div>
   );
 };

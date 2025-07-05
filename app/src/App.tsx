@@ -32,6 +32,9 @@ import {
 // Unified loading system
 import { PageLoader, ComponentLoader } from './components/UnifiedLoading'
 
+// Feature flags for UX elements
+import { isFeatureEnabled, logFeatureFlagStatus } from './config/featureFlags'
+
 // Lazy load admin and other pages
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'))
 const Categories = React.lazy(() => import('./pages/Categories'))
@@ -47,6 +50,9 @@ function App() {
   // Setup debug methods in development
   React.useEffect(() => {
     OnboardingService.setupDebugMethods();
+
+    // Log feature flag status in development
+    logFeatureFlagStatus();
   }, []);
 
   return (
@@ -108,8 +114,8 @@ function App() {
                       </div>
                     </div>
                   </div>
-                {/* Onboarding Overlay - Must be inside ProtectedRoute for authenticated users only */}
-                <OnboardingOverlay />
+                {/* Onboarding Overlay - Temporarily disabled to prevent UX conflicts */}
+                {isFeatureEnabled('ONBOARDING_ENABLED') && <OnboardingOverlay />}
                 </ProtectedRoute>
               } />
             </Routes>
