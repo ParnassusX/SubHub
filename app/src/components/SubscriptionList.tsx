@@ -2,13 +2,20 @@ import React from 'react';
 import { useSubscriptions, Subscription } from '../contexts/SubscriptionContext';
 import SubscriptionListItem from './SubscriptionListItem';
 import { useCurrency } from '../hooks/useCurrency';
+import { ChevronDown, Loader2 } from 'lucide-react';
 
 interface SubscriptionListProps {
   filteredSubscriptions?: Subscription[];
 }
 
 const SubscriptionList: React.FC<SubscriptionListProps> = ({ filteredSubscriptions }) => {
-  const { subscriptions } = useSubscriptions();
+  const {
+    subscriptions,
+    isLoading,
+    loadMoreSubscriptions,
+    hasMoreSubscriptions,
+    totalCount
+  } = useSubscriptions();
   const { formatPrice } = useCurrency();
 
   // Use filtered subscriptions if provided, otherwise use all subscriptions
@@ -62,6 +69,45 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({ filteredSubscriptio
           />
         ))}
       </div>
+
+      {/* Load More Button - Only show if not using filtered results and there are more items */}
+      {!filteredSubscriptions && hasMoreSubscriptions && (
+        <div className="mt-6 pt-4 border-t border-gray-700">
+          <button
+            onClick={loadMoreSubscriptions}
+            disabled={isLoading}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3
+                       bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800
+                       text-white rounded-lg transition-colors duration-200
+                       disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading more...</span>
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-4 h-4" />
+                <span>Load More Subscriptions</span>
+                <span className="text-sm text-blue-200">
+                  ({displaySubscriptions.length} of {totalCount})
+                </span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Pagination Info */}
+      {!filteredSubscriptions && totalCount > 0 && (
+        <div className="mt-4 text-center text-sm text-gray-400">
+          Showing {displaySubscriptions.length} of {totalCount} subscriptions
+          {!hasMoreSubscriptions && displaySubscriptions.length > 23 && (
+            <span className="text-green-400 ml-2">• All loaded</span>
+          )}
+        </div>
+      )}
     </div>
   );
 };

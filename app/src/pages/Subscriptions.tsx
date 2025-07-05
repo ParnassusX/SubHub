@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AddSubscriptionForm from '../components/AddSubscriptionForm';
 import SubscriptionList from '../components/SubscriptionList';
-import SearchAndFilter from '../components/SearchAndFilter';
+import CollapsibleSearchAndFilter from '../components/CollapsibleSearchAndFilter';
 import OfflineIndicator from '../components/OfflineIndicator';
 import { Subscription } from '../contexts/SubscriptionContext';
 
@@ -22,9 +22,9 @@ const Subscriptions: React.FC = () => {
           <OfflineIndicator className="mb-4" />
         </div>
 
-        {/* Search and Filter Section - Full Width at Top */}
+        {/* Collapsible Search and Filter Section - Full Width at Top */}
         <div className="w-full max-w-full min-w-0 px-4 sm:px-6">
-          <SearchAndFilter onFilteredResults={setFilteredSubscriptions} />
+          <CollapsibleSearchAndFilter onFilteredResults={setFilteredSubscriptions} />
         </div>
 
         {/* Main Content - Two Column Layout Below Filters */}

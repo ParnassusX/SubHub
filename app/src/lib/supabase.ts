@@ -15,31 +15,56 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 // Helper functions for common operations
 export const auth = supabase.auth
 
+// Cached user helper to reduce auth calls
+let cachedUser: any = null;
+let cacheTime = 0;
+const CACHE_DURATION = 30000; // 30 seconds
+
+const getCurrentUser = async () => {
+  const now = Date.now();
+  if (cachedUser && (now - cacheTime) < CACHE_DURATION) {
+    return cachedUser;
+  }
+
+  const { data: user } = await supabase.auth.getUser();
+  if (user.user?.id) {
+    cachedUser = user.user;
+    cacheTime = now;
+  }
+  return user.user;
+};
+
+// Clear user cache on auth state changes
+supabase.auth.onAuthStateChange(() => {
+  cachedUser = null;
+  cacheTime = 0;
+});
+
 // Database helpers
 export const db = {
   // Profiles
   profiles: {
     get: () => supabase.from('profiles').select('*').single(),
     update: async (data: Partial<Database['public']['Tables']['profiles']['Update']>) => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user?.id) throw new Error('User not authenticated');
-      return supabase.from('profiles').update(data).eq('id', user.user.id);
+      const user = await getCurrentUser();
+      if (!user?.id) throw new Error('User not authenticated');
+      return supabase.from('profiles').update(data).eq('id', user.id);
     },
   },
 
   // User Preferences
   userPreferences: {
     get: async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user?.id) throw new Error('User not authenticated');
-      return supabase.from('user_preferences').select('*').eq('user_id', user.user.id).single();
+      const user = await getCurrentUser();
+      if (!user?.id) throw new Error('User not authenticated');
+      return supabase.from('user_preferences').select('*').eq('user_id', user.id).single();
     },
     create: async (data: Database['public']['Tables']['user_preferences']['Insert']) =>
       supabase.from('user_preferences').insert(data).select().single(),
     update: async (data: Database['public']['Tables']['user_preferences']['Update']) => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user?.id) throw new Error('User not authenticated');
-      return supabase.from('user_preferences').update(data).eq('user_id', user.user.id).select().single();
+      const user = await getCurrentUser();
+      if (!user?.id) throw new Error('User not authenticated');
+      return supabase.from('user_preferences').update(data).eq('user_id', user.id).select().single();
     },
     upsert: async (data: Database['public']['Tables']['user_preferences']['Insert']) =>
       supabase.from('user_preferences').upsert(data).select().single(),
@@ -48,6 +73,15 @@ export const db = {
   // Subscriptions
   subscriptions: {
     getAll: () => supabase.from('subscriptions').select('*').order('created_at', { ascending: false }),
+    getPaginated: (page: number = 0, limit: number = 23) => {
+      const from = page * limit;
+      const to = from + limit - 1;
+      return supabase
+        .from('subscriptions')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
+    },
     getById: (id: string) => supabase.from('subscriptions').select('*').eq('id', id).single(),
     create: (data: Database['public']['Tables']['subscriptions']['Insert']) =>
       supabase.from('subscriptions').insert(data).select().single(),
@@ -59,16 +93,16 @@ export const db = {
   // Notification Preferences
   notificationPreferences: {
     get: async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user?.id) throw new Error('User not authenticated');
-      return supabase.from('notification_preferences').select('*').eq('user_id', user.user.id).single();
+      const user = await getCurrentUser();
+      if (!user?.id) throw new Error('User not authenticated');
+      return supabase.from('notification_preferences').select('*').eq('user_id', user.id).single();
     },
     create: async (data: Database['public']['Tables']['notification_preferences']['Insert']) =>
       supabase.from('notification_preferences').insert(data).select().single(),
     update: async (data: Database['public']['Tables']['notification_preferences']['Update']) => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user?.id) throw new Error('User not authenticated');
-      return supabase.from('notification_preferences').update(data).eq('user_id', user.user.id).select().single();
+      const user = await getCurrentUser();
+      if (!user?.id) throw new Error('User not authenticated');
+      return supabase.from('notification_preferences').update(data).eq('user_id', user.id).select().single();
     },
     upsert: async (data: Database['public']['Tables']['notification_preferences']['Insert']) =>
       supabase.from('notification_preferences').upsert(data).select().single(),

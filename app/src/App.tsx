@@ -13,6 +13,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import PWAUpdatePrompt from './components/PWAUpdatePrompt'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
 import OnboardingOverlay from './components/onboarding/OnboardingOverlay'
+import PerformanceDashboard from './components/PerformanceDashboard'
 import RootRoute from './components/RootRoute'
 import { OnboardingService } from './services/onboardingService'
 import { usePerformanceOptimization } from './hooks/usePerformanceOptimization'
@@ -119,6 +120,9 @@ function App() {
       {/* PWA Prompts */}
       <PWAUpdatePrompt />
       <PWAInstallPrompt />
+
+      {/* Performance Dashboard - Development Only */}
+      <PerformanceDashboard />
     </ErrorBoundary>
   )
 }

@@ -8,6 +8,10 @@ import type {
 } from '../types/onboarding';
 import { ONBOARDING_STEPS, CONVERSION_OPPORTUNITIES } from '../types/onboarding';
 
+// Cache for onboarding completion status to prevent repeated database calls
+const completionCache = new Map<string, { isCompleted: boolean; timestamp: number }>();
+const CACHE_DURATION = 60000; // 1 minute cache
+
 export class OnboardingService {
   // Removed localStorage constants - using Supabase as single source of truth
 
@@ -162,6 +166,9 @@ export class OnboardingService {
   static async saveOnboardingProgress(progress: OnboardingProgress): Promise<void> {
     try {
       console.log('Saving onboarding progress to database:', progress);
+
+      // Clear cache when saving progress
+      completionCache.delete(progress.userId);
 
       // Prepare update data with all onboarding fields
       const updateData = {
@@ -362,6 +369,15 @@ export class OnboardingService {
    */
   static async isOnboardingCompleted(userId: string): Promise<boolean> {
     try {
+      // Check cache first to prevent duplicate database calls
+      const cached = completionCache.get(userId);
+      const now = Date.now();
+
+      if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+        console.log('Using cached onboarding completion status:', cached.isCompleted);
+        return cached.isCompleted;
+      }
+
       console.log('Checking onboarding completion for user:', userId);
 
       // First check database directly for faster response
@@ -376,6 +392,10 @@ export class OnboardingService {
       }
 
       const isCompleted = !!(data?.onboarding_completed && data?.onboarding_completed_at);
+
+      // Cache the result
+      completionCache.set(userId, { isCompleted, timestamp: now });
+
       console.log('Onboarding completion status:', {
         userId,
         isCompleted,

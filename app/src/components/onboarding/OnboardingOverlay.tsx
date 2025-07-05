@@ -59,6 +59,12 @@ const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ className = '' })
     return null;
   }
 
+  // Additional safety check to prevent duplicate renders
+  if (!user.id || !currentStep.id) {
+    console.warn('OnboardingOverlay: Missing required IDs, not rendering');
+    return null;
+  }
+
   // Render the appropriate step component with error handling
   const renderStepComponent = () => {
     const stepProps = {
@@ -117,7 +123,10 @@ const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ className = '' })
   };
 
   return (
-    <div className={`fixed inset-0 z-50 bg-black/80 backdrop-blur-sm ${className}`}>
+    <div
+      key={`onboarding-${user.id}-${currentStep.id}`}
+      className={`fixed inset-0 z-50 bg-black/80 backdrop-blur-sm ${className}`}
+    >
       <div className="flex items-center justify-center min-h-screen p-4">
         <div className="bg-[#20364b] rounded-xl border border-[#2e4e6b] shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
           {/* Header */}

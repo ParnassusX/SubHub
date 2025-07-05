@@ -4,6 +4,7 @@ import { SubscriptionInsert, SubscriptionUpdate } from '../types/supabase';
 import { useAuth } from './AuthContext';
 import { OfflineStorageService } from '../services/offlineStorageService';
 import { useOffline } from '../hooks/useOffline';
+import { timeOperation } from '../utils/performanceMonitor';
 
 export interface Subscription {
   id: string;
@@ -28,6 +29,10 @@ interface SubscriptionContextType {
   isLoading: boolean;
   error: string | null;
   refreshSubscriptions: () => Promise<void>;
+  loadMoreSubscriptions: () => Promise<void>;
+  hasMoreSubscriptions: boolean;
+  totalCount: number;
+  currentPage: number;
   isOfflineMode: boolean;
   hasOfflineData: boolean;
 }
@@ -50,6 +55,9 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMoreSubscriptions, setHasMoreSubscriptions] = useState(true);
   const { user } = useAuth();
   const { isOffline } = useOffline();
 
@@ -67,13 +75,16 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
     setIsLoading(true);
     setError(null);
+    setCurrentPage(0);
 
     // If offline, try to load cached data
     if (isOffline) {
       try {
         const cachedSubscriptions = OfflineStorageService.getCachedSubscriptions();
         if (cachedSubscriptions.length > 0) {
-          setSubscriptions(cachedSubscriptions);
+          setSubscriptions(cachedSubscriptions.slice(0, 23)); // Show first 23 items
+          setTotalCount(cachedSubscriptions.length);
+          setHasMoreSubscriptions(cachedSubscriptions.length > 23);
           console.log('Loaded subscriptions from offline cache');
         } else {
           setError('No cached data available offline');
@@ -87,16 +98,21 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       return;
     }
 
-    // Online: fetch from Supabase and cache the result
+    // Online: fetch first page from Supabase with pagination
     try {
-      const { data, error: fetchError } = await db.subscriptions.getAll();
+      const result = await timeOperation(
+        'fetch_subscriptions_paginated',
+        async () => await db.subscriptions.getPaginated(0, 23),
+        { page: 0, limit: 23 }
+      );
+      const { data, error: fetchError, count } = result;
 
       if (fetchError) {
         throw fetchError;
       }
 
       // Convert Supabase format to our format
-      const formattedSubscriptions: Subscription[] = (data || []).map(sub => ({
+      const formattedSubscriptions: Subscription[] = (data || []).map((sub: any) => ({
         id: sub.id,
         name: sub.name,
         cost: sub.cost,
@@ -111,6 +127,8 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       }));
 
       setSubscriptions(formattedSubscriptions);
+      setTotalCount(count || 0);
+      setHasMoreSubscriptions((count || 0) > 23);
 
       // Cache the data for offline access
       OfflineStorageService.cacheSubscriptionData(formattedSubscriptions);
@@ -126,6 +144,54 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       } else {
         setError(err instanceof Error ? err.message : 'Failed to fetch subscriptions');
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadMoreSubscriptions = async () => {
+    if (!user || !hasMoreSubscriptions || isLoading || isOffline) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const nextPage = currentPage + 1;
+      const result = await timeOperation(
+        'load_more_subscriptions',
+        async () => await db.subscriptions.getPaginated(nextPage, 23),
+        { page: nextPage, limit: 23 }
+      );
+      const { data, error: fetchError, count } = result;
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      // Convert Supabase format to our format
+      const formattedSubscriptions: Subscription[] = (data || []).map((sub: any) => ({
+        id: sub.id,
+        name: sub.name,
+        cost: sub.cost,
+        frequency: sub.frequency as 'Monthly' | 'Yearly',
+        category: sub.category,
+        startDate: sub.start_date,
+        description: sub.description || undefined,
+        website: sub.website || undefined,
+        user_id: sub.user_id,
+        created_at: sub.created_at || undefined,
+        updated_at: sub.updated_at || undefined,
+      }));
+
+      // Append new subscriptions to existing ones
+      setSubscriptions(prev => [...prev, ...formattedSubscriptions]);
+      setCurrentPage(nextPage);
+      setTotalCount(count || 0);
+      setHasMoreSubscriptions((nextPage + 1) * 23 < (count || 0));
+
+    } catch (err) {
+      console.error('Error loading more subscriptions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load more subscriptions');
     } finally {
       setIsLoading(false);
     }
@@ -265,6 +331,10 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     isLoading,
     error,
     refreshSubscriptions,
+    loadMoreSubscriptions,
+    hasMoreSubscriptions,
+    totalCount,
+    currentPage,
     isOfflineMode: isOffline,
     hasOfflineData: OfflineStorageService.hasCachedData(),
   };

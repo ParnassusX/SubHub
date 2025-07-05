@@ -1,5 +1,5 @@
 // Onboarding Hook for SubHub User Experience
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { OnboardingService } from '../services/onboardingService';
 import type {
@@ -7,8 +7,12 @@ import type {
   ConversionOpportunity
 } from '../types/onboarding';
 
+// Global state to prevent duplicate initializations
+let isInitializing = false;
+
 export function useOnboarding() {
   const { user } = useAuth();
+  const initializationRef = useRef<boolean>(false);
   const [state, setState] = useState<OnboardingState>({
     isActive: false,
     isLoading: true,
@@ -21,7 +25,7 @@ export function useOnboarding() {
   const [conversionOpportunities, setConversionOpportunities] = useState<ConversionOpportunity[]>([]);
 
   /**
-   * Initialize onboarding when user is available
+   * Initialize onboarding when user is available - with duplicate prevention
    */
   useEffect(() => {
     if (!user?.id) {
@@ -29,6 +33,13 @@ export function useOnboarding() {
       return;
     }
 
+    // Prevent duplicate initialization
+    if (initializationRef.current || isInitializing) {
+      console.log('Onboarding initialization already in progress, skipping');
+      return;
+    }
+
+    initializationRef.current = true;
     initializeOnboarding();
   }, [user?.id]);
 
@@ -57,10 +68,15 @@ export function useOnboarding() {
     if (!user?.id) {
       console.log('No user ID available for onboarding initialization');
       setState(prev => ({ ...prev, isLoading: false, isActive: false }));
+      isInitializing = false;
+      initializationRef.current = false;
       return;
     }
 
     console.log('Initializing onboarding for user:', user.id);
+
+    // Set global initialization flag
+    isInitializing = true;
 
     // Check if onboarding is globally disabled
     if (OnboardingService.isOnboardingDisabled()) {
@@ -136,6 +152,10 @@ export function useOnboarding() {
         isActive: false, // Ensure onboarding doesn't show on error
         error: error instanceof Error ? error.message : 'Failed to initialize onboarding'
       }));
+    } finally {
+      // Reset global initialization flags
+      isInitializing = false;
+      initializationRef.current = false;
     }
   }, [user?.id]);
 
