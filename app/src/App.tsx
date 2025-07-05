@@ -131,6 +131,9 @@ function App() {
                 </ProtectedRoute>
               } />
             </Routes>
+
+            {/* Auth Debugger - Development Only (must be inside AuthProvider) */}
+            <AuthDebugger />
           </SubscriptionProvider>
         </AuthProvider>
       </Router>
@@ -141,9 +144,6 @@ function App() {
 
       {/* Performance Dashboard - Development Only */}
       <PerformanceDashboard />
-
-      {/* Auth Debugger - Development Only */}
-      <AuthDebugger />
     </ErrorBoundary>
   )
 }
