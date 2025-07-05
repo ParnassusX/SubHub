@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Note: Supabase handles automatic token refresh via autoRefreshToken: true in client config
   // No manual session refresh needed - this was causing performance overhead
@@ -36,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     const initializeAuth = async () => {
+      console.log('🔄 Auth initialization started');
       try {
         // Add timeout for PWA scenarios to prevent endless loading
         const sessionPromise = supabase.auth.getSession();
@@ -45,18 +47,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
 
-        if (!mounted) return;
+        if (!mounted) {
+          console.log('⚠️ Component unmounted during auth initialization');
+          return;
+        }
 
         if (session?.user) {
+          console.log('✅ Session found, handling user session');
           await handleUserSession(session.user);
         } else {
+          console.log('❌ No session found, setting loading to false');
           setIsLoading(false);
         }
+
+        // Mark as initialized to prevent race conditions
+        setIsInitialized(true);
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        console.error('❌ Auth initialization error:', error);
         if (mounted) {
           // In PWA mode, if auth fails, still allow app to load
+          console.log('🔧 Setting loading to false due to error');
           setIsLoading(false);
+          setIsInitialized(true);
           // Don't redirect in PWA mode to prevent navigation issues
           if (!window.matchMedia('(display-mode: standalone)').matches) {
             console.log('Auth failed, but allowing app to load');
@@ -72,6 +84,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
 
       console.log('Auth state change:', event, session?.user?.id || 'no user');
+
+      // Skip handling during initial load to prevent race conditions
+      if (!isInitialized && event === 'INITIAL_SESSION') {
+        console.log('⏭️ Skipping initial session handling to prevent race condition');
+        return;
+      }
 
       try {
         if (session?.user) {
@@ -103,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const handleUserSession = async (supabaseUser: SupabaseUser) => {
+    console.log('🔄 Handling user session for:', supabaseUser.email);
     try {
       // Set basic user data immediately to prevent loading state
       const basicUserData: User = {
@@ -113,15 +132,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
 
       setUser(basicUserData);
+      console.log('✅ Basic user data set, loading set to false');
       setIsLoading(false);
 
-      // Fetch profile data - simplified without timeout for better performance
+      // Fetch profile data with timeout protection
       try {
-        const { data: profileData, error } = await supabase
+        const profilePromise = supabase
           .from('profiles')
           .select('*')
           .eq('id', supabaseUser.id)
           .single();
+
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+        );
+
+        const { data: profileData, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
 
         if (!error && profileData) {
           const enhancedUserData: User = {
@@ -144,6 +170,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Critical error in handleUserSession:', error);
+      setIsLoading(false);
+    } finally {
+      // Ensure loading is always set to false
+      console.log('🔧 Final safety check: setting loading to false');
       setIsLoading(false);
     }
   };

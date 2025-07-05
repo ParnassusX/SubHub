@@ -19,6 +19,7 @@ import { OnboardingService } from './services/onboardingService'
 import { usePerformanceOptimization } from './hooks/usePerformanceOptimization'
 import { useErrorHandler } from './hooks/useErrorHandler'
 import { initializePWAEventListeners, runPWADiagnostics, isPWAMode } from './utils/pwaUtils'
+import AuthDebugger from './components/AuthDebugger'
 import './App.css'
 
 // Lazy load heavy components for better performance
@@ -140,6 +141,9 @@ function App() {
 
       {/* Performance Dashboard - Development Only */}
       <PerformanceDashboard />
+
+      {/* Auth Debugger - Development Only */}
+      <AuthDebugger />
     </ErrorBoundary>
   )
 }
