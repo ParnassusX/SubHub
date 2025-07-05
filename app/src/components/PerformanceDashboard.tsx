@@ -25,7 +25,7 @@ const PerformanceDashboard: React.FC = () => {
     updateMetrics(); // Initial load
 
     return () => clearInterval(interval);
-  }, [getMetrics]);
+  }, []); // Empty dependency array - getMetrics is stable from custom hook
 
   const recentMetrics = metrics.slice(-10); // Show last 10 operations
   const slowOps = getSlowOperations(1000); // Operations slower than 1 second

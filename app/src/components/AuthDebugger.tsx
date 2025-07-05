@@ -3,6 +3,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
 const AuthDebugger: React.FC = () => {
+  // Only render in development mode
+  if (process.env.NODE_ENV !== 'development') {
+    return null;
+  }
+
   const { user, isLoading, profile } = useAuth();
   const [sessionInfo, setSessionInfo] = useState<any>(null);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);

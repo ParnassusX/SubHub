@@ -108,7 +108,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       );
 
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Database query timeout')), 15000)
+        setTimeout(() => reject(new Error('Database query timeout')), 8000)
       );
 
       const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
@@ -173,7 +173,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       );
 
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Database query timeout')), 15000)
+        setTimeout(() => reject(new Error('Database query timeout')), 8000)
       );
 
       const result = await Promise.race([fetchPromise, timeoutPromise]) as any;

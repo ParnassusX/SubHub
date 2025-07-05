@@ -1,6 +1,8 @@
 // Performance Monitoring Utility for SubHub
 // Tracks database query performance and loading times
 
+import { useCallback } from 'react';
+
 interface PerformanceMetric {
   operation: string;
   startTime: number;
@@ -149,14 +151,39 @@ export function timeSync<T>(
 }
 
 // React hook for performance monitoring
+
 export function usePerformanceMonitor() {
+  const startOperation = useCallback((operation: string, metadata?: Record<string, any>) => {
+    return performanceMonitor.startOperation(operation, metadata);
+  }, []);
+
+  const endOperation = useCallback((operationId: string, success: boolean, error?: string) => {
+    return performanceMonitor.endOperation(operationId, success, error);
+  }, []);
+
+  const getMetrics = useCallback(() => {
+    return performanceMonitor.getMetrics();
+  }, []);
+
+  const getAverageTime = useCallback((operation: string) => {
+    return performanceMonitor.getAverageTime(operation);
+  }, []);
+
+  const getSlowOperations = useCallback((threshold?: number) => {
+    return performanceMonitor.getSlowOperations(threshold);
+  }, []);
+
+  const generateReport = useCallback(() => {
+    return performanceMonitor.generateReport();
+  }, []);
+
   return {
-    startOperation: performanceMonitor.startOperation.bind(performanceMonitor),
-    endOperation: performanceMonitor.endOperation.bind(performanceMonitor),
-    getMetrics: performanceMonitor.getMetrics.bind(performanceMonitor),
-    getAverageTime: performanceMonitor.getAverageTime.bind(performanceMonitor),
-    getSlowOperations: performanceMonitor.getSlowOperations.bind(performanceMonitor),
-    generateReport: performanceMonitor.generateReport.bind(performanceMonitor),
+    startOperation,
+    endOperation,
+    getMetrics,
+    getAverageTime,
+    getSlowOperations,
+    generateReport,
     timeOperation,
     timeSync
   };
