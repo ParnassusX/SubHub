@@ -73,10 +73,10 @@ export const db = {
   // Subscriptions
   subscriptions: {
     getAll: () => supabase.from('subscriptions').select('*').order('created_at', { ascending: false }),
-    getPaginated: (page: number = 0, limit: number = 23) => {
+    getPaginated: async (page: number = 0, limit: number = 23) => {
       const from = page * limit;
       const to = from + limit - 1;
-      return supabase
+      return await supabase
         .from('subscriptions')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })

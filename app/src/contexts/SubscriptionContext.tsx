@@ -102,7 +102,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     try {
       const result = await timeOperation(
         'fetch_subscriptions_paginated',
-        async () => await db.subscriptions.getPaginated(0, 23),
+        () => db.subscriptions.getPaginated(0, 23),
         { page: 0, limit: 23 }
       );
       const { data, error: fetchError, count } = result;
@@ -159,7 +159,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       const nextPage = currentPage + 1;
       const result = await timeOperation(
         'load_more_subscriptions',
-        async () => await db.subscriptions.getPaginated(nextPage, 23),
+        () => db.subscriptions.getPaginated(nextPage, 23),
         { page: nextPage, limit: 23 }
       );
       const { data, error: fetchError, count } = result;
