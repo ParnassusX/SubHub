@@ -1,8 +1,24 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '../types/supabase'
 
-const supabaseUrl = 'https://kfzuzxsywaptgbumrfgv.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmenV6eHN5d2FwdGdidW1yZmd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5NTgwNTYsImV4cCI6MjA2NjUzNDA1Nn0.zXged0s_9x_K7i1EA8N8MaysPOYe-LJS4Nz0uzz3L8w'
+// Environment variables with fallback for development
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kfzuzxsywaptgbumrfgv.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmenV6eHN5d2FwdGdidW1yZmd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5NTgwNTYsImV4cCI6MjA2NjUzNDA1Nn0.zXged0s_9x_K7i1EA8N8MaysPOYe-LJS4Nz0uzz3L8w'
+
+// Validate environment variables
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables. Please check your .env configuration.')
+  console.error('VITE_SUPABASE_URL:', supabaseUrl ? 'Set' : 'Missing')
+  console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Set' : 'Missing')
+  throw new Error('Supabase configuration error: Missing required environment variables')
+}
+
+// Log configuration status in development
+if (process.env.NODE_ENV === 'development') {
+  console.log('🔧 Supabase Configuration:')
+  console.log('  URL:', supabaseUrl)
+  console.log('  Key:', supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'Missing')
+}
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
