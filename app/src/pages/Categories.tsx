@@ -27,12 +27,6 @@ export default function Categories() {
     icon: null as string | null
   })
 
-  // Update category counts when subscriptions change
-  useEffect(() => {
-    if (categories.length > 0) {
-      updateSubscriptionCounts(subscriptions)
-    }
-  }, [subscriptions, categories.length, updateSubscriptionCounts])
 
 
 
@@ -44,31 +38,31 @@ export default function Categories() {
         name: newCategory.name,
         color: newCategory.color,
         icon: newCategory.icon || undefined
-      })
-      setNewCategory({ name: '', color: '#3b82f6', icon: null })
-      setShowAddForm(false)
+      });
+      setNewCategory({ name: '', color: '#3b82f6', icon: null });
+      setShowAddForm(false);
     } catch (error) {
-      console.error('Error adding category:', error)
+      console.error('Error adding category:', error);
     }
-  }
+  };
 
   const handleUpdateCategory = async (id: string, updates: { name?: string; color?: string; icon?: string | null }) => {
     try {
-      await updateCategory(id, updates)
-      setEditingCategory(null)
+      await updateCategory({ id, updates });
+      setEditingCategory(null);
     } catch (error) {
-      console.error('Error updating category:', error)
+      console.error('Error updating category:', error);
     }
-  }
+  };
 
   const handleDeleteCategory = async (id: string) => {
     try {
-      await deleteCategory(id)
-      setDeletingCategory(null)
+      await deleteCategory(id);
+      setDeletingCategory(null);
     } catch (error) {
-      console.error('Error deleting category:', error)
+      console.error('Error deleting category:', error);
     }
-  }
+  };
 
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase())

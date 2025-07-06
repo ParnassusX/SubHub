@@ -1,157 +1,68 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { db } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Database } from '../types/supabase';
-import { defaultCategories, updateDynamicCategories } from '../utils/categoryColors';
+import { updateDynamicCategories } from '../utils/categoryColors';
 
 type Category = Database['public']['Tables']['categories']['Row'] & {
   subscription_count?: number;
 };
 
+const fetchCategories = async () => {
+  const { data, error } = await db.categories.getAll();
+  if (error) throw error;
+  return data || [];
+};
+
 export const useCategories = () => {
   const { user } = useAuth();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchCategories = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
+  const { data: categories = [], isLoading: loading, error } = useQuery<Category[], Error>({
+    queryKey: ['categories', user?.id],
+    queryFn: fetchCategories,
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    if (categories) {
+      updateDynamicCategories(categories.map(cat => ({ name: cat.name, color: cat.color })));
     }
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const { data, error: fetchError } = await db.categories.getAll();
-      
-      if (fetchError) {
-        throw fetchError;
-      }
+  }, [categories]);
 
-      // If no categories exist, create default ones
-      if (!data || data.length === 0) {
-        await createDefaultCategories();
-        return;
-      }
-
-      const categoriesData = data || [];
-      setCategories(categoriesData);
-
-      // Update dynamic color system
-      updateDynamicCategories(categoriesData.map(cat => ({ name: cat.name, color: cat.color })));
-    } catch (err) {
-      console.error('Error fetching categories:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch categories');
-      
-      // Fallback to default categories
-      setCategories(defaultCategories.map((cat, index) => ({
-        id: `fallback-${index}`,
-        name: cat.name,
-        color: cat.color,
-        icon: null,
-        user_id: user?.id || '',
-        created_at: new Date().toISOString(),
-        updated_at: null,
-        subscription_count: 0
-      })));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createDefaultCategories = async () => {
-    if (!user?.id) return;
-
-    try {
-      const promises = defaultCategories.map(cat => 
-        db.categories.create({
-          name: cat.name,
-          color: cat.color,
-          user_id: user.id
-        })
-      );
-
-      const results = await Promise.all(promises);
-      const newCategories = results
-        .map(result => result.data)
-        .filter((data): data is Category => data !== null)
-        .map(cat => ({ ...cat, subscription_count: 0 }));
-
-      setCategories(newCategories);
-
-      // Update dynamic color system
-      updateDynamicCategories(newCategories.map(cat => ({ name: cat.name, color: cat.color })));
-    } catch (error) {
-      console.error('Error creating default categories:', error);
-      setError('Failed to create default categories');
-    }
-  };
-
-  const createCategory = async (categoryData: { name: string; color: string; icon?: string }) => {
-    if (!user?.id) {
-      throw new Error('User not authenticated');
-    }
-
-    try {
-      const { data, error } = await db.categories.create({
-        name: categoryData.name,
-        color: categoryData.color,
-        icon: categoryData.icon || null,
-        user_id: user.id
-      });
-
+  const createCategoryMutation = useMutation<Category, Error, { name: string; color: string; icon?: string }>({
+    mutationFn: async (categoryData) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      const { data, error } = await db.categories.create({ ...categoryData, user_id: user.id });
       if (error) throw error;
-      
-      if (data) {
-        const newCategory = { ...data, subscription_count: 0 };
-        setCategories(prev => [...prev, newCategory]);
-        return newCategory;
-      }
-    } catch (error) {
-      console.error('Error creating category:', error);
-      throw error;
-    }
-  };
+      return data as Category;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
+    },
+  });
 
-  const updateCategory = async (id: string, updates: Partial<Pick<Category, 'name' | 'color' | 'icon'>>) => {
-    try {
+  const updateCategoryMutation = useMutation<Category, Error, { id: string; updates: Partial<Pick<Category, 'name' | 'color' | 'icon'>> }>({
+    mutationFn: async ({ id, updates }) => {
       const { data, error } = await db.categories.update(id, updates);
-      
       if (error) throw error;
-      
-      if (data) {
-        const updatedCategories = categories.map(cat =>
-          cat.id === id
-            ? { ...data, subscription_count: cat.subscription_count }
-            : cat
-        );
-        setCategories(updatedCategories);
+      return data as Category;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
+    },
+  });
 
-        // Update dynamic color system
-        updateDynamicCategories(updatedCategories.map(cat => ({ name: cat.name, color: cat.color })));
-
-        return data;
-      }
-    } catch (error) {
-      console.error('Error updating category:', error);
-      throw error;
-    }
-  };
-
-  const deleteCategory = async (id: string) => {
-    try {
+  const deleteCategoryMutation = useMutation<void, Error, string>({
+    mutationFn: async (id: string) => {
       const { error } = await db.categories.delete(id);
-      
       if (error) throw error;
-      
-      setCategories(prev => prev.filter(cat => cat.id !== id));
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      throw error;
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
+    },
+  });
 
   const getCategoryNames = (): string[] => {
     return categories.map(cat => cat.name);
@@ -165,30 +76,22 @@ export const useCategories = () => {
     return categories.find(cat => cat.id === id);
   };
 
-  // Update subscription counts
-  const updateSubscriptionCounts = (subscriptions: any[]) => {
-    setCategories(prev => prev.map(category => {
-      const count = subscriptions.filter(sub => sub.category === category.name).length;
-      return { ...category, subscription_count: count };
-    }));
+  // This function will need to be updated to work with the new data flow
+  const updateSubscriptionCounts = () => {
+    // This logic will be moved to the backend or a separate hook
   };
-
-  useEffect(() => {
-    fetchCategories();
-  }, [user]);
 
   return {
     categories,
     loading,
-    error,
-    fetchCategories,
-    createCategory,
-    updateCategory,
-    deleteCategory,
+    error: error?.message || null,
+    createCategory: createCategoryMutation.mutateAsync,
+    updateCategory: updateCategoryMutation.mutateAsync,
+    deleteCategory: deleteCategoryMutation.mutateAsync,
     getCategoryNames,
     getCategoryByName,
     getCategoryById,
     updateSubscriptionCounts,
-    refetch: fetchCategories
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['categories', user?.id] }),
   };
 };

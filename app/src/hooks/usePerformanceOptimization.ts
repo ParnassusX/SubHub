@@ -3,67 +3,47 @@ import { supabase } from '../lib/supabase';
 
 // Performance optimization hook for session persistence and caching
 export const usePerformanceOptimization = () => {
-  const sessionCheckRef = useRef<NodeJS.Timeout | null>(null);
   const cacheRef = useRef<Map<string, { data: any; timestamp: number }>>(new Map());
 
-  // Session persistence optimization
-  const optimizeSessionPersistence = useCallback(async () => {
-    try {
-      // Check if session exists in localStorage
-      const localSession = localStorage.getItem('supabase.auth.token');
-      
-      if (localSession) {
-        // Validate session with Supabase
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error || !session) {
-          // Clear invalid session
-          localStorage.removeItem('supabase.auth.token');
-          await supabase.auth.signOut();
-        } else {
-          // Refresh session if it's close to expiring (within 5 minutes)
-          const expiresAt = session.expires_at;
-          if (expiresAt) {
-            const now = Math.floor(Date.now() / 1000);
-            const timeUntilExpiry = expiresAt - now;
+  // Handle runtime errors and message port issues
+  const handleRuntimeErrors = useCallback(() => {
+    // Handle unhandled promise rejections
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.warn('Unhandled promise rejection (handled):', event.reason);
+      // Prevent default browser error handling
+      event.preventDefault();
+    };
 
-            if (timeUntilExpiry < 300) { // 5 minutes
-              await supabase.auth.refreshSession();
-            }
-          }
-        }
+    // Handle runtime errors
+    const handleError = (event: ErrorEvent) => {
+      // Filter out browser extension and content script errors
+      if (event.filename?.includes('extension://') ||
+          event.message?.includes('content/scripts.js') ||
+          event.message?.includes('message port closed')) {
+        console.warn('Browser extension error (ignored):', event.message);
+        return;
       }
-    } catch (error) {
-      console.error('Session optimization error:', error);
-    }
-  }, []);
 
-  // Data caching with TTL (Time To Live)
-  const cacheData = useCallback((key: string, data: any, ttlMinutes: number = 5) => {
-    const timestamp = Date.now();
-    cacheRef.current.set(key, { data, timestamp });
-    
-    // Clean up expired cache entries
-    setTimeout(() => {
-      const cached = cacheRef.current.get(key);
-      if (cached && Date.now() - cached.timestamp > ttlMinutes * 60 * 1000) {
-        cacheRef.current.delete(key);
+      // Log actual application errors
+      if (event.message && !event.message.includes('Script error')) {
+        console.error('Application runtime error:', {
+          message: event.message,
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno
+        });
       }
-    }, ttlMinutes * 60 * 1000);
-  }, []);
+    };
 
-  // Get cached data if still valid
-  const getCachedData = useCallback((key: string, ttlMinutes: number = 5) => {
-    const cached = cacheRef.current.get(key);
-    if (!cached) return null;
-    
-    const isExpired = Date.now() - cached.timestamp > ttlMinutes * 60 * 1000;
-    if (isExpired) {
-      cacheRef.current.delete(key);
-      return null;
-    }
-    
-    return cached.data;
+    // Add event listeners
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    window.addEventListener('error', handleError);
+
+    // Cleanup function
+    return () => {
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      window.removeEventListener('error', handleError);
+    };
   }, []);
 
   // Preload critical resources
@@ -95,25 +75,20 @@ export const usePerformanceOptimization = () => {
 
   // Initialize performance optimizations
   useEffect(() => {
-    // Run session optimization immediately
-    optimizeSessionPersistence();
-    
-    // Set up periodic session checks (every 5 minutes)
-    sessionCheckRef.current = setInterval(optimizeSessionPersistence, 5 * 60 * 1000);
-    
     // Preload critical resources
     preloadCriticalResources();
-    
+
     // Optimize bundle size
     optimizeBundleSize();
-    
+
+    // Setup runtime error handling
+    const cleanupErrorHandling = handleRuntimeErrors();
+
     // Cleanup on unmount
     return () => {
-      if (sessionCheckRef.current) {
-        clearInterval(sessionCheckRef.current);
-      }
+      cleanupErrorHandling();
     };
-  }, [optimizeSessionPersistence, preloadCriticalResources, optimizeBundleSize]);
+  }, [preloadCriticalResources, optimizeBundleSize, handleRuntimeErrors]);
 
   // Performance monitoring
   const measurePerformance = useCallback((name: string, fn: (...args: any[]) => Promise<any>) => {
@@ -161,10 +136,7 @@ export const usePerformanceOptimization = () => {
   }, [optimizeMemory]);
 
   return {
-    cacheData,
-    getCachedData,
     measurePerformance,
-    optimizeSessionPersistence,
     optimizeMemory,
   };
 };
@@ -188,26 +160,19 @@ export const useComponentPerformance = (componentName: string) => {
 
 // Hook for data fetching optimization
 export const useOptimizedDataFetching = () => {
-  const { cacheData, getCachedData, measurePerformance } = usePerformanceOptimization();
+  const { measurePerformance } = usePerformanceOptimization();
   
   const fetchWithCache = useCallback(async (
     key: string,
     fetchFn: () => Promise<any>,
     ttlMinutes: number = 5
   ) => {
-    // Check cache first
-    const cached = getCachedData(key, ttlMinutes);
-    if (cached) {
-      return cached;
-    }
-    
     // Fetch and cache data
     const measuredFetch = measurePerformance(`fetch-${key}`, fetchFn);
     const data = await measuredFetch();
-    cacheData(key, data, ttlMinutes);
     
     return data;
-  }, [cacheData, getCachedData, measurePerformance]);
+  }, [measurePerformance]);
   
   return { fetchWithCache };
 };

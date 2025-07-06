@@ -28,153 +28,108 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isInitialized, setIsInitialized] = useState(false)
 
   // Note: Supabase handles automatic token refresh via autoRefreshToken: true in client config
   // No manual session refresh needed - this was causing performance overhead
 
   useEffect(() => {
-    let mounted = true;
-
-    const initializeAuth = async () => {
-      console.log('🔄 Auth initialization started');
-      try {
-        // Add timeout for PWA scenarios to prevent endless loading
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Auth initialization timeout')), 10000)
-        );
-
-        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
-
-        if (!mounted) {
-          console.log('⚠️ Component unmounted during auth initialization');
-          return;
-        }
-
-        if (session?.user) {
-          console.log('✅ Session found, handling user session');
-          await handleUserSession(session.user);
-        } else {
-          console.log('❌ No session found, setting loading to false');
-          setIsLoading(false);
-        }
-
-        // Mark as initialized to prevent race conditions
-        setIsInitialized(true);
-      } catch (error) {
-        console.error('❌ Auth initialization error:', error);
-        if (mounted) {
-          // In PWA mode, if auth fails, still allow app to load
-          console.log('🔧 Setting loading to false due to error');
-          setIsLoading(false);
-          setIsInitialized(true);
-          // Don't redirect in PWA mode to prevent navigation issues
-          if (!window.matchMedia('(display-mode: standalone)').matches) {
-            console.log('Auth failed, but allowing app to load');
-          }
-        }
-      }
-    };
-
-    // Listen for auth changes with better error handling
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-
       console.log('Auth state change:', event, session?.user?.id || 'no user');
-
-      // Skip handling during initial load to prevent race conditions
-      if (!isInitialized && event === 'INITIAL_SESSION') {
-        console.log('⏭️ Skipping initial session handling to prevent race condition');
-        return;
+      if (session?.user) {
+        await handleUserSession(session.user);
+      } else {
+        setUser(null);
+        setProfile(null);
       }
+      setIsLoading(false);
 
-      try {
-        if (session?.user) {
-          await handleUserSession(session.user);
-        } else {
-          // User logged out or session expired
-          setUser(null);
-          setProfile(null);
-          setIsLoading(false);
-
-          // Only navigate to login if we're not already there and this is a sign out
-          if (event === 'SIGNED_OUT' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-            console.log('User signed out, redirecting to login');
-            navigate('/login', { replace: true });
-          }
-        }
-      } catch (error) {
-        console.error('Error handling auth state change:', error);
-        setIsLoading(false);
+      if (event === 'SIGNED_OUT' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+        console.log('User signed out, redirecting to login');
+        navigate('/login', { replace: true });
       }
     });
 
-    initializeAuth();
+    // Check initial session with timeout to prevent hanging
+    const checkInitialSession = async () => {
+      try {
+        // Add timeout to prevent hanging authentication
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error('Authentication timeout after 8 seconds'));
+          }, 8000);
+        });
+
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
+
+        if (session?.user) {
+          await handleUserSession(session.user);
+        }
+      } catch (error) {
+        console.error('Initial session check failed:', error);
+        // Continue with app loading even if auth fails
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkInitialSession();
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
-  }, [])
+  }, [navigate])
 
   const handleUserSession = async (supabaseUser: SupabaseUser) => {
     console.log('🔄 Handling user session for:', supabaseUser.email);
+    
+    // Set basic user data immediately
+    const basicUserData: User = {
+      id: supabaseUser.id,
+      email: supabaseUser.email!,
+      name: supabaseUser.user_metadata?.name || undefined,
+      role: 'user' // Default role
+    };
+    setUser(basicUserData);
+
+    // Fetch profile data with timeout to prevent slow loading
     try {
-      // Set basic user data immediately to prevent loading state
-      const basicUserData: User = {
-        id: supabaseUser.id,
-        email: supabaseUser.email!,
-        name: supabaseUser.user_metadata?.name || undefined,
-        role: 'user' // Default role
-      };
+      const profilePromise = supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', supabaseUser.id)
+        .single();
 
-      setUser(basicUserData);
-      console.log('✅ Basic user data set, loading set to false');
-      setIsLoading(false);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Profile fetch timeout after 5 seconds'));
+        }, 5000);
+      });
 
-      // Fetch profile data with timeout protection
-      try {
-        const profilePromise = supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', supabaseUser.id)
-          .single();
+      const { data: profileData, error } = await Promise.race([profilePromise, timeoutPromise]);
 
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
-        );
-
-        const { data: profileData, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
-
-        if (!error && profileData) {
-          const enhancedUserData: User = {
-            ...basicUserData,
-            name: profileData.name || basicUserData.name,
-            role: (profileData.role as 'user' | 'admin') || 'user'
-          };
-
-          setUser(enhancedUserData);
-          setProfile(profileData);
-        } else if (error) {
-          console.warn('Profile fetch failed, using basic user data:', error);
-          // Create basic profile if it doesn't exist
-          if (error.code === 'PGRST116') {
-            await createBasicProfile(supabaseUser);
-          }
+      if (error) {
+        console.warn('Profile fetch failed, using basic user data:', error);
+        if (error.code === 'PGRST116') { // "Not found"
+          await createBasicProfile(supabaseUser);
         }
-      } catch (profileError) {
-        console.warn('Profile fetch error, continuing with basic user data:', profileError);
+        return;
       }
-    } catch (error) {
-      console.error('Critical error in handleUserSession:', error);
-      setIsLoading(false);
-    } finally {
-      // Ensure loading is always set to false
-      console.log('🔧 Final safety check: setting loading to false');
-      setIsLoading(false);
+
+      if (profileData) {
+        const enhancedUserData: User = {
+          ...basicUserData,
+          name: profileData.name || basicUserData.name,
+          role: (profileData.role as 'user' | 'admin') || 'user'
+        };
+        setUser(enhancedUserData);
+        setProfile(profileData);
+      }
+    } catch (profileError) {
+      console.error('Profile fetch error (continuing with basic user data):', profileError);
+      // Continue with basic user data even if profile fetch fails
     }
   };
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
 import { db } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useDashboardStats } from '../hooks/useDashboardStats';
 
 import { getCategoryHex } from '../utils/categoryColors';
 import { useCurrency } from '../hooks/useCurrency';
@@ -41,105 +42,15 @@ const Dashboard: React.FC = () => {
   // Budget hook is used by budget components
   const navigate = useNavigate();
 
-  const [stats, setStats] = useState<DashboardStats>({
-    totalSubscriptions: 0,
-    monthlySpending: 0,
-    yearlySpending: 0,
-    upcomingRenewals: 0,
-    notificationsCount: 0
-  });
-  const [isLoading, setIsLoading] = useState(true);
 
 
 
   // Load dashboard stats and insights
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      if (!user || subscriptionsLoading) return;
-
-      setIsLoading(true);
-      try {
-        // Calculate insights from subscriptions (placeholder for future use)
-
-        // Try to get stats from Supabase function, fallback to calculation
-        try {
-          const { data, error } = await db.dashboard.getUserStats();
-
-          if (error) {
-            console.error('Error loading dashboard stats:', error);
-            calculateStatsFromSubscriptions();
-          } else if (data && data.length > 0) {
-            const statsData = data[0];
-            setStats({
-              totalSubscriptions: Number(statsData.total_subscriptions),
-              monthlySpending: Number(statsData.monthly_spending),
-              yearlySpending: Number(statsData.yearly_spending),
-              upcomingRenewals: Number(statsData.upcoming_renewals),
-              notificationsCount: Number(statsData.notifications_count)
-            });
-          } else {
-            calculateStatsFromSubscriptions();
-          }
-        } catch (dbError) {
-          console.error('Database error:', dbError);
-          calculateStatsFromSubscriptions();
-        }
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
-        calculateStatsFromSubscriptions();
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const calculateStatsFromSubscriptions = () => {
-      const totalMonthlyCost = subscriptions.reduce((total, sub) => {
-        const monthlyCost = sub.frequency === 'Monthly' ? sub.cost : sub.cost / 12;
-        return total + monthlyCost;
-      }, 0);
-
-      const totalYearlyCost = totalMonthlyCost * 12;
-      const totalSubscriptions = subscriptions.length;
-
-      // Calculate upcoming renewals (next 7 days)
-      const today = new Date();
-      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-      
-      const upcomingRenewals = subscriptions.filter(sub => {
-        const startDate = new Date(sub.startDate);
-        const nextBilling = new Date(startDate);
-        
-        // Calculate next billing date
-        if (sub.frequency === 'Monthly') {
-          while (nextBilling < today) {
-            nextBilling.setMonth(nextBilling.getMonth() + 1);
-          }
-        } else {
-          while (nextBilling < today) {
-            nextBilling.setFullYear(nextBilling.getFullYear() + 1);
-          }
-        }
-        
-        return nextBilling >= today && nextBilling <= nextWeek;
-      }).length;
-
-      setStats({
-        totalSubscriptions,
-        monthlySpending: totalMonthlyCost,
-        yearlySpending: totalYearlyCost,
-        upcomingRenewals,
-        notificationsCount: 0 // Would need to fetch from notifications
-      });
-    };
-
-    if (user && !subscriptionsLoading) {
-      loadDashboardData();
-    }
-  }, [user, subscriptions, subscriptionsLoading]);
+  const { data: stats, isLoading } = useDashboardStats();
 
 
 
-  if (isLoading || subscriptionsLoading) {
+  if (isLoading || subscriptionsLoading || !stats) {
     return (
       <div className="flex-1 bg-background-primary h-full overflow-y-auto overflow-x-hidden">
         <div className="w-full max-w-full min-w-0">
@@ -246,17 +157,17 @@ const Dashboard: React.FC = () => {
             <div className="subscription-overview">
               <HeroMetrics
                 stats={{
-                  totalSubscriptions: stats.totalSubscriptions,
-                  monthlySpending: stats.monthlySpending,
-                  yearlySpending: stats.yearlySpending,
-                  upcomingRenewals: stats.upcomingRenewals
+                  totalSubscriptions: stats.total_subscriptions,
+                  monthlySpending: stats.monthly_spending,
+                  yearlySpending: stats.yearly_spending,
+                  upcomingRenewals: stats.upcoming_renewals
                 }}
                 budgetStatus={{
-                  monthlyBudget: 500,
-                  monthlySpent: stats.monthlySpending,
-                  budgetUtilization: (stats.monthlySpending / 500) * 100,
-                  status: (stats.monthlySpending / 500) >= 1 ? 'critical' :
-                         (stats.monthlySpending / 500) >= 0.8 ? 'warning' : 'safe'
+                  monthlyBudget: 500, // This will be replaced with data from settings
+                  monthlySpent: stats.monthly_spending,
+                  budgetUtilization: (stats.monthly_spending / 500) * 100,
+                  status: (stats.monthly_spending / 500) >= 1 ? 'critical' :
+                         (stats.monthly_spending / 500) >= 0.8 ? 'warning' : 'safe'
                 }}
               />
             </div>
@@ -265,12 +176,12 @@ const Dashboard: React.FC = () => {
             <CriticalAlerts
               alerts={[
                 // Mock alerts for now - will be replaced with real data
-                ...(stats.monthlySpending > 400 ? [{
+                ...(stats.monthly_spending > 400 ? [{
                   id: 'budget-warning',
                   type: 'budget_warning' as const,
                   title: 'Budget Warning',
-                  message: `You've used ${((stats.monthlySpending / 500) * 100).toFixed(0)}% of your monthly budget`,
-                  severity: (stats.monthlySpending / 500) >= 1 ? 'critical' as const : 'warning' as const,
+                  message: `You've used ${((stats.monthly_spending / 500) * 100).toFixed(0)}% of your monthly budget`,
+                  severity: (stats.monthly_spending / 500) >= 1 ? 'critical' as const : 'warning' as const,
                   actionLabel: 'Adjust Budget',
                   actionPath: '/settings'
                 }] : [])
@@ -286,7 +197,7 @@ const Dashboard: React.FC = () => {
                 <ExpandableSection
                   title="Upcoming Renewals"
                   subtitle="Subscription renewals and expirations"
-                  showItemCount={stats.upcomingRenewals}
+                  showItemCount={stats.upcoming_renewals}
                   previewContent={
                     <UpcomingRenewals maxItems={2} showProcessButton={false} />
                   }
@@ -417,7 +328,7 @@ const Dashboard: React.FC = () => {
       {/* Feature Discovery - Temporarily disabled to prevent UX conflicts */}
       {isFeatureEnabled('FEATURE_HIGHLIGHT_ENABLED') && (
         <FeatureHighlight
-          subscriptionCount={stats.totalSubscriptions}
+          subscriptionCount={stats.total_subscriptions}
           userLevel="beginner"
           currentPage="dashboard"
         />

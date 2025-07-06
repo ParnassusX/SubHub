@@ -1,6 +1,7 @@
 
 import React, { Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext'
 import { SubscriptionProvider } from './contexts/SubscriptionContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -49,6 +50,9 @@ function App() {
   usePerformanceOptimization()
   useErrorHandler()
 
+  // Create a client
+  const queryClient = new QueryClient()
+
   // Setup debug methods in development and PWA initialization
   React.useEffect(() => {
     OnboardingService.setupDebugMethods();
@@ -69,12 +73,13 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <AuthProvider>
-          <SubscriptionProvider>
-            <Routes>
-              {/* Smart root route - directs based on authentication */}
-              <Route path="/" element={<RootRoute />} />
+      <QueryClientProvider client={queryClient}>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <AuthProvider>
+            <SubscriptionProvider>
+              <Routes>
+                {/* Smart root route - directs based on authentication */}
+                <Route path="/" element={<RootRoute />} />
 
               {/* Public routes */}
               <Route
@@ -135,8 +140,9 @@ function App() {
             {/* Auth Debugger - Development Only (must be inside AuthProvider) */}
             <AuthDebugger />
           </SubscriptionProvider>
-        </AuthProvider>
-      </Router>
+          </AuthProvider>
+        </Router>
+      </QueryClientProvider>
 
       {/* PWA Prompts */}
       <PWAUpdatePrompt />

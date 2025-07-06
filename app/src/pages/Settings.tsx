@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../hooks/useSettings';
 import { SettingsService } from '../services/settingsService';
 import { Database } from '../types/supabase';
 import ImportExport from '../components/ImportExport';
@@ -34,137 +35,10 @@ const Settings: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'budget' | 'privacy'>('profile');
-  const [settings, setSettings] = useState<SettingsState>({
-    profile: null,
-    preferences: null
-  });
+
+  const { settings, isLoading, isSaving, error, successMessage, updateProfileSetting, updatePreferenceSetting, saveSettings } = useSettings();
   const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(getUserLanguage());
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  // Load settings from Supabase database
-  useEffect(() => {
-    const loadSettings = async () => {
-      if (!user) return;
-
-      setIsLoading(true);
-      try {
-        const { profile, preferences } = await SettingsService.getAllSettings();
-
-        // If no settings exist, initialize with defaults
-        if (!profile || !preferences) {
-          const defaultSettings = await SettingsService.initializeDefaultSettings();
-          setSettings(defaultSettings);
-        } else {
-          setSettings({ profile, preferences });
-        }
-      } catch (error) {
-        console.error('Error loading settings:', error);
-        setError('Failed to load settings');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadSettings();
-  }, [user]);
-
-  // Helper functions for showing messages
-  const showSuccess = (message: string) => {
-    setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(null), 3000);
-  };
-
-  const showError = (message: string) => {
-    setError(message);
-    setTimeout(() => setError(null), 5000);
-  };
-
-  // Save settings handler
-  const saveSettings = async () => {
-    if (!settings.profile || !settings.preferences) {
-      showError('Settings not loaded');
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      // Save both profile and preferences
-      await Promise.all([
-        SettingsService.updateProfile({
-          timezone: settings.profile.timezone,
-          currency: settings.profile.currency,
-          date_format: settings.profile.date_format
-        }),
-        SettingsService.updatePreferences({
-          email_notifications: settings.preferences.email_notifications,
-          push_notifications: settings.preferences.push_notifications,
-          renewal_alerts: settings.preferences.renewal_alerts,
-          spending_alerts: settings.preferences.spending_alerts,
-          weekly_summary: settings.preferences.weekly_summary,
-          monthly_report: settings.preferences.monthly_report,
-          reminder_frequency: settings.preferences.reminder_frequency,
-          theme: settings.preferences.theme,
-          language: settings.preferences.language,
-          auto_categorize: settings.preferences.auto_categorize,
-          data_export_format: settings.preferences.data_export_format
-        })
-      ]);
-
-      showSuccess('Settings saved successfully');
-    } catch (error: any) {
-      console.error('Error saving settings:', error);
-      showError('Failed to save settings');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Update setting helpers
-  const updateProfileSetting = (key: keyof Profile, value: any) => {
-    if (!settings.profile) return;
-
-    // Handle currency change specially for immediate UI updates
-    if (key === 'currency') {
-      // Trigger a storage event to notify currency hook
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'subhub-currency',
-        newValue: value,
-        oldValue: settings.profile.currency
-      }));
-    }
-
-    setSettings(prev => ({
-      ...prev,
-      profile: { ...prev.profile!, [key]: value }
-    }));
-  };
-
-  const updatePreferenceSetting = (key: keyof UserPreferences, value: any) => {
-    if (!settings.preferences) return;
-
-    // Handle language change specially
-    if (key === 'language') {
-      const newLanguage = value as SupportedLanguage;
-      setCurrentLanguage(newLanguage);
-      setUserLanguage(newLanguage);
-
-      // Trigger a storage event to notify other components
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'subhub-language',
-        newValue: newLanguage,
-        oldValue: currentLanguage
-      }));
-    }
-
-    setSettings(prev => ({
-      ...prev,
-      preferences: { ...prev.preferences!, [key]: value }
-    }));
-  };
 
   if (!user) {
     return (
@@ -191,7 +65,7 @@ const Settings: React.FC = () => {
     );
   }
 
-  if (!settings.profile || !settings.preferences) {
+  if (!settings?.profile || !settings?.preferences) {
     return (
       <div className="flex-1 bg-[#0f1a24] h-full overflow-y-auto">
         <div className="flex items-center justify-center h-full">
@@ -278,7 +152,7 @@ const Settings: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Currency</label>
                   <select
-                    value={settings.profile?.currency || 'USD'}
+                    value={settings.profile.currency || 'USD'}
                     onChange={(e) => updateProfileSetting('currency', e.target.value)}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
@@ -291,7 +165,7 @@ const Settings: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Date Format</label>
                   <select
-                    value={settings.profile?.date_format || 'MM/DD/YYYY'}
+                    value={settings.profile.date_format || 'MM/DD/YYYY'}
                     onChange={(e) => updateProfileSetting('date_format', e.target.value)}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
@@ -304,7 +178,7 @@ const Settings: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Timezone</label>
                   <select
-                    value={settings.profile?.timezone || 'UTC'}
+                    value={settings.profile.timezone || 'UTC'}
                     onChange={(e) => updateProfileSetting('timezone', e.target.value)}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
@@ -341,7 +215,7 @@ const Settings: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Theme</label>
                   <select
-                    value={settings.preferences?.theme || 'dark'}
+                    value={settings.preferences.theme || 'dark'}
                     onChange={(e) => updatePreferenceSetting('theme', e.target.value)}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
@@ -354,7 +228,7 @@ const Settings: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Language</label>
                   <select
-                    value={settings.preferences?.language || currentLanguage}
+                    value={settings.preferences.language || currentLanguage}
                     onChange={(e) => updatePreferenceSetting('language', e.target.value)}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
@@ -392,7 +266,7 @@ const Settings: React.FC = () => {
                     <input
                       type="checkbox"
                       className="sr-only peer"
-                      checked={settings.preferences?.auto_categorize || false}
+                      checked={settings.preferences.auto_categorize || false}
                       onChange={(e) => updatePreferenceSetting('auto_categorize', e.target.checked)}
                     />
                     <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -402,7 +276,7 @@ const Settings: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Data Export Format</label>
                   <select
-                    value={settings.preferences?.data_export_format || 'csv'}
+                    value={settings.preferences.data_export_format || 'csv'}
                     onChange={(e) => updatePreferenceSetting('data_export_format', e.target.value)}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >

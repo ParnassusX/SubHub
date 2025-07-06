@@ -1,8 +1,19 @@
 import { test, expect } from '@playwright/test';
 
+const ADMIN_EMAIL = 'admin@subhub.com';
+const ADMIN_PASSWORD = 'password';
+
+async function loginAsAdmin(page: any) {
+  await page.goto('/login');
+  await page.fill('input[type="email"]', ADMIN_EMAIL);
+  await page.fill('input[type="password"]', ADMIN_PASSWORD);
+  await page.click('button[type="submit"]');
+  await page.waitForURL('/dashboard');
+}
+
 test.describe('Admin Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to admin dashboard
+    await loginAsAdmin(page);
     await page.goto('/admin');
   });
 
