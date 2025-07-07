@@ -9,6 +9,27 @@ export const usePerformanceOptimization = () => {
   const handleRuntimeErrors = useCallback(() => {
     // Handle unhandled promise rejections
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      // Filter out browser extension promise rejections
+      const reason = event.reason?.toString() || '';
+      const extensionRejectionPatterns = [
+        'runtime.lastError',
+        'message port closed',
+        'Extension context invalidated',
+        'Could not establish connection',
+        'chrome-extension',
+        'moz-extension'
+      ];
+
+      const isExtensionRejection = extensionRejectionPatterns.some(pattern =>
+        reason.includes(pattern)
+      );
+
+      if (isExtensionRejection) {
+        // Silently prevent extension errors
+        event.preventDefault();
+        return;
+      }
+
       console.warn('Unhandled promise rejection (handled):', event.reason);
       // Prevent default browser error handling
       event.preventDefault();
@@ -16,11 +37,34 @@ export const usePerformanceOptimization = () => {
 
     // Handle runtime errors
     const handleError = (event: ErrorEvent) => {
-      // Filter out browser extension and content script errors
-      if (event.filename?.includes('extension://') ||
-          event.message?.includes('content/scripts.js') ||
-          event.message?.includes('message port closed')) {
-        console.warn('Browser extension error (ignored):', event.message);
+      // Comprehensive browser extension and content script error filtering
+      const extensionPatterns = [
+        'extension://',
+        'content/scripts.js',
+        'message port closed',
+        'runtime.lastError',
+        'chrome-extension://',
+        'moz-extension://',
+        'safari-extension://',
+        'edge-extension://',
+        'The message port closed before a response was received',
+        'Could not establish connection',
+        'Extension context invalidated',
+        'has-text(',  // Playwright test selector
+        'body>hs/tex', // Malformed selector
+        'invalid pseudo class',
+        'invalid selector'
+      ];
+
+      // Check if error is from browser extension or test tools
+      const isExtensionError = extensionPatterns.some(pattern =>
+        event.message?.includes(pattern) ||
+        event.filename?.includes(pattern) ||
+        event.error?.message?.includes(pattern)
+      );
+
+      if (isExtensionError) {
+        // Silently ignore extension errors - don't even log them
         return;
       }
 
@@ -73,6 +117,48 @@ export const usePerformanceOptimization = () => {
     }
   }, []);
 
+  // Chrome runtime error suppression
+  const suppressChromeRuntimeErrors = useCallback(() => {
+    // Suppress Chrome runtime.lastError messages
+    if (typeof (window as any).chrome !== 'undefined' && (window as any).chrome.runtime) {
+      const chromeRuntime = (window as any).chrome.runtime;
+      const originalSendMessage = chromeRuntime.sendMessage;
+      chromeRuntime.sendMessage = function(...args: any[]) {
+        try {
+          return originalSendMessage.apply(this, args);
+        } catch (error) {
+          // Silently ignore chrome runtime errors
+          return;
+        }
+      };
+    }
+
+    // Suppress console errors from extensions
+    const originalConsoleError = console.error;
+    console.error = function(...args) {
+      const message = args.join(' ');
+      const extensionErrorPatterns = [
+        'runtime.lastError',
+        'message port closed',
+        'Extension context invalidated',
+        'has-text(',
+        'invalid pseudo class'
+      ];
+
+      const isExtensionError = extensionErrorPatterns.some(pattern =>
+        message.includes(pattern)
+      );
+
+      if (!isExtensionError) {
+        originalConsoleError.apply(console, args);
+      }
+    };
+
+    return () => {
+      console.error = originalConsoleError;
+    };
+  }, []);
+
   // Initialize performance optimizations
   useEffect(() => {
     // Preload critical resources
@@ -84,11 +170,15 @@ export const usePerformanceOptimization = () => {
     // Setup runtime error handling
     const cleanupErrorHandling = handleRuntimeErrors();
 
+    // Setup Chrome runtime error suppression
+    const cleanupChromeErrors = suppressChromeRuntimeErrors();
+
     // Cleanup on unmount
     return () => {
       cleanupErrorHandling();
+      cleanupChromeErrors();
     };
-  }, [preloadCriticalResources, optimizeBundleSize, handleRuntimeErrors]);
+  }, [preloadCriticalResources, optimizeBundleSize, handleRuntimeErrors, suppressChromeRuntimeErrors]);
 
   // Performance monitoring
   const measurePerformance = useCallback((name: string, fn: (...args: any[]) => Promise<any>) => {

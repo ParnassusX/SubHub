@@ -80,11 +80,9 @@
       "destination": "/index.html"
     }
   ],
-  "functions": {
-    "app/dist/index.html": {
-      "includeFiles": "app/dist/**"
-    }
-  },
+  "buildCommand": "cd app && npm run build",
+  "outputDirectory": "app/dist",
+  "installCommand": "cd app && npm install",
   "github": {
     "silent": true
   },
