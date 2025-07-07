@@ -2,20 +2,20 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 
-import { Database } from '../types/supabase';
+
 import ImportExport from '../components/ImportExport';
 import { getUserLanguage, SupportedLanguage } from '../utils/localization';
 import { useTranslation } from '../hooks/useTranslation';
 import BudgetSettings from '../components/budget/BudgetSettings';
 import NotificationPreferences from '../components/notifications/NotificationPreferences';
 
-type Profile = Database['public']['Tables']['profiles']['Row'];
-type UserPreferences = Database['public']['Tables']['user_preferences']['Row'];
+// type Profile = Database['public']['Tables']['profiles']['Row'];
+// type UserPreferences = Database['public']['Tables']['user_preferences']['Row'];
 
-interface SettingsState {
-  profile: Profile | null;
-  preferences: UserPreferences | null;
-}
+// interface SettingsState {
+//   profile: Profile | null;
+//   preferences: UserPreferences | null;
+// }
 
 const CURRENCY_OPTIONS = [
   { value: 'USD', label: 'US Dollar ($)' },

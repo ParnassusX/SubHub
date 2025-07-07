@@ -26,13 +26,13 @@ import { isFeatureEnabled } from '../config/featureFlags';
 
 import { useNavigate } from 'react-router-dom';
 
-interface DashboardStats {
-  totalSubscriptions: number;
-  monthlySpending: number;
-  yearlySpending: number;
-  upcomingRenewals: number;
-  notificationsCount: number;
-}
+// interface DashboardStats {
+//   totalSubscriptions: number;
+//   monthlySpending: number;
+//   yearlySpending: number;
+//   upcomingRenewals: number;
+//   notificationsCount: number;
+// }
 
 const Dashboard: React.FC = () => {
   const { subscriptions, isLoading: subscriptionsLoading } = useSubscriptions();
