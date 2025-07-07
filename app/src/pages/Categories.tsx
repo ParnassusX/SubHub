@@ -44,13 +44,13 @@ export default function Categories() {
 
       // Set new timeout
       const timeoutId = setTimeout(() => {
-        handleUpdateCategory(categoryId, { color });
+        updateCategory({ id: categoryId, updates: { color } });
         debounceTimeouts.current.delete(categoryId);
       }, 500);
 
       debounceTimeouts.current.set(categoryId, timeoutId);
     },
-    [updateCategory] // ✅ Proper dependency to prevent stale closures
+    [updateCategory] // ✅ Fixed: Now correctly depends on updateCategory which is what we're calling
   );
 
 
