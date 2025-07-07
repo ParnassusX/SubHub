@@ -17,6 +17,7 @@ import ExpandableSection from '../components/dashboard/ExpandableSection';
 import ResponsiveCard from '../components/dashboard/ResponsiveCard';
 import TourOverlay from '../components/tour/TourOverlay';
 import TourTrigger from '../components/tour/TourTrigger';
+import { useBudget } from '../hooks/useBudget';
 import FeatureHighlight from '../components/tour/FeatureHighlight';
 import HelpTooltip from '../components/help/HelpTooltip';
 import { HelpContentManager } from '../data/helpContent';
@@ -38,7 +39,12 @@ const Dashboard: React.FC = () => {
   const { subscriptions, isLoading: subscriptionsLoading } = useSubscriptions();
   const { user } = useAuth();
   const { formatPrice } = useCurrency();
-  // Budget hook is used by budget components
+  const {
+    monthlyBudget,
+    monthlySpending,
+    budgetSummary,
+    isLoading: budgetLoading
+  } = useBudget();
   const navigate = useNavigate();
 
 
@@ -162,11 +168,12 @@ const Dashboard: React.FC = () => {
                   upcomingRenewals: stats.upcoming_renewals
                 }}
                 budgetStatus={{
-                  monthlyBudget: 500, // This will be replaced with data from settings
-                  monthlySpent: stats.monthly_spending,
-                  budgetUtilization: (stats.monthly_spending / 500) * 100,
-                  status: (stats.monthly_spending / 500) >= 1 ? 'critical' :
-                         (stats.monthly_spending / 500) >= 0.8 ? 'warning' : 'safe'
+                  monthlyBudget: monthlyBudget || 0,
+                  monthlySpent: monthlySpending,
+                  budgetUtilization: monthlyBudget ? (monthlySpending / monthlyBudget) * 100 : 0,
+                  status: !monthlyBudget ? 'no_budget' :
+                         (monthlySpending / monthlyBudget) >= 1 ? 'critical' :
+                         (monthlySpending / monthlyBudget) >= 0.8 ? 'warning' : 'safe'
                 }}
               />
             </div>
@@ -174,14 +181,27 @@ const Dashboard: React.FC = () => {
             {/* Critical Alerts Section */}
             <CriticalAlerts
               alerts={[
-                // Mock alerts for now - will be replaced with real data
-                ...(stats.monthly_spending > 400 ? [{
-                  id: 'budget-warning',
+                // Real budget alerts from useBudget hook
+                ...(budgetSummary?.alerts?.filter(alert =>
+                  alert.threshold >= 90 // Only show critical alerts (90%+)
+                ).map(alert => ({
+                  id: `budget-alert-${alert.id}`,
                   type: 'budget_warning' as const,
-                  title: 'Budget Warning',
-                  message: `You've used ${((stats.monthly_spending / 500) * 100).toFixed(0)}% of your monthly budget`,
-                  severity: (stats.monthly_spending / 500) >= 1 ? 'critical' as const : 'warning' as const,
+                  title: alert.type === 'monthly_threshold' ? 'Monthly Budget Alert' :
+                         alert.type === 'yearly_threshold' ? 'Yearly Budget Alert' : 'Category Budget Alert',
+                  message: alert.message,
+                  severity: alert.threshold >= 100 ? 'critical' as const : 'warning' as const,
                   actionLabel: 'Adjust Budget',
+                  actionPath: '/settings'
+                })) || []),
+                // Add no budget set alert if no budget is configured
+                ...(!monthlyBudget && !budgetLoading ? [{
+                  id: 'no-budget-set',
+                  type: 'budget_warning' as const,
+                  title: 'No Budget Set',
+                  message: 'Set up your monthly budget to track spending and get alerts',
+                  severity: 'warning' as const,
+                  actionLabel: 'Set Budget',
                   actionPath: '/settings'
                 }] : [])
               ]}

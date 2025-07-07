@@ -16,7 +16,7 @@ interface HeroMetricsProps {
     monthlyBudget: number;
     monthlySpent: number;
     budgetUtilization: number;
-    status: 'safe' | 'warning' | 'critical';
+    status: 'safe' | 'warning' | 'critical' | 'no_budget';
   };
 }
 
@@ -25,20 +25,22 @@ const HeroMetrics: React.FC<HeroMetricsProps> = ({ stats, budgetStatus }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const getStatusColor = (status: 'safe' | 'warning' | 'critical') => {
+  const getStatusColor = (status: 'safe' | 'warning' | 'critical' | 'no_budget') => {
     switch (status) {
       case 'critical': return 'text-red-400';
       case 'warning': return 'text-yellow-400';
       case 'safe': return 'text-green-400';
+      case 'no_budget': return 'text-blue-400';
       default: return 'text-gray-400';
     }
   };
 
-  const getStatusIcon = (status: 'safe' | 'warning' | 'critical') => {
+  const getStatusIcon = (status: 'safe' | 'warning' | 'critical' | 'no_budget') => {
     switch (status) {
       case 'critical': return '🚨';
       case 'warning': return '⚠️';
       case 'safe': return '✅';
+      case 'no_budget': return '💰';
       default: return '📊';
     }
   };
@@ -57,22 +59,27 @@ const HeroMetrics: React.FC<HeroMetricsProps> = ({ stats, budgetStatus }) => {
                 </h2>
               </div>
               <p className="text-gray-300 text-sm sm:text-base">
-                {formatPrice(budgetStatus.monthlySpent)} of {formatPrice(budgetStatus.monthlyBudget)} used
+                {budgetStatus.status === 'no_budget'
+                  ? `${formatPrice(budgetStatus.monthlySpent)} spent this month - Set a budget to track progress`
+                  : `${formatPrice(budgetStatus.monthlySpent)} of ${formatPrice(budgetStatus.monthlyBudget)} used`
+                }
               </p>
             </div>
             <div className="text-right">
               <div className={`text-2xl sm:text-3xl font-bold ${getStatusColor(budgetStatus.status)}`}>
-                {budgetStatus.budgetUtilization.toFixed(0)}%
+                {budgetStatus.status === 'no_budget' ? 'No Budget' : `${budgetStatus.budgetUtilization.toFixed(0)}%`}
               </div>
-              <div className="w-full sm:w-32 bg-gray-700 rounded-full h-2 mt-2">
-                <div
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    budgetStatus.status === 'critical' ? 'bg-red-500' :
-                    budgetStatus.status === 'warning' ? 'bg-yellow-500' : 'bg-green-500'
-                  }`}
-                  style={{ width: `${Math.min(budgetStatus.budgetUtilization, 100)}%` }}
-                ></div>
-              </div>
+              {budgetStatus.status !== 'no_budget' && (
+                <div className="w-full sm:w-32 bg-gray-700 rounded-full h-2 mt-2">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      budgetStatus.status === 'critical' ? 'bg-red-500' :
+                      budgetStatus.status === 'warning' ? 'bg-yellow-500' : 'bg-green-500'
+                    }`}
+                    style={{ width: `${Math.min(budgetStatus.budgetUtilization, 100)}%` }}
+                  ></div>
+                </div>
+              )}
             </div>
           </div>
         </ResponsiveCard>
