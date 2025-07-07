@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
-import { SettingsService } from '../services/settingsService';
+
 import { Database } from '../types/supabase';
 import ImportExport from '../components/ImportExport';
-import { getUserLanguage, setUserLanguage, SupportedLanguage } from '../utils/localization';
+import { getUserLanguage, SupportedLanguage } from '../utils/localization';
 import { useTranslation } from '../hooks/useTranslation';
 import BudgetSettings from '../components/budget/BudgetSettings';
 import NotificationPreferences from '../components/notifications/NotificationPreferences';
@@ -37,7 +37,7 @@ const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'budget' | 'privacy'>('profile');
 
   const { settings, isLoading, isSaving, error, successMessage, updateProfileSetting, updatePreferenceSetting, saveSettings } = useSettings();
-  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(getUserLanguage());
+  const [currentLanguage] = useState<SupportedLanguage>(getUserLanguage());
 
 
   if (!user) {

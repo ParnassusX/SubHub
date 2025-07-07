@@ -1,20 +1,17 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { Search, Plus, Edit2, Trash2, Tag, Palette } from 'lucide-react'
-import { useSubscriptions } from '../contexts/SubscriptionContext'
 import { getCategoryDotProps } from '../utils/categoryColors'
 import { useCategories } from '../hooks/useCategories'
 import { ComponentLoader } from '../components/UnifiedLoading'
 import { IconPicker, renderIcon } from '../components/IconPicker'
 
 export default function Categories() {
-  const { subscriptions } = useSubscriptions()
   const {
     categories,
     loading,
     createCategory,
     updateCategory,
-    deleteCategory,
-    updateSubscriptionCounts
+    deleteCategory
   } = useCategories()
 
   const [searchTerm, setSearchTerm] = useState('')

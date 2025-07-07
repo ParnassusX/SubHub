@@ -1,5 +1,4 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../lib/supabase';
 
 // Performance optimization hook for session persistence and caching
 export const usePerformanceOptimization = () => {
@@ -254,8 +253,7 @@ export const useOptimizedDataFetching = () => {
   
   const fetchWithCache = useCallback(async (
     key: string,
-    fetchFn: () => Promise<any>,
-    ttlMinutes: number = 5
+    fetchFn: () => Promise<any>
   ) => {
     // Fetch and cache data
     const measuredFetch = measurePerformance(`fetch-${key}`, fetchFn);

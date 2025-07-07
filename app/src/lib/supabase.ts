@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 import { Database } from '../types/supabase'
 
 // Environment variables with fallback for development
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kfzuzxsywaptgbumrfgv.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmenV6eHN5d2FwdGdidW1yZmd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5NTgwNTYsImV4cCI6MjA2NjUzNDA1Nn0.zXged0s_9x_K7i1EA8N8MaysPOYe-LJS4Nz0uzz3L8w'
+const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL || 'https://kfzuzxsywaptgbumrfgv.supabase.co'
+const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmenV6eHN5d2FwdGdidW1yZmd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5NTgwNTYsImV4cCI6MjA2NjUzNDA1Nn0.zXged0s_9x_K7i1EA8N8MaysPOYe-LJS4Nz0uzz3L8w'
 
 // Validate environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
