@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { db } from '../lib/supabase';
 import { SubscriptionInsert, SubscriptionUpdate } from '../types/supabase';
 import { useAuth } from './AuthContext';
@@ -61,17 +61,27 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   const { user } = useAuth();
   const { isOffline } = useOffline();
 
-  // Load subscriptions when user changes
+  // Query deduplication - prevent multiple simultaneous fetches
+  const activeQueryRef = useRef<Promise<any> | null>(null);
+
+  // Load subscriptions when user changes (with deduplication)
   useEffect(() => {
     if (user) {
       refreshSubscriptions();
     } else {
       setSubscriptions([]);
+      activeQueryRef.current = null; // Clear active query when user changes
     }
   }, [user]);
 
   const refreshSubscriptions = async () => {
     if (!user) return;
+
+    // Prevent duplicate queries
+    if (activeQueryRef.current) {
+      console.log('⏭️ Skipping duplicate subscription refresh');
+      return activeQueryRef.current;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -99,61 +109,68 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     }
 
     // Online: fetch first page from Supabase with pagination
-    try {
-      // Add timeout to prevent endless loading
-      const fetchPromise = timeOperation(
-        'fetch_subscriptions_paginated',
-        () => db.subscriptions.getPaginated(0, 23),
-        { page: 0, limit: 23 }
-      );
+    const queryPromise = (async () => {
+      try {
+        // Add timeout to prevent endless loading
+        const fetchPromise = timeOperation(
+          'fetch_subscriptions_paginated',
+          () => db.subscriptions.getPaginated(0, 23),
+          { page: 0, limit: 23 }
+        );
 
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Database query timeout')), 8000)
-      );
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Database query timeout')), 8000)
+        );
 
-      const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
-      const { data, error: fetchError, count } = result;
+        const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
+        const { data, error: fetchError, count } = result;
 
-      if (fetchError) {
-        throw fetchError;
+        if (fetchError) {
+          throw fetchError;
+        }
+
+        // Convert Supabase format to our format
+        const formattedSubscriptions: Subscription[] = (data || []).map((sub: any) => ({
+          id: sub.id,
+          name: sub.name,
+          cost: sub.cost,
+          frequency: sub.frequency as 'Monthly' | 'Yearly',
+          category: sub.category,
+          startDate: sub.start_date,
+          description: sub.description || undefined,
+          website: sub.website || undefined,
+          user_id: sub.user_id,
+          created_at: sub.created_at || undefined,
+          updated_at: sub.updated_at || undefined,
+        }));
+
+        setSubscriptions(formattedSubscriptions);
+        setTotalCount(count || 0);
+        setHasMoreSubscriptions((count || 0) > 23);
+
+        // Cache the data for offline access
+        OfflineStorageService.cacheSubscriptionData(formattedSubscriptions);
+
+      } catch (err) {
+        console.error('Error fetching subscriptions:', err);
+
+        // If online fetch fails, try to load cached data as fallback
+        const cachedSubscriptions = OfflineStorageService.getCachedSubscriptions();
+        if (cachedSubscriptions.length > 0) {
+          setSubscriptions(cachedSubscriptions);
+          setError('Using cached data - connection failed');
+        } else {
+          setError(err instanceof Error ? err.message : 'Failed to fetch subscriptions');
+        }
+      } finally {
+        setIsLoading(false);
+        activeQueryRef.current = null; // Clear active query
       }
+    })();
 
-      // Convert Supabase format to our format
-      const formattedSubscriptions: Subscription[] = (data || []).map((sub: any) => ({
-        id: sub.id,
-        name: sub.name,
-        cost: sub.cost,
-        frequency: sub.frequency as 'Monthly' | 'Yearly',
-        category: sub.category,
-        startDate: sub.start_date,
-        description: sub.description || undefined,
-        website: sub.website || undefined,
-        user_id: sub.user_id,
-        created_at: sub.created_at || undefined,
-        updated_at: sub.updated_at || undefined,
-      }));
-
-      setSubscriptions(formattedSubscriptions);
-      setTotalCount(count || 0);
-      setHasMoreSubscriptions((count || 0) > 23);
-
-      // Cache the data for offline access
-      OfflineStorageService.cacheSubscriptionData(formattedSubscriptions);
-
-    } catch (err) {
-      console.error('Error fetching subscriptions:', err);
-
-      // If online fetch fails, try to load cached data as fallback
-      const cachedSubscriptions = OfflineStorageService.getCachedSubscriptions();
-      if (cachedSubscriptions.length > 0) {
-        setSubscriptions(cachedSubscriptions);
-        setError('Using cached data - connection failed');
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to fetch subscriptions');
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    // Store the active query promise
+    activeQueryRef.current = queryPromise;
+    return queryPromise;
   };
 
   const loadMoreSubscriptions = async () => {

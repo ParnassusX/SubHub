@@ -31,10 +31,10 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 // Helper functions for common operations
 export const auth = supabase.auth
 
-// Cached user helper to reduce auth calls
+// Optimized user caching to reduce auth calls
 let cachedUser: any = null;
 let cacheTime = 0;
-const CACHE_DURATION = 30000; // 30 seconds
+const CACHE_DURATION = 60000; // 60 seconds (increased for production performance)
 
 const getCurrentUser = async () => {
   const now = Date.now();
@@ -50,10 +50,12 @@ const getCurrentUser = async () => {
   return user.user;
 };
 
-// Clear user cache on auth state changes
-supabase.auth.onAuthStateChange(() => {
-  cachedUser = null;
-  cacheTime = 0;
+// Only clear user cache on sign out (not on every auth state change)
+supabase.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_OUT') {
+    cachedUser = null;
+    cacheTime = 0;
+  }
 });
 
 // Database helpers
@@ -88,13 +90,21 @@ export const db = {
 
   // Subscriptions
   subscriptions: {
-    getAll: () => supabase.from('subscriptions').select('*').order('created_at', { ascending: false }),
+    getAll: async () => {
+      const user = await getCurrentUser();
+      if (!user?.id) throw new Error('User not authenticated');
+      return supabase.from('subscriptions').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    },
     getPaginated: async (page: number = 0, limit: number = 23) => {
+      const user = await getCurrentUser();
+      if (!user?.id) throw new Error('User not authenticated');
+
       const from = page * limit;
       const to = from + limit - 1;
       return await supabase
         .from('subscriptions')
         .select('*', { count: 'exact' })
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .range(from, to);
     },

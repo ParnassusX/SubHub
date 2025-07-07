@@ -52,19 +52,31 @@ class PerformanceMonitor {
     this.metrics.push(metric);
     this.activeOperations.delete(operationId);
 
-    // Log completion for debugging
+    // Log completion for debugging (enhanced for production monitoring)
+    const status = success ? '✅' : '❌';
+    const durationMs = metric.duration.toFixed(2);
+
     if (process.env.NODE_ENV === 'development') {
-      const status = success ? '✅' : '❌';
-      const durationMs = metric.duration.toFixed(2);
       console.log(`${status} Performance: ${metric.operation} completed in ${durationMs}ms`, {
         success,
         error,
         metadata: metric.metadata
       });
+    }
 
-      // Warn about slow operations
-      if (metric.duration > 2000) {
-        console.warn(`⚠️ Performance: Slow operation detected - ${metric.operation} took ${durationMs}ms`);
+    // Always warn about slow operations (even in production)
+    if (metric.duration > 1000) {
+      console.warn(`⚠️ Performance: Slow operation detected - ${metric.operation} took ${durationMs}ms`);
+
+      // Track slow operations for production debugging
+      if (typeof window !== 'undefined') {
+        (window as any).__SUBHUB_SLOW_OPERATIONS = (window as any).__SUBHUB_SLOW_OPERATIONS || [];
+        (window as any).__SUBHUB_SLOW_OPERATIONS.push({
+          operation: metric.operation,
+          duration: metric.duration,
+          timestamp: new Date().toISOString(),
+          metadata: metric.metadata
+        });
       }
     }
   }

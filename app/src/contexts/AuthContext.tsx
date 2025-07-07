@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, authHelpers } from '../lib/supabase'
 import { Profile } from '../types/supabase'
@@ -28,22 +28,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isInitialized, setIsInitialized] = useState(false)
 
-  // Note: Supabase handles automatic token refresh via autoRefreshToken: true in client config
-  // No manual session refresh needed - this was causing performance overhead
+  // Track active session handling to prevent race conditions
+  const activeSessionRef = useRef<string | null>(null)
 
   useEffect(() => {
+    let mounted = true;
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
       console.log('Auth state change:', event, session?.user?.id || 'no user');
+
+      // Skip initial session to prevent race condition with checkInitialSession
+      if (event === 'INITIAL_SESSION' && !isInitialized) {
+        console.log('⏭️ Skipping INITIAL_SESSION to prevent race condition');
+        return;
+      }
+
       if (session?.user) {
         await handleUserSession(session.user);
       } else {
         setUser(null);
         setProfile(null);
+        activeSessionRef.current = null;
       }
-      setIsLoading(false);
+
+      if (mounted) {
+        setIsLoading(false);
+      }
 
       if (event === 'SIGNED_OUT' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
         console.log('User signed out, redirecting to login');
@@ -51,10 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Check initial session with timeout to prevent hanging
+    // Check initial session with race condition protection
     const checkInitialSession = async () => {
+      if (!mounted) return;
+
       try {
-        // Add timeout to prevent hanging authentication
+        console.log('🔄 Checking initial session...');
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
@@ -64,27 +82,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
 
-        if (session?.user) {
+        if (mounted && session?.user) {
           await handleUserSession(session.user);
         }
       } catch (error) {
         console.error('Initial session check failed:', error);
-        // Continue with app loading even if auth fails
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsInitialized(true);
+          setIsLoading(false);
+        }
       }
     };
 
     checkInitialSession();
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [navigate])
 
   const handleUserSession = async (supabaseUser: SupabaseUser) => {
+    // Prevent duplicate session handling for the same user
+    if (activeSessionRef.current === supabaseUser.id) {
+      console.log('⏭️ Skipping duplicate session handling for user:', supabaseUser.email);
+      return;
+    }
+
+    activeSessionRef.current = supabaseUser.id;
     console.log('🔄 Handling user session for:', supabaseUser.email);
-    
+
     // Set basic user data immediately
     const basicUserData: User = {
       id: supabaseUser.id,
