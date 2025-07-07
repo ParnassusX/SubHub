@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Search, Plus, Edit2, Trash2, Tag, Palette } from 'lucide-react'
 import { useSubscriptions } from '../contexts/SubscriptionContext'
 import { getCategoryDotProps } from '../utils/categoryColors'
@@ -26,6 +26,26 @@ export default function Categories() {
     color: '#3b82f6',
     icon: null as string | null
   })
+
+  // Fixed color options for reliable color selection
+  const fixedColors = [
+    '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+    '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+  ];
+
+  // Debounced color update to prevent excessive database calls
+  const debouncedColorUpdate = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return (categoryId: string, color: string) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          handleUpdateCategory(categoryId, { color });
+        }, 500); // 500ms debounce
+      };
+    })(),
+    []
+  );
 
 
 
@@ -128,6 +148,26 @@ export default function Categories() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Color</label>
+
+                  {/* Fixed Color Options */}
+                  <div className="grid grid-cols-5 gap-2 mb-3">
+                    {fixedColors.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setNewCategory(prev => ({ ...prev, color }))}
+                        className={`w-8 h-8 rounded-lg border-2 transition-all ${
+                          newCategory.color === color
+                            ? 'border-white scale-110'
+                            : 'border-[#2e4e6b] hover:border-gray-400'
+                        }`}
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Custom Color Picker */}
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
@@ -238,12 +278,31 @@ export default function Categories() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Palette className="w-4 h-4 text-gray-400" />
+
+                    {/* Quick Color Options */}
+                    <div className="flex gap-1">
+                      {fixedColors.slice(0, 3).map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => handleUpdateCategory(category.id, { color })}
+                          className={`w-4 h-4 rounded border transition-all ${
+                            category.color === color
+                              ? 'border-white scale-110'
+                              : 'border-gray-500 hover:border-gray-300'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          title={`Set color to ${color}`}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Custom Color Picker */}
                     <input
                       type="color"
                       value={category.color}
-                      onChange={(e) => handleUpdateCategory(category.id, { color: e.target.value })}
+                      onChange={(e) => debouncedColorUpdate(category.id, e.target.value)}
                       className="w-6 h-6 rounded border border-[#2e4e6b] cursor-pointer"
-                      title="Change color"
+                      title="Custom color"
                     />
                   </div>
                 </div>

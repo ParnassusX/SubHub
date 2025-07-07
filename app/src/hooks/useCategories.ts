@@ -4,15 +4,18 @@ import { db } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Database } from '../types/supabase';
 import { updateDynamicCategories } from '../utils/categoryColors';
+import { timeOperation } from '../utils/performanceMonitor';
 
 type Category = Database['public']['Tables']['categories']['Row'] & {
   subscription_count?: number;
 };
 
 const fetchCategories = async () => {
-  const { data, error } = await db.categories.getAll();
-  if (error) throw error;
-  return data || [];
+  return timeOperation('fetch-categories', async () => {
+    const { data, error } = await db.categories.getAll();
+    if (error) throw error;
+    return data || [];
+  });
 };
 
 export const useCategories = () => {

@@ -38,11 +38,13 @@ import { PageLoader, ComponentLoader } from './components/UnifiedLoading'
 // Feature flags for UX elements
 import { isFeatureEnabled, logFeatureFlagStatus } from './config/featureFlags'
 
-// Lazy load admin and other pages
+// Import simple pages directly for instant loading (anti-over-engineering)
+import Categories from './pages/Categories'
+import Help from './pages/Help'
+import Renewals from './pages/Renewals'
+
+// Only lazy load heavy pages that benefit from code splitting
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'))
-const Categories = React.lazy(() => import('./pages/Categories'))
-const Help = React.lazy(() => import('./pages/Help'))
-const Renewals = React.lazy(() => import('./pages/Renewals'))
 const LandingPage = React.lazy(() => import('./pages/LandingPage'))
 
 function App() {

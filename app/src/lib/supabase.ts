@@ -147,12 +147,23 @@ export const db = {
 
   // Categories
   categories: {
-    getAll: () => supabase.from('categories').select('*').order('name'),
+    getAll: async () => {
+      const user = await getCurrentUser();
+      if (!user?.id) throw new Error('User not authenticated');
+      return supabase.from('categories').select('*').eq('user_id', user.id).order('name');
+    },
     create: (data: Database['public']['Tables']['categories']['Insert']) =>
       supabase.from('categories').insert(data).select().single(),
-    update: (id: string, data: Database['public']['Tables']['categories']['Update']) =>
-      supabase.from('categories').update(data).eq('id', id).select().single(),
-    delete: (id: string) => supabase.from('categories').delete().eq('id', id),
+    update: async (id: string, data: Database['public']['Tables']['categories']['Update']) => {
+      const user = await getCurrentUser();
+      if (!user?.id) throw new Error('User not authenticated');
+      return supabase.from('categories').update(data).eq('id', id).eq('user_id', user.id).select().single();
+    },
+    delete: async (id: string) => {
+      const user = await getCurrentUser();
+      if (!user?.id) throw new Error('User not authenticated');
+      return supabase.from('categories').delete().eq('id', id).eq('user_id', user.id);
+    },
   },
 
   // Dashboard functions
