@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { Search, Plus, Edit2, Trash2, Tag, Palette } from 'lucide-react'
 import { getCategoryDotProps } from '../utils/categoryColors'
 import { useCategories } from '../hooks/useCategories'
@@ -30,18 +30,27 @@ export default function Categories() {
     '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
   ];
 
-  // Debounced color update to prevent excessive database calls
+  // Use ref to store debounce timeouts and avoid closure issues
+  const debounceTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  // Debounced color update to prevent excessive database calls (closure-safe)
   const debouncedColorUpdate = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout;
-      return (categoryId: string, color: string) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          handleUpdateCategory(categoryId, { color });
-        }, 500); // 500ms debounce
-      };
-    })(),
-    []
+    (categoryId: string, color: string) => {
+      // Clear existing timeout for this category
+      const existingTimeout = debounceTimeouts.current.get(categoryId);
+      if (existingTimeout) {
+        clearTimeout(existingTimeout);
+      }
+
+      // Set new timeout
+      const timeoutId = setTimeout(() => {
+        handleUpdateCategory(categoryId, { color });
+        debounceTimeouts.current.delete(categoryId);
+      }, 500);
+
+      debounceTimeouts.current.set(categoryId, timeoutId);
+    },
+    [updateCategory] // ✅ Proper dependency to prevent stale closures
   );
 
 
@@ -65,10 +74,14 @@ export default function Categories() {
 
   const handleUpdateCategory = async (id: string, updates: { name?: string; color?: string; icon?: string | null }) => {
     try {
+      console.log('🔄 Updating category:', id, updates);
       await updateCategory({ id, updates });
       setEditingCategory(null);
+      console.log('✅ Category updated successfully');
     } catch (error) {
-      console.error('Error updating category:', error);
+      console.error('❌ Error updating category:', error);
+      // Don't let category update errors break the entire page
+      setEditingCategory(null);
     }
   };
 
@@ -84,6 +97,27 @@ export default function Categories() {
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // Add error boundary protection
+  if (error) {
+    console.error('Categories page error:', error);
+    return (
+      <div className="flex-1 bg-[#0f1a24] text-white">
+        <div className="w-full max-w-full min-w-0 p-6">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-red-400 mb-2">Categories Error</h2>
+            <p className="text-gray-400 mb-4">There was an error loading categories. Please try refreshing the page.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

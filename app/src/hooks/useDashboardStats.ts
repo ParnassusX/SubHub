@@ -15,5 +15,10 @@ export const useDashboardStats = () => {
     queryKey: ['dashboardStats', user?.id],
     queryFn: fetchDashboardStats,
     enabled: !!user,
+    retry: 2, // Retry failed requests
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 60000, // Consider data fresh for 1 minute
+    gcTime: 300000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
   });
 };

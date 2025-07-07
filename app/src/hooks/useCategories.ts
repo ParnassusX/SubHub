@@ -26,6 +26,10 @@ export const useCategories = () => {
     queryKey: ['categories', user?.id],
     queryFn: fetchCategories,
     enabled: !!user,
+    retry: 2, // Retry failed requests up to 2 times
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 300000, // Keep in cache for 5 minutes
   });
 
   useEffect(() => {
