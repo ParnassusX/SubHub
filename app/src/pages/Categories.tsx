@@ -9,6 +9,7 @@ export default function Categories() {
   const {
     categories,
     loading,
+    error,
     createCategory,
     updateCategory,
     deleteCategory
