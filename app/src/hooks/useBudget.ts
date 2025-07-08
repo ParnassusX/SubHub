@@ -39,7 +39,7 @@ const calculateProgress = (spent: number, budget: number): BudgetProgress => {
 };
 
 export const useBudget = (): UseBudgetReturn => {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, isLoading: authLoading } = useAuth();
   const { subscriptions } = useSubscriptions();
   
   // Budget state
@@ -54,23 +54,31 @@ export const useBudget = (): UseBudgetReturn => {
 
   // Load budget data from profile
   useEffect(() => {
-    // Always set loading to false when we have a user, regardless of profile status
-    if (user) {
-      if (profile) {
-        setMonthlyBudget(profile.monthly_budget);
-        setYearlyBudget(profile.yearly_budget);
-        setCategoryBudgets((profile.category_budgets as CategoryBudget) || {});
-        setBudgetAlertsEnabled(profile.budget_alerts_enabled ?? true);
-      } else {
-        // Profile is null but user exists - set defaults and stop loading
-        setMonthlyBudget(null);
-        setYearlyBudget(null);
-        setCategoryBudgets({});
-        setBudgetAlertsEnabled(true);
-      }
+    if (user && profile) {
+      // Profile data is available - load budget values
+      setMonthlyBudget(profile.monthly_budget);
+      setYearlyBudget(profile.yearly_budget);
+      setCategoryBudgets((profile.category_budgets as CategoryBudget) || {});
+      setBudgetAlertsEnabled(profile.budget_alerts_enabled ?? true);
+      setIsLoading(false);
+    } else if (user && !authLoading && !profile) {
+      // User exists, auth is not loading, but profile is null - this means profile fetch failed or no profile exists
+      // Only reset to defaults in this case, not during loading
+      setMonthlyBudget(null);
+      setYearlyBudget(null);
+      setCategoryBudgets({});
+      setBudgetAlertsEnabled(true);
+      setIsLoading(false);
+    } else if (!authLoading && !user) {
+      // Not loading and no user - clear everything
+      setMonthlyBudget(null);
+      setYearlyBudget(null);
+      setCategoryBudgets({});
+      setBudgetAlertsEnabled(true);
       setIsLoading(false);
     }
-  }, [user, profile]);
+    // If authLoading is true, we're still loading - don't reset data
+  }, [user, profile, authLoading]);
 
   // Calculate spending totals
   const { monthly: monthlySpending, yearly: yearlySpending } = useMemo(() => {
