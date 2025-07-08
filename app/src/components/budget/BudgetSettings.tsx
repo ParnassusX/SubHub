@@ -217,7 +217,7 @@ const BudgetSettings: React.FC = () => {
       />
 
       {/* Budget Configuration */}
-      <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
+      <div id="budget-configuration" className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
         <h3 className="text-lg font-semibold text-white mb-6">{t('budgetConfiguration')}</h3>
         
         <div className="space-y-6">

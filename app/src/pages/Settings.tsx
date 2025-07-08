@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
+import { useLocation } from 'react-router-dom';
 
 
 import ImportExport from '../components/ImportExport';
@@ -34,7 +35,28 @@ const LANGUAGE_OPTIONS = [
 const Settings: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'budget' | 'privacy'>('profile');
+
+  // Handle URL parameters for direct navigation to specific tabs
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const tabParam = urlParams.get('tab');
+
+    if (tabParam && ['profile', 'notifications', 'appearance', 'budget', 'privacy'].includes(tabParam)) {
+      setActiveTab(tabParam as 'profile' | 'notifications' | 'appearance' | 'budget' | 'privacy');
+
+      // Scroll to budget configuration section if navigating to budget tab
+      if (tabParam === 'budget') {
+        setTimeout(() => {
+          const budgetSection = document.getElementById('budget-configuration');
+          if (budgetSection) {
+            budgetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      }
+    }
+  }, [location.search]);
 
   const { settings, isLoading, isSaving, error, successMessage, updateProfileSetting, updatePreferenceSetting, saveSettings } = useSettings();
   const [currentLanguage] = useState<SupportedLanguage>(getUserLanguage());

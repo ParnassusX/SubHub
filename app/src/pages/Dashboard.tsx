@@ -206,7 +206,7 @@ const Dashboard: React.FC = () => {
                   message: alert.message,
                   severity: alert.threshold >= 100 ? 'critical' as const : 'warning' as const,
                   actionLabel: 'Adjust Budget',
-                  actionPath: '/settings'
+                  actionPath: '/settings?tab=budget'
                 })) || []),
                 // Add budget loading error alert
                 ...(budgetTimeout ? [{
@@ -226,7 +226,7 @@ const Dashboard: React.FC = () => {
                   message: 'Unable to load budget data. Please check your connection and try again.',
                   severity: 'warning' as const,
                   actionLabel: 'Retry',
-                  actionPath: '/settings'
+                  actionPath: '/settings?tab=budget'
                 }] : []),
                 // Add no budget set alert only if user has subscriptions but no budget (actionable case)
                 ...(!monthlyBudget && !budgetLoading && !budgetTimeout && !budgetError && stats.total_subscriptions > 0 ? [{
@@ -236,7 +236,7 @@ const Dashboard: React.FC = () => {
                   message: `You have ${stats.total_subscriptions} subscription${stats.total_subscriptions > 1 ? 's' : ''} costing ${formatPrice(stats.monthly_spending)}/month. Set a budget to track your spending.`,
                   severity: 'warning' as const,
                   actionLabel: 'Set Budget',
-                  actionPath: '/settings'
+                  actionPath: '/settings?tab=budget'
                 }] : [])
               ]}
               maxVisible={3}
