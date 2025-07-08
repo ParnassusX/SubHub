@@ -54,14 +54,23 @@ export const useBudget = (): UseBudgetReturn => {
 
   // Load budget data from profile
   useEffect(() => {
-    if (profile) {
-      setMonthlyBudget(profile.monthly_budget);
-      setYearlyBudget(profile.yearly_budget);
-      setCategoryBudgets((profile.category_budgets as CategoryBudget) || {});
-      setBudgetAlertsEnabled(profile.budget_alerts_enabled ?? true);
+    // Always set loading to false when we have a user, regardless of profile status
+    if (user) {
+      if (profile) {
+        setMonthlyBudget(profile.monthly_budget);
+        setYearlyBudget(profile.yearly_budget);
+        setCategoryBudgets((profile.category_budgets as CategoryBudget) || {});
+        setBudgetAlertsEnabled(profile.budget_alerts_enabled ?? true);
+      } else {
+        // Profile is null but user exists - set defaults and stop loading
+        setMonthlyBudget(null);
+        setYearlyBudget(null);
+        setCategoryBudgets({});
+        setBudgetAlertsEnabled(true);
+      }
       setIsLoading(false);
     }
-  }, [profile]);
+  }, [user, profile]);
 
   // Calculate spending totals
   const { monthly: monthlySpending, yearly: yearlySpending } = useMemo(() => {

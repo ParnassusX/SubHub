@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
@@ -43,9 +44,23 @@ const Dashboard: React.FC = () => {
     monthlyBudget,
     monthlySpending,
     budgetSummary,
-    isLoading: budgetLoading
+    isLoading: budgetLoading,
+    error: budgetError
   } = useBudget();
   const navigate = useNavigate();
+
+  // Add timeout protection for budget loading
+  const [budgetTimeout, setBudgetTimeout] = useState(false);
+  useEffect(() => {
+    if (budgetLoading) {
+      const timer = setTimeout(() => {
+        setBudgetTimeout(true);
+      }, 8000); // 8 second timeout
+      return () => clearTimeout(timer);
+    } else {
+      setBudgetTimeout(false);
+    }
+  }, [budgetLoading]);
 
 
 
@@ -168,10 +183,11 @@ const Dashboard: React.FC = () => {
                   upcomingRenewals: stats.upcoming_renewals
                 }}
                 budgetStatus={{
-                  monthlyBudget: monthlyBudget || 0,
+                  monthlyBudget: (budgetTimeout || budgetError) ? 0 : (monthlyBudget || 0),
                   monthlySpent: monthlySpending,
-                  budgetUtilization: monthlyBudget ? (monthlySpending / monthlyBudget) * 100 : 0,
-                  status: !monthlyBudget ? 'no_budget' :
+                  budgetUtilization: (budgetTimeout || budgetError || !monthlyBudget) ? 0 : (monthlySpending / monthlyBudget) * 100,
+                  status: (budgetTimeout || budgetError) ? 'no_budget' :
+                         !monthlyBudget ? 'no_budget' :
                          (monthlySpending / monthlyBudget) >= 1 ? 'critical' :
                          (monthlySpending / monthlyBudget) >= 0.8 ? 'warning' : 'safe'
                 }}
@@ -181,8 +197,8 @@ const Dashboard: React.FC = () => {
             {/* Critical Alerts Section */}
             <CriticalAlerts
               alerts={[
-                // Real budget alerts from useBudget hook
-                ...(budgetSummary?.alerts?.filter(alert =>
+                // Real budget alerts from useBudget hook (only if not timed out or errored)
+                ...(!budgetTimeout && !budgetError && budgetSummary?.alerts?.filter(alert =>
                   alert.threshold >= 90 // Only show critical alerts (90%+)
                 ).map(alert => ({
                   id: `budget-alert-${alert.id}`,
@@ -194,8 +210,28 @@ const Dashboard: React.FC = () => {
                   actionLabel: 'Adjust Budget',
                   actionPath: '/settings'
                 })) || []),
-                // Add no budget set alert if no budget is configured
-                ...(!monthlyBudget && !budgetLoading ? [{
+                // Add budget loading error alert
+                ...(budgetTimeout ? [{
+                  id: 'budget-timeout',
+                  type: 'budget_warning' as const,
+                  title: 'Budget Loading Issue',
+                  message: 'Budget data is taking longer than expected to load. Please refresh the page.',
+                  severity: 'warning' as const,
+                  actionLabel: 'Refresh Page',
+                  actionPath: window.location.pathname
+                }] : []),
+                // Add budget error alert
+                ...(budgetError ? [{
+                  id: 'budget-error',
+                  type: 'budget_warning' as const,
+                  title: 'Budget Connection Issue',
+                  message: 'Unable to load budget data. Please check your connection and try again.',
+                  severity: 'warning' as const,
+                  actionLabel: 'Retry',
+                  actionPath: '/settings'
+                }] : []),
+                // Add no budget set alert if no budget is configured and not loading/errored
+                ...(!monthlyBudget && !budgetLoading && !budgetTimeout && !budgetError ? [{
                   id: 'no-budget-set',
                   type: 'budget_warning' as const,
                   title: 'No Budget Set',
