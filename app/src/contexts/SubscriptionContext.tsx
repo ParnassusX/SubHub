@@ -13,6 +13,8 @@ export interface Subscription {
   frequency: 'Monthly' | 'Yearly';
   category: string;
   startDate: string;
+  nextBilling?: string;
+  status?: string;
   description?: string;
   website?: string;
   user_id: string;
@@ -137,6 +139,8 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
           frequency: sub.frequency as 'Monthly' | 'Yearly',
           category: sub.category,
           startDate: sub.start_date,
+          nextBilling: sub.next_billing || undefined,
+          status: sub.status || undefined,
           description: sub.description || undefined,
           website: sub.website || undefined,
           user_id: sub.user_id,

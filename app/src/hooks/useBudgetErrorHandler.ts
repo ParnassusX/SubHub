@@ -106,13 +106,10 @@ export const useBudgetErrorHandler = (): UseBudgetErrorHandlerReturn => {
     context: string
   ): Promise<{ success: true; data: T } | { success: false; error: BudgetError }> => {
     clearError();
-    
+
     const result = await safeBudgetOperation(operation, context, setError);
-    
-    if (!result.success) {
-      setError(result.error);
-    }
-    
+
+    // Error is already set by safeBudgetOperation, no need to set it again
     return result;
   }, [clearError, setError]);
 

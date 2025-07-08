@@ -206,7 +206,9 @@ export type Database = {
           frequency: string
           id: string
           name: string
+          next_billing: string | null
           start_date: string
+          status: string | null
           updated_at: string | null
           user_id: string
           website: string | null
@@ -219,7 +221,9 @@ export type Database = {
           frequency: string
           id?: string
           name: string
+          next_billing?: string | null
           start_date: string
+          status?: string | null
           updated_at?: string | null
           user_id: string
           website?: string | null
@@ -232,7 +236,9 @@ export type Database = {
           frequency?: string
           id?: string
           name?: string
+          next_billing?: string | null
           start_date?: string
+          status?: string | null
           updated_at?: string | null
           user_id?: string
           website?: string | null

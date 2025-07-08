@@ -83,10 +83,22 @@ export const isActiveInMonth = (subscription: Subscription, month: number, year:
 };
 
 export const calculateNextRenewal = (subscription: Subscription): Date => {
+  // Use next_billing field if available and valid
+  if (subscription.nextBilling) {
+    const nextBillingDate = new Date(subscription.nextBilling);
+    const today = new Date();
+
+    // If next_billing is in the future, use it
+    if (nextBillingDate > today) {
+      return nextBillingDate;
+    }
+  }
+
+  // Fallback to calculation from start date
   const startDate = new Date(subscription.startDate);
   const today = new Date();
   const nextRenewal = new Date(startDate);
-  
+
   if (subscription.frequency === 'Monthly') {
     // Find next monthly renewal
     while (nextRenewal <= today) {
@@ -98,7 +110,7 @@ export const calculateNextRenewal = (subscription: Subscription): Date => {
       nextRenewal.setFullYear(nextRenewal.getFullYear() + 1);
     }
   }
-  
+
   return nextRenewal;
 };
 

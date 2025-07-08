@@ -26,8 +26,6 @@ import { HelpContentManager } from '../data/helpContent';
 // Feature flags for UX elements
 import { isFeatureEnabled } from '../config/featureFlags';
 
-import { useNavigate } from 'react-router-dom';
-
 // interface DashboardStats {
 //   totalSubscriptions: number;
 //   monthlySpending: number;
@@ -230,12 +228,12 @@ const Dashboard: React.FC = () => {
                   actionLabel: 'Retry',
                   actionPath: '/settings'
                 }] : []),
-                // Add no budget set alert if no budget is configured and not loading/errored
-                ...(!monthlyBudget && !budgetLoading && !budgetTimeout && !budgetError ? [{
+                // Add no budget set alert only if user has subscriptions but no budget (actionable case)
+                ...(!monthlyBudget && !budgetLoading && !budgetTimeout && !budgetError && stats.total_subscriptions > 0 ? [{
                   id: 'no-budget-set',
                   type: 'budget_warning' as const,
-                  title: 'No Budget Set',
-                  message: 'Set up your monthly budget to track spending and get alerts',
+                  title: 'Set Budget to Track Spending',
+                  message: `You have ${stats.total_subscriptions} subscription${stats.total_subscriptions > 1 ? 's' : ''} costing ${formatPrice(stats.monthly_spending)}/month. Set a budget to track your spending.`,
                   severity: 'warning' as const,
                   actionLabel: 'Set Budget',
                   actionPath: '/settings'
