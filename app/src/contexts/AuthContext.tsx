@@ -17,6 +17,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>
   register: (email: string, password: string, name?: string) => Promise<boolean>
   logout: () => void
+  refreshProfile: () => Promise<void>
   isLoading: boolean
   isAdmin: boolean
 }
@@ -184,6 +185,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const refreshProfile = async (): Promise<void> => {
+    if (!user?.id) {
+      console.warn('Cannot refresh profile: no authenticated user');
+      return;
+    }
+
+    try {
+      console.log('🔄 Refreshing profile data for user:', user.email);
+
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Failed to refresh profile:', error);
+        return;
+      }
+
+      if (profileData) {
+        // Update user data with any profile changes
+        const enhancedUserData: User = {
+          ...user,
+          name: profileData.name || user.name,
+          role: (profileData.role as 'user' | 'admin') || user.role
+        };
+        setUser(enhancedUserData);
+        setProfile(profileData);
+        console.log('✅ Profile refreshed successfully');
+      }
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    }
+  }
+
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
 
@@ -273,6 +310,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       register,
       logout,
+      refreshProfile,
       isLoading,
       isAdmin
     }}>

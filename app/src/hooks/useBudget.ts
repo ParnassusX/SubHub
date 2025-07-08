@@ -39,7 +39,7 @@ const calculateProgress = (spent: number, budget: number): BudgetProgress => {
 };
 
 export const useBudget = (): UseBudgetReturn => {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { subscriptions } = useSubscriptions();
   
   // Budget state
@@ -252,6 +252,11 @@ export const useBudget = (): UseBudgetReturn => {
         setBudgetAlertsEnabled(budgetData.budgetAlertsEnabled);
       }
 
+      // Refresh profile data in AuthContext to sync across components
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+
       return true;
     } catch (err) {
       console.error('Error updating budget:', err);
@@ -260,7 +265,7 @@ export const useBudget = (): UseBudgetReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, refreshProfile]);
 
   // Reset budget data
   const resetBudget = useCallback(async (): Promise<boolean> => {
@@ -278,6 +283,11 @@ export const useBudget = (): UseBudgetReturn => {
       setCategoryBudgets({});
       setBudgetAlertsEnabled(true);
 
+      // Refresh profile data in AuthContext to sync across components
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+
       return true;
     } catch (err) {
       console.error('Error resetting budget:', err);
@@ -286,7 +296,7 @@ export const useBudget = (): UseBudgetReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, refreshProfile]);
 
   return {
     // Budget data
