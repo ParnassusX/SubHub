@@ -42,11 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
-      console.log('Auth state change:', event, session?.user?.id || 'no user');
-
       // Skip initial session to prevent race condition with checkInitialSession
       if (event === 'INITIAL_SESSION' && !isInitialized) {
-        console.log('⏭️ Skipping INITIAL_SESSION to prevent race condition');
         return;
       }
 
@@ -63,7 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (event === 'SIGNED_OUT' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-        console.log('User signed out, redirecting to login');
         navigate('/login', { replace: true });
       }
     });
@@ -73,7 +69,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
 
       try {
-        console.log('🔄 Checking initial session...');
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
@@ -107,12 +102,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleUserSession = async (supabaseUser: SupabaseUser) => {
     // Prevent duplicate session handling for the same user
     if (activeSessionRef.current === supabaseUser.id) {
-      console.log('⏭️ Skipping duplicate session handling for user:', supabaseUser.email);
       return;
     }
 
     activeSessionRef.current = supabaseUser.id;
-    console.log('🔄 Handling user session for:', supabaseUser.email);
 
     // Set basic user data immediately
     const basicUserData: User = {
@@ -192,8 +185,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log('🔄 Refreshing profile data for user:', user.email);
-
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
@@ -214,7 +205,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         setUser(enhancedUserData);
         setProfile(profileData);
-        console.log('✅ Profile refreshed successfully');
       }
     } catch (error) {
       console.error('Error refreshing profile:', error);
@@ -225,7 +215,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true)
 
     try {
-      console.log('Attempting login for:', email)
       const { data, error } = await authHelpers.signIn(email, password)
 
       if (error) {
@@ -238,7 +227,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await handleUserSession(data.user)
 
         // Navigate to dashboard on successful login
-        console.log('Login successful, navigating to dashboard')
         navigate('/dashboard', { replace: true })
         return true
       }
@@ -276,8 +264,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      console.log('Logging out user...')
-
       // Clear auth state immediately for better UX
       setUser(null)
       setProfile(null)
@@ -292,7 +278,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Navigate to login page
       navigate('/login', { replace: true })
-      console.log('User logged out successfully')
 
     } catch (error) {
       console.error('Critical logout error:', error)

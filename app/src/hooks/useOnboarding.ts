@@ -35,7 +35,6 @@ export function useOnboarding() {
 
     // Prevent duplicate initialization
     if (initializationRef.current || isInitializing) {
-      console.log('Onboarding initialization already in progress, skipping');
       return;
     }
 
@@ -66,21 +65,17 @@ export function useOnboarding() {
    */
   const initializeOnboarding = useCallback(async () => {
     if (!user?.id) {
-      console.log('No user ID available for onboarding initialization');
       setState(prev => ({ ...prev, isLoading: false, isActive: false }));
       isInitializing = false;
       initializationRef.current = false;
       return;
     }
 
-    console.log('Initializing onboarding for user:', user.id);
-
     // Set global initialization flag
     isInitializing = true;
 
     // Check if onboarding is globally disabled
     if (OnboardingService.isOnboardingDisabled()) {
-      console.log('Onboarding is globally disabled');
       setState(prev => ({
         ...prev,
         isActive: false,
@@ -94,10 +89,8 @@ export function useOnboarding() {
 
       // Check if onboarding is already completed - simplified without timeout
       const isCompleted = await OnboardingService.isOnboardingCompleted(user.id);
-      console.log('Onboarding completed check result:', isCompleted);
 
       if (isCompleted) {
-        console.log('User has already completed onboarding, skipping');
         setState(prev => ({
           ...prev,
           isActive: false,
@@ -110,22 +103,16 @@ export function useOnboarding() {
       let progress = await OnboardingService.getOnboardingProgress(user.id);
 
       if (!progress) {
-        console.log('No existing progress found, initializing new onboarding');
         progress = await OnboardingService.initializeOnboarding(user.id);
       }
-
-      console.log('Onboarding progress loaded:', progress);
 
       // Get all steps with completion status
       const allSteps = OnboardingService.getOnboardingSteps(progress.completedSteps);
       const currentStep = allSteps.find(step => step.id === progress.currentStep) || allSteps[0];
 
-      console.log('Current onboarding step:', currentStep?.id);
-
       // Get conversion opportunities (non-blocking)
       OnboardingService.getConversionOpportunities(user.id)
         .then(opportunities => {
-          console.log('Conversion opportunities loaded:', opportunities.length);
           setConversionOpportunities(opportunities);
         })
         .catch(error => {
@@ -141,8 +128,6 @@ export function useOnboarding() {
         progress,
         error: null
       });
-
-      console.log('Onboarding initialization completed successfully');
 
     } catch (error) {
       console.error('Error initializing onboarding:', error);
@@ -169,20 +154,16 @@ export function useOnboarding() {
     }
 
     const targetStepId = stepId || state.currentStep.id;
-    console.log(`Completing onboarding step: ${targetStepId} for user: ${user.id}`);
 
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
       // Complete step - simplified without timeout
       const updatedProgress = await OnboardingService.completeStep(user.id, targetStepId);
-      console.log('Step completion result:', updatedProgress);
 
       // Update state with new progress
       const allSteps = OnboardingService.getOnboardingSteps(updatedProgress.completedSteps);
       const currentStep = allSteps.find(step => step.id === updatedProgress.currentStep);
-
-      console.log('Moving to next step:', currentStep?.id || 'completed');
 
       setState(prev => ({
         ...prev,
@@ -195,10 +176,8 @@ export function useOnboarding() {
 
       // If onboarding is completed, refresh conversion opportunities (non-blocking)
       if (updatedProgress.completedAt) {
-        console.log('Onboarding completed! Loading conversion opportunities...');
         OnboardingService.getConversionOpportunities(user.id)
           .then(opportunities => {
-            console.log('Conversion opportunities loaded after completion:', opportunities.length);
             setConversionOpportunities(opportunities);
           })
           .catch(error => {

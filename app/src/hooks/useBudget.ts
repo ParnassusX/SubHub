@@ -54,30 +54,41 @@ export const useBudget = (): UseBudgetReturn => {
 
   // Load budget data from profile
   useEffect(() => {
-    if (user && profile) {
-      // Profile data is available - load budget values
-      setMonthlyBudget(profile.monthly_budget);
-      setYearlyBudget(profile.yearly_budget);
-      setCategoryBudgets((profile.category_budgets as CategoryBudget) || {});
-      setBudgetAlertsEnabled(profile.budget_alerts_enabled ?? true);
-      setIsLoading(false);
-    } else if (user && !authLoading && !profile) {
-      // User exists, auth is not loading, but profile is null - this means profile fetch failed or no profile exists
-      // Only reset to defaults in this case, not during loading
-      setMonthlyBudget(null);
-      setYearlyBudget(null);
-      setCategoryBudgets({});
-      setBudgetAlertsEnabled(true);
-      setIsLoading(false);
-    } else if (!authLoading && !user) {
-      // Not loading and no user - clear everything
-      setMonthlyBudget(null);
-      setYearlyBudget(null);
-      setCategoryBudgets({});
-      setBudgetAlertsEnabled(true);
-      setIsLoading(false);
+    // Align useBudget's loading with auth loading initially
+    // However, if profile is already available, we might not need to be in a loading state.
+    // Let's refine this: isLoading should be true if authLoading is true,
+    // OR if auth is done but we don't have a profile yet (still waiting for it).
+    setIsLoading(authLoading || (!!user && !profile));
+
+    if (!authLoading) {
+      if (user && profile) {
+        // Profile data is available - load budget values
+        setMonthlyBudget(profile.monthly_budget);
+        setYearlyBudget(profile.yearly_budget);
+        setCategoryBudgets((profile.category_budgets as CategoryBudget) || {});
+        setBudgetAlertsEnabled(profile.budget_alerts_enabled ?? true);
+        setIsLoading(false); // Budget data loaded or confirmed absent from profile
+      } else if (!user) {
+        // User logged out or not available, clear budget data
+        setMonthlyBudget(null);
+        setYearlyBudget(null);
+        setCategoryBudgets({});
+        setBudgetAlertsEnabled(true); // Reset to default
+        setIsLoading(false); // No user, so not loading budget
+      } else if (user && !profile) {
+        // User is logged in, auth is done, but profile is null (e.g., fetch error)
+        // In this case, we don't want to clear existing budget state if it was populated.
+        // The budget state will remain as it was (e.g. null if initial load,
+        // or previous values if any from a prior successful load in the same session).
+        // This prevents wiping data if profile fetch has a transient issue.
+        console.warn("useBudget: User is present but profile is null after auth. Budget data might be stale or unavailable from profile.");
+        // setError("Failed to load profile data. Budget display may be affected."); // Optional: set an error in useBudget
+        setIsLoading(false); // Not actively loading, but data source (profile) is missing.
+                              // Budget display will use existing state or defaults if never loaded.
+      }
     }
-    // If authLoading is true, we're still loading - don't reset data
+    // If authLoading is true, internal states (monthlyBudget, etc.) remain as they are from previous render or initial state,
+    // and useBudget's isLoading state is true (set at the beginning of the effect).
   }, [user, profile, authLoading]);
 
   // Calculate spending totals

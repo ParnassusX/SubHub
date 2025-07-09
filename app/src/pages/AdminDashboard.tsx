@@ -22,27 +22,23 @@ const AdminDashboard: React.FC = () => {
     averageSubscriptionsPerUser: 0,
   });
   const [categoryData, setCategoryData] = useState<any[]>([]);
-  const [topSubscriptionsData, setTopSubscriptionsData] = useState<any[]>([]);
+  const [topSubscriptionsData, setTopSubscriptionsData] = useState<any[]>([]); // Initialize as empty
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Load real analytics data
   useEffect(() => {
     const loadAnalytics = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
         // Get admin analytics from Supabase
-        const { data: analytics, error } = await db.admin.getAnalytics();
+        const { data: analytics, error: analyticsError } = await db.admin.getAnalytics();
 
-        if (error) {
-          console.error('Error loading analytics:', error);
-          // Set default values if analytics function fails
-          setStats({
-            totalUsers: 1,
-            totalSubscriptions: 4,
-            totalRevenue: 82.97,
-            activeUsers: 1,
-            newUsersThisMonth: 1,
-            averageSubscriptionsPerUser: 4.0,
-          });
+        if (analyticsError) {
+          console.error('Error loading admin stats:', analyticsError);
+          // Keep stats at 0 or set a specific error state if needed
+          setError(prev => prev ? `${prev}\nFailed to load admin stats.` : 'Failed to load admin stats.');
         } else if (analytics && analytics.length > 0) {
           const data = analytics[0];
           setStats({
@@ -51,45 +47,46 @@ const AdminDashboard: React.FC = () => {
             totalRevenue: Number(data.total_annual_revenue) || 0,
             activeUsers: Number(data.active_users) || 0,
             newUsersThisMonth: Number(data.new_users_this_month) || 0,
-            averageSubscriptionsPerUser: Number(data.total_subscriptions) / Number(data.total_users) || 0,
+            averageSubscriptionsPerUser: (Number(data.total_subscriptions) / Number(data.total_users)) || 0,
           });
+        } else {
+           // No data returned, keep stats at 0
         }
 
         // Get real category breakdown data
         const { data: categoryBreakdown, error: categoryError } = await db.dashboard.getCategoryBreakdown();
-        if (!categoryError && categoryBreakdown) {
+        if (categoryError) {
+          console.error('Error loading category breakdown:', categoryError);
+          setError(prev => prev ? `${prev}\nFailed to load category breakdown.` : 'Failed to load category breakdown.');
+          setCategoryData([]); // Set to empty on error
+        } else if (categoryBreakdown) {
           setCategoryData(categoryBreakdown.map((item: any) => ({
             name: item.category || 'Other',
             value: Number(item.count) || 0,
             color: getCategoryHex(item.category || 'Other')
           })));
         } else {
-          // Fallback to sample data if real data unavailable
-          setCategoryData([
-            { name: 'Entertainment', value: 2, color: getCategoryHex('Entertainment') },
-            { name: 'Productivity', value: 1, color: getCategoryHex('Productivity') },
-            { name: 'Development', value: 1, color: getCategoryHex('Other') },
-          ]);
+          setCategoryData([]); // No data
         }
 
-        // Get real top subscriptions data (simplified for now)
-        setTopSubscriptionsData([
-          { name: 'Netflix', users: 1, revenue: 15.99 },
-          { name: 'Adobe Creative Cloud', users: 1, revenue: 52.99 },
-          { name: 'Spotify Premium', users: 1, revenue: 9.99 },
-          { name: 'GitHub Pro', users: 1, revenue: 4.00 },
-        ]);
-      } catch (error) {
-        console.error('Error loading analytics:', error);
-        // Set fallback data
+        // Top subscriptions data should be fetched from a backend. For now, it's empty.
+        // A separate function/service would be needed to populate this.
+        setTopSubscriptionsData([]);
+
+      } catch (err) {
+        console.error('Overall error loading analytics:', err);
+        setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+        // Ensure states are reset or reflect error
         setStats({
-          totalUsers: 1,
-          totalSubscriptions: 4,
-          totalRevenue: 82.97,
-          activeUsers: 1,
-          newUsersThisMonth: 1,
-          averageSubscriptionsPerUser: 4.0,
+          totalUsers: 0,
+          totalSubscriptions: 0,
+          totalRevenue: 0,
+          activeUsers: 0,
+          newUsersThisMonth: 0,
+          averageSubscriptionsPerUser: 0,
         });
+        setCategoryData([]);
+        setTopSubscriptionsData([]);
       } finally {
         setIsLoading(false);
       }
@@ -303,36 +300,16 @@ const AdminDashboard: React.FC = () => {
       <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 sm:px-6 pb-2 pt-4">Recent Activity</h3>
       <div className="p-4 sm:p-6">
         <div className="bg-[#20364b] rounded-xl border border-[#2e4e6b] p-4 sm:p-6">
-          <div className="space-y-4">
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="text-gray-400" viewBox="0 0 256 256">
-                  <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"></path>
-                </svg>
-              </div>
-              <h4 className="text-white font-medium mb-2">Real-time Activity Feed</h4>
-              <p className="text-gray-400 text-sm mb-4">
-                Activity tracking is now live! User actions will appear here as they happen.
-              </p>
-              <div className="text-left space-y-3 max-w-md mx-auto">
-                <div className="flex items-center gap-3 p-3 bg-gray-700/30 rounded-lg">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <div className="flex-1">
-                    <p className="text-white text-sm">System initialized</p>
-                    <p className="text-gray-400 text-xs">Activity monitoring active</p>
-                  </div>
-                  <p className="text-gray-400 text-xs">Now</p>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-700/30 rounded-lg">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  <div className="flex-1">
-                    <p className="text-white text-sm">Dashboard loaded</p>
-                    <p className="text-gray-400 text-xs">Real-time analytics ready</p>
-                  </div>
-                  <p className="text-gray-400 text-xs">Just now</p>
-                </div>
-              </div>
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="text-gray-400" viewBox="0 0 256 256">
+                <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"></path>
+              </svg>
             </div>
+            <h4 className="text-white font-medium mb-2">Real-time Activity Feed</h4>
+            <p className="text-gray-400 text-sm">
+              This feature is not yet implemented. Real-time user activity will be displayed here in a future update.
+            </p>
           </div>
         </div>
       </div>
