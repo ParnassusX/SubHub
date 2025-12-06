@@ -5,6 +5,7 @@ import { useCurrency } from '../hooks/useCurrency';
 import { AlertCircle } from 'lucide-react';
 import { renderIcon } from './IconPicker';
 import { useCategories } from '../hooks/useCategories';
+import { LogoService } from '../services/logoService';
 
 interface SubscriptionListItemProps {
   subscription: Subscription;
@@ -50,12 +51,24 @@ const SubscriptionListItem: React.FC<SubscriptionListItemProps> = ({ subscriptio
   };
 
   return (
-    <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600 hover:bg-gray-650 transition-colors">
-      <div className="flex-1">
+    <div className="flex items-center gap-4 p-4 bg-gray-700 rounded-lg border border-gray-600 hover:bg-gray-650 transition-colors">
+      {/* Service Logo */}
+      <div className="flex-shrink-0">
+        <img 
+          src={subscription.logo_url || LogoService.generateLetterAvatar(subscription.name)}
+          alt={subscription.name}
+          className="w-12 h-12 rounded-lg object-cover border border-gray-600"
+          onError={(e) => {
+            e.currentTarget.src = LogoService.generateLetterAvatar(subscription.name);
+          }}
+        />
+      </div>
+
+      <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h3 className="text-lg font-medium text-white">{subscription.name}</h3>
-            <span {...getCategoryBadgeProps(subscription.category)} className="flex items-center gap-1">
+            <h3 className="text-lg font-medium text-white truncate">{subscription.name}</h3>
+            <span {...getCategoryBadgeProps(subscription.category)} className="flex items-center gap-1 flex-shrink-0">
               {(() => {
                 const category = categories.find(cat => cat.name === subscription.category);
                 return category?.icon ? renderIcon(category.icon, 'w-3 h-3') : null;

@@ -121,8 +121,9 @@ export class LogoService {
   /**
    * Generate letter avatar as fallback
    * Creates an SVG with the first letter of the service name
+   * Public method so it can be used for error fallbacks
    */
-  private static generateLetterAvatar(name: string): string {
+  static generateLetterAvatar(name: string): string {
     const letter = name.charAt(0).toUpperCase();
     const colors = [
       '#ef4444', '#3b82f6', '#10b981', '#f59e0b', 

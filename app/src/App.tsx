@@ -47,6 +47,11 @@ import Renewals from './pages/Renewals'
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'))
 const LandingPage = React.lazy(() => import('./pages/LandingPage'))
 
+// Compliance pages
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
+import CookieConsent from './components/CookieConsent'
+
 function App() {
   // Initialize performance optimizations and error handling
   usePerformanceOptimization()
@@ -94,6 +99,10 @@ function App() {
               />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              
+              {/* Compliance pages - accessible to all */}
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
 
               {/* Protected routes with lazy loading and error boundaries */}
               <Route path="/*" element={
@@ -149,6 +158,9 @@ function App() {
       {/* PWA Prompts */}
       <PWAUpdatePrompt />
       <PWAInstallPrompt />
+
+      {/* Cookie Consent Banner */}
+      <CookieConsent />
 
       {/* Performance Dashboard - Development Only */}
       <PerformanceDashboard />

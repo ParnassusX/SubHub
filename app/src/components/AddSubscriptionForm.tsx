@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
 import { useCategories } from '../hooks/useCategories';
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle, X, Image as ImageIcon } from 'lucide-react';
 import { ComponentLoader } from './UnifiedLoading';
+import { LogoService } from '../services/logoService';
 
 const AddSubscriptionForm: React.FC = () => {
   const { addSubscription, isLoading } = useSubscriptions();
@@ -14,15 +15,38 @@ const AddSubscriptionForm: React.FC = () => {
   const [startDate, setStartDate] = useState('');
   const [description, setDescription] = useState('');
   const [website, setWebsite] = useState('');
+  const [logoUrl, setLogoUrl] = useState<string>('');
+  const [isFetchingLogo, setIsFetchingLogo] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Set default category when categories load
-  React.useEffect(() => {
+  useEffect(() => {
     if (categories.length > 0 && !category) {
       setCategory(categories[0].name);
     }
   }, [categories, category]);
+
+  // Auto-fetch logo when name or website changes
+  useEffect(() => {
+    const fetchLogo = async () => {
+      if (name.length >= 3 || website) {
+        setIsFetchingLogo(true);
+        try {
+          const logo = await LogoService.fetchLogo(name, website);
+          setLogoUrl(logo);
+        } catch (err) {
+          console.error('Failed to fetch logo:', err);
+        } finally {
+          setIsFetchingLogo(false);
+        }
+      }
+    };
+
+    // Debounce logo fetching
+    const timer = setTimeout(fetchLogo, 500);
+    return () => clearTimeout(timer);
+  }, [name, website]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +65,7 @@ const AddSubscriptionForm: React.FC = () => {
         startDate,
         description: description || undefined,
         website: website || undefined,
+        logo_url: logoUrl || undefined,
       });
 
       // Reset form fields
@@ -51,6 +76,7 @@ const AddSubscriptionForm: React.FC = () => {
       setStartDate('');
       setDescription('');
       setWebsite('');
+      setLogoUrl('');
     } catch (error) {
       setError('Failed to add subscription. Please try again.');
     } finally {
@@ -81,14 +107,36 @@ const AddSubscriptionForm: React.FC = () => {
         <label htmlFor="subscriptionName" className="block text-sm font-medium text-gray-300">
           Subscription Name
         </label>
-        <input
-          type="text"
-          id="subscriptionName"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          placeholder="e.g., Netflix, Spotify"
-        />
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0">
+            {isFetchingLogo ? (
+              <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center animate-pulse">
+                <ImageIcon className="w-6 h-6 text-gray-400" />
+              </div>
+            ) : logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={name || 'Service logo'} 
+                className="w-12 h-12 rounded-lg object-cover border border-gray-600"
+                onError={(e) => {
+                  e.currentTarget.src = LogoService.generateLetterAvatar(name || 'S');
+                }}
+              />
+            ) : (
+              <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
+                <ImageIcon className="w-6 h-6 text-gray-400" />
+              </div>
+            )}
+          </div>
+          <input
+            type="text"
+            id="subscriptionName"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="flex-1 block px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            placeholder="e.g., Netflix, Spotify"
+          />
+        </div>
       </div>
 
       <div>
