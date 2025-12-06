@@ -51,13 +51,13 @@ const SubscriptionListItem: React.FC<SubscriptionListItemProps> = ({ subscriptio
   };
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-gray-700 rounded-lg border border-gray-600 hover:bg-gray-650 transition-colors">
+    <div className="flex items-center gap-4 p-4 bg-gray-700 rounded-lg border border-gray-600 hover:bg-gray-650 transition-smooth hover-lift animate-fade-in">
       {/* Service Logo */}
       <div className="flex-shrink-0">
         <img 
           src={subscription.logo_url || LogoService.generateLetterAvatar(subscription.name)}
           alt={subscription.name}
-          className="w-12 h-12 rounded-lg object-cover border border-gray-600"
+          className="w-12 h-12 rounded-lg object-cover border border-gray-600 transition-smooth hover-scale"
           onError={(e) => {
             e.currentTarget.src = LogoService.generateLetterAvatar(subscription.name);
           }}

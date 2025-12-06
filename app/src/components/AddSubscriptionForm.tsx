@@ -85,18 +85,18 @@ const AddSubscriptionForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-gray-800 shadow-lg rounded-lg border border-gray-700">
+    <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-gray-800 shadow-lg rounded-lg border border-gray-700 animate-fade-in-up">
       <h2 className="text-xl font-semibold text-white mb-4">Add New Subscription</h2>
 
       {/* Error Display */}
       {error && (
-        <div className="flex items-center gap-3 p-4 bg-red-900/20 border border-red-600 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+        <div className="flex items-center gap-3 p-4 bg-red-900/20 border border-red-600 rounded-lg animate-shake">
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 animate-pulse" />
           <p className="text-red-300 text-sm">{error}</p>
           <button
             type="button"
             onClick={() => setError(null)}
-            className="ml-auto text-red-400 hover:text-red-300"
+            className="ml-auto text-red-400 hover:text-red-300 transition-smooth"
           >
             <X className="w-4 h-4" />
           </button>
@@ -240,9 +240,15 @@ const AddSubscriptionForm: React.FC = () => {
       <button
         type="submit"
         disabled={isSubmitting || isLoading}
-        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-smooth hover-lift"
       >
-        {isSubmitting ? 'Adding...' : 'Add Subscription'}
+        {isSubmitting ? (
+          <span className="flex items-center gap-2">
+            <span className="animate-spin">⟳</span> Adding...
+          </span>
+        ) : (
+          'Add Subscription'
+        )}
       </button>
     </form>
   );
