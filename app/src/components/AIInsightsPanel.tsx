@@ -1,15 +1,63 @@
-import React, { useMemo } from 'react';
-import { Sparkles, TrendingDown, Package, DollarSign, ChevronRight } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Sparkles, TrendingDown, Package, DollarSign, ChevronRight, Zap } from 'lucide-react';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
 import { AIInsightsService, AIInsight } from '../services/aiInsightsService';
+import { RealAIService } from '../services/realAIService';
 
 const AIInsightsPanel: React.FC = () => {
   const { subscriptions } = useSubscriptions();
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
+  const [aiRecommendations, setAIRecommendations] = useState<any[]>([]);
+  const [useRealAI, setUseRealAI] = useState(false);
 
-  // Generate insights
+  // Check if AI is configured
+  useEffect(() => {
+    setUseRealAI(RealAIService.isConfigured());
+  }, []);
+
+  // Load AI recommendations if available
+  useEffect(() => {
+    const loadAIRecommendations = async () => {
+      if (useRealAI && subscriptions.length > 0) {
+        setIsLoadingAI(true);
+        try {
+          const recommendations = await RealAIService.generateRecommendations(subscriptions);
+          setAIRecommendations(recommendations);
+        } catch (error) {
+          console.error('Failed to load AI recommendations:', error);
+        } finally {
+          setIsLoadingAI(false);
+        }
+      }
+    };
+
+    loadAIRecommendations();
+  }, [useRealAI, subscriptions]);
+
+  // Generate insights (combines rule-based + AI)
   const insights = useMemo(() => {
-    return AIInsightsService.generateInsights(subscriptions);
-  }, [subscriptions]);
+    const ruleBasedInsights = AIInsightsService.generateInsights(subscriptions);
+    
+    // If we have AI recommendations, prioritize them
+    if (aiRecommendations.length > 0) {
+      const aiInsights: AIInsight[] = aiRecommendations.map(rec => ({
+        id: rec.id,
+        type: rec.type as any,
+        priority: rec.confidence > 0.8 ? 'high' as const : 'medium' as const,
+        title: rec.title,
+        description: rec.description,
+        potentialSavings: rec.potentialSavings,
+        subscriptionIds: [],
+        action: rec.actionable ? 'Review and take action' : undefined,
+        icon: '🤖'
+      }));
+      
+      // Merge AI insights with rule-based, AI takes priority
+      return [...aiInsights, ...ruleBasedInsights].slice(0, 5);
+    }
+    
+    return ruleBasedInsights;
+  }, [subscriptions, aiRecommendations]);
 
   const totalSavings = useMemo(() => {
     return AIInsightsService.getTotalPotentialSavings(insights);
@@ -74,11 +122,26 @@ const AIInsightsPanel: React.FC = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white animate-pulse" />
+            {isLoadingAI ? (
+              <div className="animate-spin">⟳</div>
+            ) : useRealAI ? (
+              <Zap className="w-5 h-5 text-white" />
+            ) : (
+              <Sparkles className="w-5 h-5 text-white animate-pulse" />
+            )}
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white">AI Insights</h3>
-            <p className="text-sm text-gray-400">Smart optimization suggestions</p>
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              AI Insights
+              {useRealAI && (
+                <span className="text-xs px-2 py-0.5 bg-purple-600 text-white rounded-full">
+                  AI POWERED
+                </span>
+              )}
+            </h3>
+            <p className="text-sm text-gray-400">
+              {useRealAI ? 'Advanced AI recommendations' : 'Smart optimization suggestions'}
+            </p>
           </div>
         </div>
 

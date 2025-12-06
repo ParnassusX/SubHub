@@ -11,6 +11,7 @@ import BudgetSettings from '../components/budget/BudgetSettings';
 import NotificationPreferences from '../components/notifications/NotificationPreferences';
 import PricingPlans from '../components/PricingPlans';
 import { useUserTier } from '../hooks/useUserTier';
+import AIConfiguration from '../components/AIConfiguration';
 
 // type Profile = Database['public']['Tables']['profiles']['Row'];
 // type UserPreferences = Database['public']['Tables']['user_preferences']['Row'];
@@ -38,7 +39,7 @@ const Settings: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'budget' | 'privacy' | 'subscription'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'budget' | 'privacy' | 'subscription' | 'ai'>('profile');
   const { tier, upgradeTier } = useUserTier();
 
   // Handle URL parameters for direct navigation to specific tabs
@@ -46,8 +47,8 @@ const Settings: React.FC = () => {
     const urlParams = new URLSearchParams(location.search);
     const tabParam = urlParams.get('tab');
 
-    if (tabParam && ['profile', 'notifications', 'appearance', 'budget', 'privacy', 'subscription'].includes(tabParam)) {
-      setActiveTab(tabParam as 'profile' | 'notifications' | 'appearance' | 'budget' | 'privacy' | 'subscription');
+    if (tabParam && ['profile', 'notifications', 'appearance', 'budget', 'privacy', 'subscription', 'ai'].includes(tabParam)) {
+      setActiveTab(tabParam as 'profile' | 'notifications' | 'appearance' | 'budget' | 'privacy' | 'subscription' | 'ai');
 
       // Scroll to budget configuration section if navigating to budget tab
       if (tabParam === 'budget') {
@@ -136,6 +137,7 @@ const Settings: React.FC = () => {
               {[
                 { id: 'profile', label: t('profile'), icon: '👤' },
                 { id: 'subscription', label: 'Subscription', icon: '👑' },
+                { id: 'ai', label: 'AI Enhancement', icon: '🤖' },
                 { id: 'notifications', label: t('notifications'), icon: '🔔' },
                 { id: 'appearance', label: t('appearance'), icon: '🎨' },
                 { id: 'budget', label: t('budget'), icon: '💰' },
@@ -285,6 +287,12 @@ const Settings: React.FC = () => {
                 currentTier={tier}
                 onSelectPlan={upgradeTier}
               />
+            </div>
+          )}
+
+          {activeTab === 'ai' && (
+            <div className="bg-[#1a2332] rounded-xl border border-[#2e4e6b] p-6">
+              <AIConfiguration />
             </div>
           )}
 
