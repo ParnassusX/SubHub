@@ -33,10 +33,17 @@ export class RealAIService {
 
   /**
    * Configure AI provider
+   * Note: For production, consider encrypting API keys before storing
    */
   static configure(config: AIConfig) {
+    // Validate API key if provided
+    if (config.apiKey && config.apiKey.length < 10) {
+      console.warn('API key seems too short, configuration may be invalid');
+    }
+    
     this.config = config;
     // Store in localStorage for persistence
+    // In production, consider: sessionStorage, encrypted storage, or backend storage
     localStorage.setItem('ai_config', JSON.stringify(config));
   }
 
@@ -85,17 +92,31 @@ export class RealAIService {
   }
 
   /**
+   * Get and validate API key
+   */
+  private static getApiKey(): string {
+    const apiKey = this.config.apiKey;
+    if (!apiKey || apiKey.trim().length === 0) {
+      throw new Error('API key is not configured');
+    }
+    return apiKey;
+  }
+
+  /**
    * Google Gemini API Integration (Free tier: 60 requests/minute)
    * Model: gemini-pro (free)
+   * Note: Gemini requires API key in URL. Consider upgrading to OAuth for production.
    */
   private static async generateGeminiInsights(
     subscriptions: Subscription[]
   ): Promise<AIRecommendation[]> {
-    const apiKey = this.config.apiKey;
+    const apiKey = this.getApiKey();
     const model = this.config.model || 'gemini-pro';
 
     const prompt = this.buildPrompt(subscriptions);
 
+    // Note: Gemini API requires key in URL parameter
+    // This is a limitation of their free tier API
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
       {
@@ -138,7 +159,7 @@ export class RealAIService {
   private static async generateHuggingFaceInsights(
     subscriptions: Subscription[]
   ): Promise<AIRecommendation[]> {
-    const apiKey = this.config.apiKey;
+    const apiKey = this.getApiKey();
     const model = this.config.model || 'mistralai/Mixtral-8x7B-Instruct-v0.1';
 
     const prompt = this.buildPrompt(subscriptions);
@@ -179,7 +200,7 @@ export class RealAIService {
   private static async generateOpenRouterInsights(
     subscriptions: Subscription[]
   ): Promise<AIRecommendation[]> {
-    const apiKey = this.config.apiKey;
+    const apiKey = this.getApiKey();
     const model = this.config.model || 'google/gemini-pro-1.5';
 
     const prompt = this.buildPrompt(subscriptions);
@@ -261,14 +282,18 @@ Return ONLY valid JSON array, no extra text.`;
    */
   private static parseAIResponse(text: string): AIRecommendation[] {
     try {
-      // Try to extract JSON from response
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) {
-        console.warn('No JSON found in AI response');
+      // Try to extract JSON array from response
+      // Look for first opening bracket to last closing bracket
+      const firstBracket = text.indexOf('[');
+      const lastBracket = text.lastIndexOf(']');
+      
+      if (firstBracket === -1 || lastBracket === -1 || firstBracket >= lastBracket) {
+        console.warn('No valid JSON array found in AI response');
         return [];
       }
 
-      const parsed = JSON.parse(jsonMatch[0]);
+      const jsonText = text.substring(firstBracket, lastBracket + 1);
+      const parsed = JSON.parse(jsonText);
       
       return parsed.map((item: any, index: number) => ({
         id: `ai-${Date.now()}-${index}`,

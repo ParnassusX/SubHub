@@ -195,12 +195,14 @@ const AIConfiguration: React.FC = () => {
             type="text"
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            placeholder={providerInfo[provider].defaultModel}
+            placeholder={providerInfo[provider].defaultModel || 'Default model'}
             className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <p className="text-xs text-gray-500 mt-1">
-            Leave empty to use default model: {providerInfo[provider].defaultModel}
-          </p>
+          {providerInfo[provider].defaultModel && (
+            <p className="text-xs text-gray-500 mt-1">
+              Leave empty to use default model: {providerInfo[provider].defaultModel}
+            </p>
+          )}
         </div>
       )}
 
@@ -278,9 +280,14 @@ const AIConfiguration: React.FC = () => {
 
       {/* Privacy Note */}
       <div className="p-4 bg-purple-900/20 border border-purple-600/50 rounded-lg">
-        <p className="text-xs text-gray-400">
-          🔒 <strong>Privacy:</strong> Your API key and subscription data are only used for generating insights.
-          No personal information is stored or shared with third parties. All AI providers follow strict data privacy policies.
+        <p className="text-xs text-gray-400 mb-2">
+          🔒 <strong>Privacy & Security:</strong> Your API key is stored in browser localStorage (not on our servers).
+          Only anonymized subscription data (service names and costs) is sent to AI providers for analysis.
+          No personal information is shared.
+        </p>
+        <p className="text-xs text-yellow-400">
+          ⚠️ <strong>Security Note:</strong> API keys in localStorage can be accessed by browser extensions or XSS attacks.
+          Use a dedicated API key for SubHub with limited permissions. Never share your API key.
         </p>
       </div>
     </div>
