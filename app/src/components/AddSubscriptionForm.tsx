@@ -85,8 +85,11 @@ const AddSubscriptionForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-gray-800 shadow-lg rounded-lg border border-gray-700 animate-fade-in-up">
-      <h2 className="text-xl font-semibold text-white mb-4">Add New Subscription</h2>
+    <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-gradient-to-br from-gray-800 to-gray-850 shadow-2xl rounded-lg border border-gray-700 animate-fade-in-up hover-lift transition-smooth">
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-xl font-semibold text-white">Add New Subscription</h2>
+        <span className="text-2xl">➕</span>
+      </div>
 
       {/* Error Display */}
       {error && (
@@ -110,20 +113,20 @@ const AddSubscriptionForm: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0">
             {isFetchingLogo ? (
-              <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center animate-pulse">
-                <ImageIcon className="w-6 h-6 text-gray-400" />
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-lg flex items-center justify-center animate-pulse border border-blue-500/30">
+                <ImageIcon className="w-6 h-6 text-blue-400 animate-pulse" />
               </div>
             ) : logoUrl ? (
               <img 
                 src={logoUrl} 
                 alt={name || 'Service logo'} 
-                className="w-12 h-12 rounded-lg object-cover border border-gray-600"
+                className="w-12 h-12 rounded-lg object-cover border-2 border-gray-600 shadow-md hover-scale transition-smooth"
                 onError={(e) => {
                   e.currentTarget.src = LogoService.generateLetterAvatar(name || 'S');
                 }}
               />
             ) : (
-              <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-750 rounded-lg flex items-center justify-center border border-gray-600">
                 <ImageIcon className="w-6 h-6 text-gray-400" />
               </div>
             )}
