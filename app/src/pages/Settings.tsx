@@ -9,6 +9,8 @@ import { getUserLanguage, SupportedLanguage } from '../utils/localization';
 import { useTranslation } from '../hooks/useTranslation';
 import BudgetSettings from '../components/budget/BudgetSettings';
 import NotificationPreferences from '../components/notifications/NotificationPreferences';
+import PricingPlans from '../components/PricingPlans';
+import { useUserTier } from '../hooks/useUserTier';
 
 // type Profile = Database['public']['Tables']['profiles']['Row'];
 // type UserPreferences = Database['public']['Tables']['user_preferences']['Row'];
@@ -36,15 +38,16 @@ const Settings: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'budget' | 'privacy'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'budget' | 'privacy' | 'subscription'>('profile');
+  const { tier, upgradeTier } = useUserTier();
 
   // Handle URL parameters for direct navigation to specific tabs
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const tabParam = urlParams.get('tab');
 
-    if (tabParam && ['profile', 'notifications', 'appearance', 'budget', 'privacy'].includes(tabParam)) {
-      setActiveTab(tabParam as 'profile' | 'notifications' | 'appearance' | 'budget' | 'privacy');
+    if (tabParam && ['profile', 'notifications', 'appearance', 'budget', 'privacy', 'subscription'].includes(tabParam)) {
+      setActiveTab(tabParam as 'profile' | 'notifications' | 'appearance' | 'budget' | 'privacy' | 'subscription');
 
       // Scroll to budget configuration section if navigating to budget tab
       if (tabParam === 'budget') {
@@ -132,6 +135,7 @@ const Settings: React.FC = () => {
             <nav className="-mb-px flex space-x-8">
               {[
                 { id: 'profile', label: t('profile'), icon: '👤' },
+                { id: 'subscription', label: 'Subscription', icon: '👑' },
                 { id: 'notifications', label: t('notifications'), icon: '🔔' },
                 { id: 'appearance', label: t('appearance'), icon: '🎨' },
                 { id: 'budget', label: t('budget'), icon: '💰' },
@@ -273,6 +277,15 @@ const Settings: React.FC = () => {
 
           {activeTab === 'budget' && (
             <BudgetSettings />
+          )}
+
+          {activeTab === 'subscription' && (
+            <div className="animate-fade-in">
+              <PricingPlans 
+                currentTier={tier}
+                onSelectPlan={upgradeTier}
+              />
+            </div>
           )}
 
           {activeTab === 'privacy' && (
