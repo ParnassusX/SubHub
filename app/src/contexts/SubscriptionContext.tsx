@@ -17,6 +17,7 @@ export interface Subscription {
   status?: string;
   description?: string;
   website?: string;
+  logo_url?: string;
   user_id: string;
   created_at?: string;
   updated_at?: string;

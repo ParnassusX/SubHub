@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSubscriptions } from '../contexts/SubscriptionContext';
 import { useCategories } from '../hooks/useCategories';
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle, X, Image as ImageIcon } from 'lucide-react';
 import { ComponentLoader } from './UnifiedLoading';
+import { LogoService } from '../services/logoService';
 
 const AddSubscriptionForm: React.FC = () => {
   const { addSubscription, isLoading } = useSubscriptions();
@@ -14,15 +15,38 @@ const AddSubscriptionForm: React.FC = () => {
   const [startDate, setStartDate] = useState('');
   const [description, setDescription] = useState('');
   const [website, setWebsite] = useState('');
+  const [logoUrl, setLogoUrl] = useState<string>('');
+  const [isFetchingLogo, setIsFetchingLogo] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Set default category when categories load
-  React.useEffect(() => {
+  useEffect(() => {
     if (categories.length > 0 && !category) {
       setCategory(categories[0].name);
     }
   }, [categories, category]);
+
+  // Auto-fetch logo when name or website changes
+  useEffect(() => {
+    const fetchLogo = async () => {
+      if (name.length >= 3 || website) {
+        setIsFetchingLogo(true);
+        try {
+          const logo = await LogoService.fetchLogo(name, website);
+          setLogoUrl(logo);
+        } catch (err) {
+          console.error('Failed to fetch logo:', err);
+        } finally {
+          setIsFetchingLogo(false);
+        }
+      }
+    };
+
+    // Debounce logo fetching
+    const timer = setTimeout(fetchLogo, 500);
+    return () => clearTimeout(timer);
+  }, [name, website]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +65,7 @@ const AddSubscriptionForm: React.FC = () => {
         startDate,
         description: description || undefined,
         website: website || undefined,
+        logo_url: logoUrl || undefined,
       });
 
       // Reset form fields
@@ -51,6 +76,7 @@ const AddSubscriptionForm: React.FC = () => {
       setStartDate('');
       setDescription('');
       setWebsite('');
+      setLogoUrl('');
     } catch (error) {
       setError('Failed to add subscription. Please try again.');
     } finally {
@@ -59,18 +85,21 @@ const AddSubscriptionForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-gray-800 shadow-lg rounded-lg border border-gray-700">
-      <h2 className="text-xl font-semibold text-white mb-4">Add New Subscription</h2>
+    <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-gradient-to-br from-gray-800 to-gray-850 shadow-2xl rounded-lg border border-gray-700 animate-fade-in-up hover-lift transition-smooth">
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-xl font-semibold text-white">Add New Subscription</h2>
+        <span className="text-2xl">➕</span>
+      </div>
 
       {/* Error Display */}
       {error && (
-        <div className="flex items-center gap-3 p-4 bg-red-900/20 border border-red-600 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+        <div className="flex items-center gap-3 p-4 bg-red-900/20 border border-red-600 rounded-lg animate-shake">
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 animate-pulse" />
           <p className="text-red-300 text-sm">{error}</p>
           <button
             type="button"
             onClick={() => setError(null)}
-            className="ml-auto text-red-400 hover:text-red-300"
+            className="ml-auto text-red-400 hover:text-red-300 transition-smooth"
           >
             <X className="w-4 h-4" />
           </button>
@@ -81,14 +110,36 @@ const AddSubscriptionForm: React.FC = () => {
         <label htmlFor="subscriptionName" className="block text-sm font-medium text-gray-300">
           Subscription Name
         </label>
-        <input
-          type="text"
-          id="subscriptionName"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          placeholder="e.g., Netflix, Spotify"
-        />
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0">
+            {isFetchingLogo ? (
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-lg flex items-center justify-center animate-pulse border border-blue-500/30">
+                <ImageIcon className="w-6 h-6 text-blue-400 animate-pulse" />
+              </div>
+            ) : logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={name || 'Service logo'} 
+                className="w-12 h-12 rounded-lg object-cover border-2 border-gray-600 shadow-md hover-scale transition-smooth"
+                onError={(e) => {
+                  e.currentTarget.src = LogoService.generateLetterAvatar(name || 'S');
+                }}
+              />
+            ) : (
+              <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-750 rounded-lg flex items-center justify-center border border-gray-600">
+                <ImageIcon className="w-6 h-6 text-gray-400" />
+              </div>
+            )}
+          </div>
+          <input
+            type="text"
+            id="subscriptionName"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="flex-1 block px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            placeholder="e.g., Netflix, Spotify"
+          />
+        </div>
       </div>
 
       <div>
@@ -192,9 +243,15 @@ const AddSubscriptionForm: React.FC = () => {
       <button
         type="submit"
         disabled={isSubmitting || isLoading}
-        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-smooth hover-lift"
       >
-        {isSubmitting ? 'Adding...' : 'Add Subscription'}
+        {isSubmitting ? (
+          <span className="flex items-center gap-2">
+            <span className="animate-spin">⟳</span> Adding...
+          </span>
+        ) : (
+          'Add Subscription'
+        )}
       </button>
     </form>
   );

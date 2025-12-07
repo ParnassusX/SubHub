@@ -22,6 +22,7 @@ import { useBudget } from '../hooks/useBudget';
 import FeatureHighlight from '../components/tour/FeatureHighlight';
 import HelpTooltip from '../components/help/HelpTooltip';
 import { HelpContentManager } from '../data/helpContent';
+import AIInsightsPanel from '../components/AIInsightsPanel';
 
 // Feature flags for UX elements
 import { isFeatureEnabled } from '../config/featureFlags';
@@ -244,6 +245,9 @@ const Dashboard: React.FC = () => {
 
             {/* Progressive Disclosure - Below the Fold */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+
+              {/* AI Insights Panel - New Feature */}
+              <AIInsightsPanel />
 
               {/* Detailed Renewals Section */}
               <div className="upcoming-renewals">
